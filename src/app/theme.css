@@ -1,3 +1,5 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--ink:#eee9dd;--paper:#181714;--paper-alt:#24221d;--line:#48443a;--muted:#b4ad9e}}
 :root[data-theme="dark"]{--ink:#eee9dd;--paper:#181714;--paper-alt:#24221d;--line:#48443a;--muted:#b4ad9e}
 .theme-toggle{background:transparent;border:1px solid var(--line);color:var(--ink);font-size:15px;line-height:16px;padding:0 5px}
+.error-page{min-height:55vh;padding:12vh 0}.error-page h1{font:500 clamp(38px,5vw,68px)/1.04 var(--serif);letter-spacing:-1.5px;margin:0 0 15px}.error-page p:not(.eyebrow){max-width:48ch;color:var(--muted);margin-bottom:25px}
+.forgot-link{display:inline-block;font-size:12px;margin-top:16px;border-bottom:1px solid var(--ink)}
