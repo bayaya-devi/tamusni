@@ -1,0 +1,2 @@
+import { articles } from "@/lib/content"; import Link from "next/link";
+export default function WeekPage(){return <section className="format-page shell"><p className="eyebrow">SEMAINE · 14 — 20 septembre 2026</p><h1>L’essentiel de la semaine.</h1><p className="intro">Une édition pour remettre les informations importantes dans leur contexte.</p><ol className="week-list">{articles.slice(0,5).map(a=><li key={a.slug}><span>{a.category}</span><Link href={`/article/${a.slug}`}>{a.title}</Link></li>)}</ol></section>}

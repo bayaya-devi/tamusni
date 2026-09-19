@@ -1,0 +1,8 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "tamusni",
+  "compatibility_date": "2026-09-19",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [{ "binding": "DB", "database_name": "tamusni-production", "database_id": "REPLACE_AFTER_WRANGLER_D1_CREATE", "migrations_dir": "migrations" }],
+  "observability": { "enabled": true }
+}

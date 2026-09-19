@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAMUSNI — Technologies • Sciences • Futur</title>
+<meta name="description" content="TAMUSNI est une revue internationale consacrée à l'intelligence artificielle, l'innovation, les technologies, la robotique, la cybersécurité, le futur, l'espace et les sciences.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#141310;
+    --ink-soft:#2b2924;
+    --paper:#FAF7F0;
+    --paper-alt:#F3EFE5;
+    --line:#DAD5C7;
+    --line-strong:#C7C1AF;
+    --gray:#78746A;
+    --gray-light:#9B968A;
+    --serif:'Fraunces', Georgia, serif;
+    --sans:'Inter', -apple-system, sans-serif;
+    --radius:2px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-font-smoothing:antialiased;scroll-behavior:smooth}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:16px;
+    line-height:1.5;
+  }
+  a{color:inherit;text-decoration:none}
+  img{max-width:100%;display:block}
+  button{font-family:var(--sans)}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 28px}
+
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible{
+    outline:2px solid var(--ink);
+    outline-offset:3px;
+  }
+
+  /* ============ STAR MARK ============ */
+  .star{display:inline-flex;width:13px;height:13px;flex-shrink:0}
+  .star svg{width:100%;height:100%;display:block}
+
+  /* ============ AD SLOT ============ */
+  .ad-slot{
+    border:1px dashed var(--line-strong);
+    color:var(--gray-light);
+    font-size:11px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    text-align:center;
+    padding:14px;
+    margin:0 0 8px;
+  }
+  .ad-slot--strip{margin:0}
+
+  /* ============ MASTHEAD ============ */
+  .site-header{border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(250,247,240,.94);backdrop-filter:blur(6px);z-index:100}
+
+  .masthead{padding:26px 0 20px;text-align:center;border-bottom:1px solid var(--line)}
+  .masthead-mark{display:inline-flex;align-items:center;gap:12px;justify-content:center}
+  .masthead-name{
+    font-family:var(--serif);
+    font-weight:600;
+    font-size:38px;
+    letter-spacing:.01em;
+    line-height:1;
+  }
+  .masthead-tagline{
+    display:block;
+    margin-top:9px;
+    font-size:11.5px;
+    letter-spacing:.14em;
+    color:var(--gray);
+  }
+
+  .nav-primary{border-bottom:1px solid var(--line)}
+  .nav-primary-inner{display:flex;align-items:center;justify-content:center;gap:30px;padding:14px 0;flex-wrap:wrap}
+  .nav-primary a{font-size:14px;color:var(--ink-soft);white-space:nowrap;position:relative;padding-bottom:3px}
+  .nav-primary a:hover{color:var(--ink)}
+  .nav-primary a[aria-current="page"]{color:var(--ink)}
+  .nav-primary a[aria-current="page"]::after{content:"";position:absolute;left:0;right:0;bottom:-15px;height:2px;background:var(--ink)}
+
+  .nav-secondary-bar{display:flex;align-items:center;justify-content:space-between;padding:9px 0;gap:20px}
+  .nav-formats{display:flex;gap:20px;overflow-x:auto}
+  .nav-formats a{font-size:12px;color:var(--gray);letter-spacing:.03em;white-space:nowrap}
+  .nav-formats a:hover{color:var(--ink)}
+  .nav-tools{display:flex;align-items:center;gap:16px;flex-shrink:0}
+
+  .icon-btn{background:none;border:none;padding:4px;cursor:pointer;color:var(--gray);display:flex;align-items:center;gap:7px;font-size:12.5px}
+  .icon-btn:hover{color:var(--ink)}
+  .icon-btn svg{width:15px;height:15px}
+
+  .lang-select{border:1px solid var(--line);border-radius:var(--radius);padding:4px 8px;font-size:12.5px;color:var(--ink-soft);background:transparent;font-family:var(--sans);cursor:pointer}
+
+  .menu-toggle{display:none;background:none;border:none;cursor:pointer;padding:4px;color:var(--ink)}
+  .menu-toggle svg{width:20px;height:20px;display:block}
+
+  /* ---- search panel ---- */
+  .search-panel{
+    max-height:0;
+    overflow:hidden;
+    border-bottom:0 solid var(--line);
+    transition:max-height .22s ease;
+  }
+  .search-panel.is-open{max-height:90px;border-bottom-width:1px}
+  .search-panel-inner{display:flex;align-items:center;gap:14px;padding:16px 0}
+  .search-panel-inner input{
+    flex:1;
+    border:none;
+    background:transparent;
+    font-family:var(--serif);
+    font-size:20px;
+    color:var(--ink);
+  }
+  .search-panel-inner input:focus{outline:none}
+  .search-panel-inner input::placeholder{color:var(--gray-light)}
+  .search-close{background:none;border:1px solid var(--line);border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--gray);flex-shrink:0}
+  .search-close:hover{color:var(--ink);border-color:var(--ink)}
+
+  /* ---- mobile menu ---- */
+  .mobile-menu{
+    display:none;
+    max-height:0;
+    overflow:hidden;
+    border-bottom:0 solid var(--line);
+    transition:max-height .25s ease;
+  }
+  .mobile-menu.is-open{max-height:600px;border-bottom-width:1px}
+  .mobile-menu-inner{padding:8px 0 22px}
+  .mobile-menu-group{padding:14px 0;border-top:1px solid var(--line)}
+  .mobile-menu-group:first-child{border-top:none}
+  .mobile-menu-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--gray-light);margin-bottom:10px}
+  .mobile-menu-links{display:flex;flex-direction:column}
+  .mobile-menu-links a{padding:8px 0;font-size:15.5px;font-family:var(--serif)}
+  .mobile-menu-links.is-compact a{font-family:var(--sans);font-size:14px;padding:6px 0;color:var(--gray)}
+  .mobile-menu-tools{display:flex;align-items:center;justify-content:space-between;gap:14px}
+
+  section{padding:52px 0}
+  .section-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:26px;border-bottom:1px solid var(--line);padding-bottom:14px}
+  .section-title{font-family:var(--serif);font-size:22px;font-weight:500}
+  .section-link{font-size:13px;color:var(--gray)}
+  .section-link:hover{color:var(--ink)}
+
+  .kicker{font-size:12.5px;color:var(--gray);display:flex;align-items:center;gap:9px;margin-bottom:14px}
+  .kicker .rubrique{color:var(--ink);font-weight:500}
+  .kicker .dot{width:3px;height:3px;background:var(--gray-light);border-radius:50%;flex-shrink:0}
+
+  .media-block{
+    width:100%;
+    background:var(--paper-alt);
+    border:1px solid var(--line);
+    position:relative;
+    display:flex;
+    align-items:flex-end;
+  }
+  .media-block::after{
+    content:"Image";
+    position:absolute;
+    top:10px;
+    left:10px;
+    font-size:10px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--gray-light);
+    background:var(--paper);
+    border:1px solid var(--line);
+    padding:2px 7px;
+  }
+
+  /* ============ HERO ============ */
+  .hero{padding-top:40px;padding-bottom:40px;border-bottom:1px solid var(--line)}
+  .hero-grid{display:grid;grid-template-columns:1.7fr 1fr;gap:52px;align-items:start}
+  .hero-main .media-block{aspect-ratio:16/10;margin-bottom:22px}
+  .hero-lead-title{font-family:var(--serif);font-size:48px;line-height:1.06;font-weight:500;margin-bottom:16px;letter-spacing:-.005em}
+  .hero-lead-summary{font-size:17.5px;color:var(--ink-soft);line-height:1.55;max-width:54ch;margin-bottom:16px}
+  .hero-lead-byline{font-size:12.5px;color:var(--gray-light)}
+
+  .hero-secondary{border-top:1px solid var(--line);margin-top:32px;padding-top:26px;display:grid;grid-template-columns:130px 1fr;gap:18px}
+  .hero-secondary .media-block{aspect-ratio:4/3}
+  .hero-secondary-title{font-family:var(--serif);font-size:20px;line-height:1.28;font-weight:500}
+
+  .hero-side{display:flex;flex-direction:column}
+  .flash-heading{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--gray);margin-bottom:6px}
+  .flash-list{display:flex;flex-direction:column}
+  .flash-item{display:flex;gap:14px;padding:14px 0;border-top:1px solid var(--line)}
+  .flash-item:first-of-type{border-top:none}
+  .flash-time{font-size:12px;color:var(--gray-light);white-space:nowrap;padding-top:2px;min-width:42px}
+  .flash-body .rubrique-tag{font-size:11.5px;color:var(--gray);display:block;margin-bottom:4px}
+  .flash-body h4{font-family:var(--serif);font-size:16.5px;font-weight:500;line-height:1.3}
+  .flash-body h4:hover{text-decoration:underline;text-underline-offset:3px}
+
+  /* ============ EDITORIAL CARD GRID ============ */
+  .cards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:32px}
+  .cards-grid.two{grid-template-columns:repeat(2,1fr)}
+
+  .editorial-card .media-block{aspect-ratio:4/3;margin-bottom:14px}
+  .editorial-card .card-title{font-family:var(--serif);font-size:19px;font-weight:500;line-height:1.28;margin-bottom:8px}
+  .editorial-card .card-summary{font-size:14px;color:var(--gray);line-height:1.5}
+  .editorial-card:hover .card-title{text-decoration:underline;text-underline-offset:3px}
+
+  .editorial-card--feature{display:grid;grid-template-columns:1.3fr 1fr;gap:28px;align-items:center;margin-bottom:34px;padding-bottom:34px;border-bottom:1px solid var(--line)}
+  .editorial-card--feature .media-block{aspect-ratio:16/11;margin-bottom:0}
+  .editorial-card--feature .card-title{font-size:26px}
+  .editorial-card--feature .card-summary{font-size:15px;max-width:44ch}
+
+  /* ============ INNOVATION ============ */
+  .innovation-section{background:var(--paper-alt);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .innovation-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:36px}
+  .innovation-secondary{display:flex;flex-direction:column;gap:22px}
+  .innovation-secondary .editorial-card .media-block{aspect-ratio:16/10}
+  .innovation-secondary .card-title{font-size:16.5px}
+
+  .company-watch{
+    border:1px solid var(--line-strong);
+    padding:18px 20px;
+    margin-top:4px;
+  }
+  .company-watch-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--gray);margin-bottom:8px;display:flex;align-items:center;gap:7px}
+  .company-watch-name{font-family:var(--serif);font-size:18px;font-weight:500;margin-bottom:6px}
+  .company-watch-desc{font-size:13.5px;color:var(--gray);line-height:1.5}
+
+  /* ============ INTELLIGENCE / hierarchy grid ============ */
+  .hierarchy-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:36px}
+  .hierarchy-grid .editorial-card--primary .media-block{aspect-ratio:16/10;margin-bottom:16px}
+  .hierarchy-grid .editorial-card--primary .card-title{font-size:24px}
+  .hierarchy-side{display:flex;flex-direction:column;gap:22px}
+  .hierarchy-side .editorial-card{display:grid;grid-template-columns:96px 1fr;gap:14px}
+  .hierarchy-side .editorial-card .media-block{aspect-ratio:1/1;margin-bottom:0}
+  .hierarchy-side .card-title{font-size:16px}
+
+  /* ============ TECHNOLOGIES contrast pair ============ */
+  .contrast-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:32px}
+  .contrast-grid .editorial-card--major .media-block{aspect-ratio:16/9;margin-bottom:16px}
+  .contrast-grid .editorial-card--major .card-title{font-size:23px}
+  .contrast-grid .editorial-card--minor .media-block{aspect-ratio:4/3}
+
+  /* ============ VISION ============ */
+  .vision-feature{display:grid;grid-template-columns:1.1fr 1fr;gap:44px;align-items:center}
+  .vision-media{
+    position:relative;
+    aspect-ratio:16/9;
+    background:linear-gradient(135deg,#1f1e1a,#3a382f);
+    border:1px solid var(--line);
+  }
+  .vision-play{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:58px;height:58px;border:1.5px solid rgba(250,247,240,.85);border-radius:50%;
+    display:flex;align-items:center;justify-content:center;background:rgba(20,19,16,.15);
+    cursor:pointer;
+  }
+  .vision-play:hover{background:rgba(20,19,16,.3)}
+  .vision-play::after{content:"";border-left:13px solid #FAF7F0;border-top:8px solid transparent;border-bottom:8px solid transparent;margin-left:4px}
+  .vision-duration{
+    position:absolute;bottom:12px;right:12px;
+    background:rgba(20,19,16,.72);color:var(--paper);
+    font-size:11.5px;padding:3px 8px;letter-spacing:.03em;
+  }
+  .vision-text h3{font-family:var(--serif);font-size:29px;font-weight:500;line-height:1.2;margin-bottom:14px}
+  .vision-text p{color:var(--gray);font-size:15px;line-height:1.6;max-width:46ch;margin-bottom:14px}
+  .vision-meta{font-size:12.5px;color:var(--gray-light)}
+
+  /* ============ SECONDARY RUBRIQUES ============ */
+  .rubriques-secondaires{display:grid;grid-template-columns:repeat(5,1fr)}
+  .rubrique-col{padding:0 20px;border-left:1px solid var(--line)}
+  .rubrique-col:first-child{padding-left:0;border-left:none}
+  .rubrique-col h4{font-family:var(--serif);font-size:16.5px;font-weight:500;margin-bottom:14px}
+  .rubrique-col .mini-item{display:block;padding:10px 0;border-top:1px solid var(--line);font-size:13.5px;line-height:1.4;color:var(--ink-soft)}
+  .rubrique-col .mini-item:first-of-type{border-top:none}
+  .rubrique-col .mini-item:hover{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+
+  /* ============ RENCONTRE ============ */
+  .rencontre{display:grid;grid-template-columns:220px 1fr;gap:40px;align-items:start}
+  .rencontre-photo{width:220px;aspect-ratio:3/4}
+  .rencontre-role{font-size:13px;color:var(--gray);margin-bottom:6px}
+  .rencontre-name{font-family:var(--serif);font-size:27px;font-weight:500;margin-bottom:16px}
+  .rencontre-quote{font-family:var(--serif);font-style:italic;font-size:19px;line-height:1.5;color:var(--ink-soft);max-width:58ch;margin-bottom:18px}
+  .rencontre-cta{font-size:13px;color:var(--ink);border-bottom:1px solid var(--ink);padding-bottom:2px;display:inline-block}
+  .rencontre-cta:hover{color:var(--gray)}
+
+  /* ============ SEMAINE ============ */
+  .semaine-box{border:1px solid var(--line-strong);padding:38px;display:grid;grid-template-columns:1fr 1.6fr;gap:38px}
+  .semaine-edition{font-size:12.5px;color:var(--gray);letter-spacing:.04em;margin-bottom:10px}
+  .semaine-title{font-family:var(--serif);font-size:27px;font-weight:500;line-height:1.2;margin-bottom:16px}
+  .semaine-cta{font-size:13px;color:var(--ink);border-bottom:1px solid var(--ink);padding-bottom:2px;display:inline-block}
+  .semaine-cta:hover{color:var(--gray)}
+  .semaine-list{list-style:none}
+  .semaine-list li{padding:11px 0;border-top:1px solid var(--line);font-size:14.5px;display:flex;gap:12px}
+  .semaine-list li:first-child{border-top:none}
+  .semaine-list .tag{font-size:11.5px;color:var(--gray);min-width:118px;flex-shrink:0}
+
+  /* ============ NEWSLETTER ============ */
+  .newsletter{border-top:1px solid var(--line);padding:44px 0}
+  .newsletter-inner{display:flex;align-items:center;justify-content:space-between;gap:32px;flex-wrap:wrap}
+  .newsletter-text h3{font-family:var(--serif);font-size:20px;font-weight:500;margin-bottom:6px}
+  .newsletter-text p{font-size:14px;color:var(--gray)}
+  .newsletter-form{display:flex;border:1px solid var(--line-strong)}
+  .newsletter-form label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .newsletter-form input{border:none;background:transparent;padding:11px 14px;font-family:var(--sans);font-size:14px;width:240px;color:var(--ink)}
+  .newsletter-form input:focus{outline:none}
+  .newsletter-form button{background:var(--ink);color:var(--paper);border:none;padding:11px 20px;font-size:13.5px;cursor:pointer;white-space:nowrap}
+  .newsletter-form button:hover{background:var(--ink-soft)}
+  .newsletter-success{display:none;font-size:14px;color:var(--ink-soft)}
+  .newsletter-success.is-shown{display:block}
+  .newsletter.is-submitted .newsletter-form{display:none}
+
+  /* ============ FOOTER ============ */
+  .site-footer{border-top:1px solid var(--line);padding:44px 0 30px}
+  .footer-grid{display:grid;grid-template-columns:1.6fr repeat(3,1fr);gap:32px;margin-bottom:36px}
+  .footer-col h5{font-size:12px;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
+  .footer-col a{display:block;font-size:13.5px;color:var(--ink-soft);padding:5px 0}
+  .footer-col a:hover{color:var(--ink)}
+  .footer-brand-desc{font-size:13px;color:var(--gray);max-width:32ch;line-height:1.6;margin-top:10px}
+  .footer-bottom{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:22px;font-size:12.5px;color:var(--gray-light);flex-wrap:wrap;gap:10px}
+  .footer-legal{display:flex;gap:18px;flex-wrap:wrap}
+
+  .visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .skip-link{
+    position:absolute;top:-40px;left:12px;background:var(--ink);color:var(--paper);
+    padding:8px 14px;font-size:13px;z-index:200;transition:top .15s;
+  }
+  .skip-link:focus{top:12px}
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width:1024px){
+    .hero-grid{grid-template-columns:1fr}
+    .hero-side{border-top:1px solid var(--line);padding-top:26px}
+    .innovation-grid{grid-template-columns:1fr}
+    .hierarchy-grid{grid-template-columns:1fr}
+    .contrast-grid{grid-template-columns:1fr}
+    .editorial-card--feature{grid-template-columns:1fr}
+    .semaine-box{grid-template-columns:1fr}
+  }
+  @media (max-width:920px){
+    .nav-primary,.nav-formats,.nav-tools .lang-select{display:none}
+    .nav-secondary-bar{justify-content:flex-end}
+    .menu-toggle{display:flex}
+    .mobile-menu{display:block}
+    .cards-grid{grid-template-columns:1fr 1fr}
+    .vision-feature{grid-template-columns:1fr}
+    .rubriques-secondaires{grid-template-columns:1fr 1fr;row-gap:28px}
+    .rubrique-col:nth-child(odd){padding-left:0;border-left:none}
+    .rubrique-col:nth-child(even){padding-left:20px}
+    .rencontre{grid-template-columns:1fr}
+    .rencontre-photo{width:140px}
+    .newsletter-inner{flex-direction:column;align-items:flex-start}
+    .footer-grid{grid-template-columns:1fr 1fr}
+    .masthead-name{font-size:32px}
+  }
+  @media (max-width:560px){
+    .hero-lead-title{font-size:32px}
+    .hero-secondary{grid-template-columns:100px 1fr}
+    .cards-grid{grid-template-columns:1fr}
+    .rubriques-secondaires{grid-template-columns:1fr}
+    .rubrique-col{padding-left:0 !important;border-left:none !important}
+    .footer-grid{grid-template-columns:1fr}
+    .semaine-list .tag{min-width:96px}
+    .hierarchy-side .editorial-card{grid-template-columns:76px 1fr}
+  }
+</style>
+</head>
+<body>
+
+<a href="#main" class="skip-link">Aller au contenu</a>
+
+<header class="site-header">
+
+  <!-- MASTHEAD -->
+  <div class="masthead">
+    <a href="#" class="masthead-mark" aria-label="TAMUSNI — Accueil">
+      <span class="star" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 1 L13.4 10.6 L23 12 L13.4 13.4 L12 23 L10.6 13.4 L1 12 L10.6 10.6 Z" fill="#141310"/>
+        </svg>
+      </span>
+      <span class="masthead-name">TAMUSNI</span>
+    </a>
+    <span class="masthead-tagline">Technologies&nbsp;•&nbsp;Sciences&nbsp;•&nbsp;Futur</span>
+  </div>
+
+  <!-- PRIMARY NAV -->
+  <nav class="nav-primary" aria-label="Rubriques principales">
+    <div class="wrap nav-primary-inner">
+      <a href="#" aria-current="page">Accueil</a>
+      <a href="#">Intelligence</a>
+      <a href="#">Innovation</a>
+      <a href="#">Technologies</a>
+      <a href="#">Robotique</a>
+      <a href="#">Cybersécurité</a>
+      <a href="#">Futur</a>
+      <a href="#">Espace</a>
+      <a href="#">Sciences</a>
+    </div>
+  </nav>
+
+  <!-- SECONDARY NAV : formats + tools -->
+  <div class="wrap nav-secondary-bar">
+    <nav class="nav-formats" aria-label="Formats éditoriaux">
+      <a href="#">Flash</a>
+      <a href="#">Focus</a>
+      <a href="#">Vision</a>
+      <a href="#">Rencontre</a>
+      <a href="#">Semaine</a>
+      <a href="#">Newsletter</a>
+    </nav>
+    <div class="nav-tools">
+      <button class="icon-btn" id="search-toggle" aria-expanded="false" aria-controls="search-panel">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <span>Rechercher</span>
+      </button>
+      <label class="visually-hidden" for="lang-select">Choisir la langue</label>
+      <select class="lang-select" id="lang-select">
+        <option value="fr">Français</option>
+        <option value="en">English</option>
+        <option value="ar">العربية</option>
+        <option value="zgh">ⵜⴰⵎⴰⵣⵉⵖⵜ</option>
+        <option value="es">Español</option>
+        <option value="pt">Português</option>
+        <option value="zh">中文</option>
+      </select>
+      <button class="menu-toggle" id="menu-toggle" aria-expanded="false" aria-controls="mobile-menu" aria-label="Ouvrir le menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- SEARCH PANEL -->
+  <div class="search-panel" id="search-panel">
+    <div class="wrap search-panel-inner">
+      <label class="visually-hidden" for="search-input">Rechercher sur TAMUSNI</label>
+      <input type="search" id="search-input" placeholder="Rechercher un sujet, une rubrique, un entretien…">
+      <button class="search-close" id="search-close" aria-label="Fermer la recherche">✕</button>
+    </div>
+  </div>
+
+  <!-- MOBILE MENU -->
+  <div class="mobile-menu" id="mobile-menu">
+    <div class="wrap mobile-menu-inner">
+      <div class="mobile-menu-group">
+        <div class="mobile-menu-label">Rubriques</div>
+        <div class="mobile-menu-links">
+          <a href="#">Accueil</a>
+          <a href="#">Intelligence</a>
+          <a href="#">Innovation</a>
+          <a href="#">Technologies</a>
+          <a href="#">Robotique</a>
+          <a href="#">Cybersécurité</a>
+          <a href="#">Futur</a>
+          <a href="#">Espace</a>
+          <a href="#">Sciences</a>
+        </div>
+      </div>
+      <div class="mobile-menu-group">
+        <div class="mobile-menu-label">Formats</div>
+        <div class="mobile-menu-links is-compact">
+          <a href="#">Flash</a>
+          <a href="#">Focus</a>
+          <a href="#">Vision</a>
+          <a href="#">Rencontre</a>
+          <a href="#">Semaine</a>
+          <a href="#">Newsletter</a>
+        </div>
+      </div>
+      <div class="mobile-menu-group mobile-menu-tools">
+        <button class="icon-btn" id="mobile-search-toggle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <span>Rechercher</span>
+        </button>
+        <label class="visually-hidden" for="lang-select-mobile">Choisir la langue</label>
+        <select class="lang-select" id="lang-select-mobile">
+          <option value="fr">Français</option>
+          <option value="en">English</option>
+          <option value="ar">العربية</option>
+          <option value="zgh">ⵜⴰⵎⴰⵣⵉⵖⵜ</option>
+          <option value="es">Español</option>
+          <option value="pt">Português</option>
+          <option value="zh">中文</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+</header>
+
+<main id="main">
+
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+
+      <div class="hero-main">
+        <article>
+          <div class="kicker">
+            <span class="rubrique">Intelligence</span>
+            <span class="dot" aria-hidden="true"></span>
+            <span>Focus</span>
+            <span class="dot" aria-hidden="true"></span>
+            <span>7 septembre 2026</span>
+          </div>
+          <div class="media-block" role="img" aria-label="Illustration : modèles de raisonnement"></div>
+          <a href="#">
+            <h1 class="hero-lead-title">Comment les modèles de raisonnement changent la manière dont les machines résolvent les problèmes</h1>
+          </a>
+          <p class="hero-lead-summary">Une nouvelle génération de systèmes ne se contente plus de répondre : elle explore, vérifie et révise ses propres hypothèses. Ce que cela change concrètement, et ce qui reste à prouver.</p>
+          <span class="hero-lead-byline">Rédaction TAMUSNI · Lecture 8&nbsp;min</span>
+        </article>
+
+        <article class="hero-secondary">
+          <div class="media-block" role="img" aria-label="Illustration : audits des assistants de code"></div>
+          <div>
+            <div class="kicker" style="margin-bottom:8px">
+              <span class="rubrique">Intelligence</span>
+              <span class="dot" aria-hidden="true"></span>
+              <span>Focus</span>
+            </div>
+            <a href="#"><h2 class="hero-secondary-title">Ce que révèlent les premiers audits indépendants sur la fiabilité des assistants de code</h2></a>
+          </div>
+        </article>
+      </div>
+
+      <aside class="hero-side" aria-label="Actualités récentes">
+        <div class="flash-heading">À suivre</div>
+        <div class="flash-list">
+          <article class="flash-item">
+            <span class="flash-time">09:14</span>
+            <div class="flash-body">
+              <span class="rubrique-tag">Espace</span>
+              <a href="#"><h4>Un nouveau lanceur réutilisable termine son premier vol d'essai</h4></a>
+            </div>
+          </article>
+          <article class="flash-item">
+            <span class="flash-time">08:02</span>
+            <div class="flash-body">
+              <span class="rubrique-tag">Cybersécurité</span>
+              <a href="#"><h4>Une faille critique touche un protocole utilisé par des millions d'appareils connectés</h4></a>
+            </div>
+          </article>
+          <article class="flash-item">
+            <span class="flash-time">Hier</span>
+            <div class="flash-body">
+              <span class="rubrique-tag">Robotique</span>
+              <a href="#"><h4>Un bras robotique open source atteint une précision chirurgicale en laboratoire</h4></a>
+            </div>
+          </article>
+          <article class="flash-item">
+            <span class="flash-time">Hier</span>
+            <div class="flash-body">
+              <span class="rubrique-tag">Sciences</span>
+              <a href="#"><h4>Des chercheurs mesurent pour la première fois un signal quantique à température ambiante</h4></a>
+            </div>
+          </article>
+        </div>
+        <div class="ad-slot" data-ad-slot="sidebar-hero">Emplacement publicitaire</div>
+      </aside>
+
+    </div>
+  </section>
+
+  <!-- ============ INNOVATION ============ -->
+  <section class="innovation-section">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="section-title">Innovation</span>
+        <a href="#" class="section-link">Toute la rubrique</a>
+      </div>
+      <div class="innovation-grid">
+        <article class="editorial-card editorial-card--feature" style="margin-bottom:0;padding-bottom:0;border-bottom:none">
+          <a href="#" class="media-block" role="img" aria-label="Illustration : stockage d'énergie de quartier"></a>
+          <div>
+            <div class="kicker"><span class="rubrique">Focus</span><span class="dot"></span><span>6 sept.</span></div>
+            <a href="#"><h3 class="card-title">Cette jeune pousse veut réinventer le stockage d'énergie à l'échelle d'un quartier</h3></a>
+            <p class="card-summary">Un pari technique risqué, mais un modèle économique qui pourrait changer la donne pour les réseaux locaux.</p>
+          </div>
+        </article>
+
+        <div class="innovation-secondary">
+          <article class="editorial-card">
+            <a href="#" class="media-block" role="img" aria-label="Illustration : fonds semi-conducteurs"></a>
+            <div class="kicker"><span class="rubrique">Flash</span><span class="dot"></span><span>5 sept.</span></div>
+            <a href="#"><h3 class="card-title">Un fonds européen lève 400 millions pour l'industrie des semi-conducteurs</h3></a>
+          </article>
+          <article class="editorial-card">
+            <a href="#" class="media-block" role="img" aria-label="Illustration : laboratoires de matériaux"></a>
+            <div class="kicker"><span class="rubrique">Focus</span><span class="dot"></span><span>4 sept.</span></div>
+            <a href="#"><h3 class="card-title">Pourquoi les grandes entreprises rachètent en silence des laboratoires de matériaux</h3></a>
+          </article>
+          <div class="company-watch">
+            <div class="company-watch-label">
+              <span class="star" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 1 L13.4 10.6 L23 12 L13.4 13.4 L12 23 L10.6 13.4 L1 12 L10.6 10.6 Z" fill="#78746A"/></svg></span>
+              Entreprise à suivre
+            </div>
+            <div class="company-watch-name">Soléna</div>
+            <p class="company-watch-desc">Une équipe européenne qui développe une batterie à flux conçue pour équiper directement les réseaux de quartier.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ INTELLIGENCE ============ -->
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <span class="section-title">Intelligence</span>
+        <a href="#" class="section-link">Toute la rubrique</a>
+      </div>
+      <div class="hierarchy-grid">
+        <article class="editorial-card editorial-card--primary">
+          <a href="#" class="media-block" role="img" aria-label="Illustration : modèles de raisonnement"></a>
+          <div class="kicker"><span class="rubrique">Focus</span><span class="dot"></span><span>7 sept.</span></div>
+          <a href="#"><h3 class="card-title">Comment les modèles de raisonnement changent la manière dont les machines résolvent les problèmes</h3></a>
+          <p class="card-summary">Ce que cela change concrètement, et ce qui reste à prouver.</p>
+        </article>
+        <div class="hierarchy-side">
+          <article class="editorial-card">
+            <a href="#" class="media-block" role="img" aria-label="Illustration : jeu de données ouvert"></a>
+            <div>
+              <div class="kicker" style="margin-bottom:6px"><span class="rubrique">Flash</span><span class="dot"></span><span>6 sept.</span></div>
+              <a href="#"><h3 class="card-title">Un laboratoire public publie le plus grand jeu de données d'entraînement en libre accès</h3></a>
+            </div>
+          </article>
+          <article class="editorial-card">
+            <a href="#" class="media-block" role="img" aria-label="Illustration : audits de fiabilité"></a>
+            <div>
+              <div class="kicker" style="margin-bottom:6px"><span class="rubrique">Focus</span><span class="dot"></span><span>3 sept.</span></div>
+              <a href="#"><h3 class="card-title">Ce que révèlent les premiers audits indépendants sur la fiabilité des assistants de code</h3></a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TECHNOLOGIES ============ -->
+  <section style="padding-top:0">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="section-title">Technologies</span>
+        <a href="#" class="section-link">Toute la rubrique</a>
+      </div>
+      <div class="contrast-grid">
+        <article class="editorial-card editorial-card--major">
+          <a href="#" class="media-block" role="img" aria-label="Illustration : puces basse consommation"></a>
+          <div class="kicker"><span class="rubrique">Focus</span><span class="dot"></span><span>7 sept.</span></div>
+          <a href="#"><h3 class="card-title">L'informatique de bord fait un bond : ce que permettent vraiment les nouvelles puces basse consommation</h3></a>
+          <p class="card-summary">Une avancée discrète qui redessine l'équilibre entre cloud et calcul local.</p>
+        </article>
+        <article class="editorial-card editorial-card--minor">
+          <a href="#" class="media-block" role="img" aria-label="Illustration : connectivité basse latence"></a>
+          <div class="kicker"><span class="rubrique">Flash</span><span class="dot"></span><span>6 sept.</span></div>
+          <a href="#"><h3 class="card-title">Un nouveau standard promet de diviser par trois la latence des objets connectés</h3></a>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap"><div class="ad-slot ad-slot--strip" data-ad-slot="mid-page">Emplacement publicitaire</div></div>
+
+  <!-- ============ VISION ============ -->
+  <section style="border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+    <div class="wrap">
+      <div class="section-head" style="border-bottom:none;margin-bottom:0">
+        <span class="section-title">Vision</span>
+        <a href="#" class="section-link">Toutes les vidéos</a>
+      </div>
+    </div>
+    <div class="wrap" style="padding-top:26px">
+      <div class="vision-feature">
+        <a href="#" class="vision-media" aria-label="Lire la vidéo : centre de calcul refroidi sans eau">
+          <span class="vision-play" aria-hidden="true"></span>
+          <span class="vision-duration">6:42</span>
+        </a>
+        <div class="vision-text">
+          <h3>À l'intérieur d'un centre de calcul conçu pour refroidir sans eau</h3>
+          <p>Une visite guidée d'une installation qui teste une nouvelle génération de refroidissement liquide direct, pensée pour des climats arides.</p>
+          <span class="vision-meta">Vision · 6 sept. 2026</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FOCUS ============ -->
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <span class="section-title">Focus</span>
+        <a href="#" class="section-link">Tous les articles</a>
+      </div>
+      <article class="editorial-card editorial-card--feature">
+        <a href="#" class="media-block" role="img" aria-label="Illustration : cellule de réponse à incident"></a>
+        <div>
+          <div class="kicker"><span class="rubrique">Cybersécurité</span><span class="dot"></span><span>7 sept.</span></div>
+          <a href="#"><h3 class="card-title">Dans les coulisses d'une cellule de réponse à incident, quand chaque minute compte</h3></a>
+          <p class="card-summary">Récit d'une intervention, des premiers signaux à la résolution.</p>
+        </div>
+      </article>
+      <div class="cards-grid two">
+        <article class="editorial-card">
+          <a href="#" class="media-block" role="img" aria-label="Illustration : satellites en désorbitation"></a>
+          <div class="kicker"><span class="rubrique">Espace</span><span class="dot"></span><span>5 sept.</span></div>
+          <a href="#"><h3 class="card-title">Pourquoi la prochaine génération de satellites sera pensée pour se désorbiter seule</h3></a>
+          <p class="card-summary">Un enjeu technique devenu une urgence réglementaire.</p>
+        </article>
+        <article class="editorial-card">
+          <a href="#" class="media-block" role="img" aria-label="Illustration : fusion à confinement inertiel"></a>
+          <div class="kicker"><span class="rubrique">Sciences</span><span class="dot"></span><span>2 sept.</span></div>
+          <a href="#"><h3 class="card-title">Ce que change vraiment la fusion nucléaire à confinement inertiel, expliqué simplement</h3></a>
+          <p class="card-summary">Entre percée scientifique réelle et attentes disproportionnées.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RUBRIQUES SECONDAIRES ============ -->
+  <section style="border-top:1px solid var(--line)">
+    <div class="wrap">
+      <div class="rubriques-secondaires">
+        <div class="rubrique-col">
+          <h4>Robotique</h4>
+          <a href="#" class="mini-item">Un exosquelette léger conçu pour les métiers du soin fait ses premiers essais cliniques</a>
+          <a href="#" class="mini-item">Ces robots agricoles autonomes désherbent sans pesticide</a>
+        </div>
+        <div class="rubrique-col">
+          <h4>Cybersécurité</h4>
+          <a href="#" class="mini-item">Une faille critique touche un protocole utilisé par des millions d'appareils connectés</a>
+          <a href="#" class="mini-item">Comment une petite équipe a détecté une attaque avant qu'elle ne se propage</a>
+        </div>
+        <div class="rubrique-col">
+          <h4>Futur</h4>
+          <a href="#" class="mini-item">Ce que les urbanistes anticipent pour les villes de 2050</a>
+          <a href="#" class="mini-item">Trois scénarios pour l'avenir du travail à l'ère des agents autonomes</a>
+        </div>
+        <div class="rubrique-col">
+          <h4>Espace</h4>
+          <a href="#" class="mini-item">Un nouveau lanceur réutilisable termine son premier vol d'essai</a>
+          <a href="#" class="mini-item">La prochaine mission lunaire habitée dévoile son calendrier</a>
+        </div>
+        <div class="rubrique-col">
+          <h4>Sciences</h4>
+          <a href="#" class="mini-item">Un signal quantique mesuré pour la première fois à température ambiante</a>
+          <a href="#" class="mini-item">Ce que cette découverte change pour la recherche fondamentale</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RENCONTRE ============ -->
+  <section style="border-top:1px solid var(--line)">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="section-title">Rencontre</span>
+        <a href="#" class="section-link">Tous les entretiens</a>
+      </div>
+      <article class="rencontre">
+        <div class="media-block rencontre-photo" role="img" aria-label="Portrait de Nadia El Amrani"></div>
+        <div>
+          <div class="rencontre-role">Chercheuse en robotique · Laboratoire de mécatronique appliquée</div>
+          <h3 class="rencontre-name">Nadia El Amrani</h3>
+          <p class="rencontre-quote">« Le vrai défi n'est plus de faire bouger un robot avec précision, mais de lui apprendre à savoir quand il a tort. »</p>
+          <a href="#" class="rencontre-cta">Lire la rencontre</a>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ============ SEMAINE ============ -->
+  <section style="border-top:1px solid var(--line)">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="section-title">Semaine</span>
+        <a href="#" class="section-link">Toutes les éditions</a>
+      </div>
+      <div class="semaine-box">
+        <div>
+          <div class="semaine-edition">Édition du 1 — 7 septembre 2026</div>
+          <h3 class="semaine-title">Ce qu'il fallait retenir cette semaine</h3>
+          <a href="#" class="semaine-cta">Ouvrir l'édition complète</a>
+        </div>
+        <ul class="semaine-list">
+          <li><span class="tag">Innovation</span><span>Un fonds européen lève 400 millions pour les semi-conducteurs</span></li>
+          <li><span class="tag">Entreprise à suivre</span><span>La jeune pousse qui veut réinventer le stockage d'énergie local</span></li>
+          <li><span class="tag">Sciences</span><span>Premier signal quantique mesuré à température ambiante</span></li>
+          <li><span class="tag">À surveiller</span><span>Le nouveau standard de connectivité basse latence</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ NEWSLETTER ============ -->
+  <section class="newsletter" id="newsletter-section" style="padding-bottom:0">
+    <div class="wrap newsletter-inner">
+      <div class="newsletter-text">
+        <h3>La revue TAMUSNI dans votre boîte mail</h3>
+        <p>Un résumé, une fois par semaine. Aucune sollicitation supplémentaire.</p>
+      </div>
+      <form class="newsletter-form" id="newsletter-form">
+        <label for="newsletter-email">Votre adresse email</label>
+        <input type="email" id="newsletter-email" placeholder="Votre adresse email" required>
+        <button type="submit">S'inscrire</button>
+      </form>
+      <p class="newsletter-success" id="newsletter-success" role="status">Merci — vous recevrez la prochaine édition.</p>
+    </div>
+  </section>
+
+  <div class="wrap" style="padding-top:6px"><div class="ad-slot ad-slot--strip" data-ad-slot="footer-top">Emplacement publicitaire</div></div>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <div class="masthead-mark" style="justify-content:flex-start">
+          <span class="star" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 1 L13.4 10.6 L23 12 L13.4 13.4 L12 23 L10.6 13.4 L1 12 L10.6 10.6 Z" fill="#141310"/></svg></span>
+          <span class="masthead-name" style="font-size:20px">TAMUSNI</span>
+        </div>
+        <p class="footer-brand-desc">Comprendre aujourd'hui ce qui transformera demain.</p>
+      </div>
+      <div class="footer-col">
+        <h5>Rubriques</h5>
+        <a href="#">Intelligence</a>
+        <a href="#">Innovation</a>
+        <a href="#">Technologies</a>
+        <a href="#">Robotique</a>
+        <a href="#">Cybersécurité</a>
+      </div>
+      <div class="footer-col">
+        <h5>Formats</h5>
+        <a href="#">Flash</a>
+        <a href="#">Focus</a>
+        <a href="#">Vision</a>
+        <a href="#">Rencontre</a>
+        <a href="#">Semaine</a>
+      </div>
+      <div class="footer-col">
+        <h5>Revue</h5>
+        <a href="#">À propos</a>
+        <a href="#">Sources &amp; méthodologie</a>
+        <a href="#">Politique de correction</a>
+        <a href="#">Contact</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 TAMUSNI</span>
+      <span class="footer-legal">
+        <a href="#">Mentions légales</a>
+        <a href="#">Confidentialité</a>
+        <a href="#">Cookies</a>
+      </span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var searchToggle = document.getElementById('search-toggle');
+  var mobileSearchToggle = document.getElementById('mobile-search-toggle');
+  var searchPanel = document.getElementById('search-panel');
+  var searchClose = document.getElementById('search-close');
+  var searchInput = document.getElementById('search-input');
+
+  function openSearch(){
+    searchPanel.classList.add('is-open');
+    searchToggle.setAttribute('aria-expanded','true');
+    setTimeout(function(){ searchInput.focus(); }, 200);
+  }
+  function closeSearch(){
+    searchPanel.classList.remove('is-open');
+    searchToggle.setAttribute('aria-expanded','false');
+  }
+  searchToggle.addEventListener('click', function(){
+    searchPanel.classList.contains('is-open') ? closeSearch() : openSearch();
+  });
+  if (mobileSearchToggle){
+    mobileSearchToggle.addEventListener('click', openSearch);
+  }
+  searchClose.addEventListener('click', closeSearch);
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') closeSearch();
+  });
+
+  var menuToggle = document.getElementById('menu-toggle');
+  var mobileMenu = document.getElementById('mobile-menu');
+  menuToggle.addEventListener('click', function(){
+    var isOpen = mobileMenu.classList.toggle('is-open');
+    menuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  });
+
+  var langSelect = document.getElementById('lang-select');
+  var langSelectMobile = document.getElementById('lang-select-mobile');
+  function syncLang(value){
+    document.documentElement.setAttribute('lang', value);
+    document.documentElement.setAttribute('dir', value === 'ar' ? 'rtl' : 'ltr');
+    if (langSelect) langSelect.value = value;
+    if (langSelectMobile) langSelectMobile.value = value;
+  }
+  if (langSelect) langSelect.addEventListener('change', function(){ syncLang(this.value); });
+  if (langSelectMobile) langSelectMobile.addEventListener('change', function(){ syncLang(this.value); });
+
+  var newsletterForm = document.getElementById('newsletter-form');
+  var newsletterSection = document.getElementById('newsletter-section');
+  var newsletterSuccess = document.getElementById('newsletter-success');
+  newsletterForm.addEventListener('submit', function(e){
+    e.preventDefault();
+    newsletterSection.classList.add('is-submitted');
+    newsletterSuccess.classList.add('is-shown');
+  });
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1 @@
+export default function ContactPage(){return <section className="text-page shell"><p className="eyebrow">Contact</p><h1>Écrire à TAMUSNI.</h1><p>Pour les partenariats, demandes de correction ou propositions éditoriales : <a className="text-link" href="mailto:aetbconseil@gmail.com">aetbconseil@gmail.com</a></p></section>}
