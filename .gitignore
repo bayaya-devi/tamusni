@@ -4,5 +4,6 @@ data/*.db
 .env
 .env.local
 npm-debug.log*
+*.tsbuildinfo
 AGENTS.md
 CLAUDE.md
