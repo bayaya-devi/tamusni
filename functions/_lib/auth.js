@@ -24,8 +24,8 @@ function fromBase64Url(value) {
 
 export async function hashPassword(password, saltBytes = crypto.getRandomValues(new Uint8Array(16))) {
   const key = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveBits"]);
-  const hash = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: saltBytes, iterations: 600_000 }, key, 256);
-  return `pbkdf2$600000$${toBase64Url(saltBytes)}$${toBase64Url(hash)}`;
+  const hash = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: saltBytes, iterations: 100_000 }, key, 256);
+  return `pbkdf2$100000$${toBase64Url(saltBytes)}$${toBase64Url(hash)}`;
 }
 
 export async function verifyPassword(password, stored) {

@@ -1,4 +1,4 @@
-import { createMfaChallengeCookie, createSessionCookie, hashPassword, hashToken, json, readBody, sameOrigin, validEmail, verifyPassword } from "../../_lib/auth.js";
+import { createMfaChallengeCookie, createSessionCookie, hashToken, json, readBody, sameOrigin, validEmail, verifyPassword } from "../../_lib/auth.js";
 import { mirrorUser } from "../../_lib/supabase.js";
 import { recordAuthEvent } from "../../_lib/mfa.js";
 
@@ -21,11 +21,10 @@ export async function onRequestPost(context) {
       return json({ error: "Identifiants invalides." }, 401);
     }
     await context.env.DB.prepare("DELETE FROM login_attempts WHERE key_hash = ?").bind(attemptKey).run();
-    if(Number(String(user.password_hash).split("$")[1]||0)<600_000)await context.env.DB.prepare("UPDATE users SET password_hash=? WHERE id=?").bind(await hashPassword(password),user.id).run();
     try { await mirrorUser(context.env, user); } catch (error) { console.error("supabase_user_mirror_failed", error); }
     if (!context.env.SESSION_SECRET) return json({ error: "Configuration de session indisponible." }, 503);
     if (user.mfa_enabled) return json({ ok: true, mfaRequired: true, message: "Saisissez le code de votre application d’authentification." }, 202, { "Set-Cookie": await createMfaChallengeCookie(user, context.env.SESSION_SECRET) });
     try { await recordAuthEvent(context,{ userId:user.id, email:user.email, event:"login_success" }); } catch {}
     return json({ ok: true, redirect: user.role === "ADMIN" ? "/admin" : "/" }, 200, { "Set-Cookie": await createSessionCookie(user, context.env.SESSION_SECRET) });
-  } catch { return json({ error: "Connexion impossible pour le moment." }, 500); }
+  } catch(error) { console.error("login_failed",error); return json({ error: "Connexion impossible pour le moment." }, 500); }
 }
