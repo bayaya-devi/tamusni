@@ -2,6 +2,7 @@
   var form=document.querySelector('[data-auth-form]');
   if(!form)return;
   var message=document.getElementById('form-message');
+  form.querySelectorAll('input[type="password"]').forEach(function(input){var wrap=input.parentElement;wrap.classList.add('password-control');var toggle=document.createElement('button');toggle.type='button';toggle.className='password-toggle';toggle.textContent='Afficher';toggle.setAttribute('aria-label','Afficher le mot de passe');toggle.onclick=function(){var visible=input.type==='text';input.type=visible?'password':'text';toggle.textContent=visible?'Afficher':'Masquer';toggle.setAttribute('aria-label',visible?'Afficher le mot de passe':'Masquer le mot de passe')};wrap.appendChild(toggle)});
   function showMfaStep(text){form.dataset.endpoint='/api/auth/mfa-login';form.innerHTML='<label>Code à six chiffres<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required></label><button type="submit">Vérifier le code</button><p class="message" id="form-message" role="status"></p>';message=form.querySelector('#form-message');message.textContent=text||'Ouvrez votre application d’authentification.';form.querySelector('input').focus()}
   form.addEventListener('submit',async function(event){
     event.preventDefault();var button=form.querySelector('button[type="submit"]');button.disabled=true;message.textContent='Traitement…';

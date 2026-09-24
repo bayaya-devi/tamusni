@@ -4,7 +4,7 @@ import { mirrorUser } from "../../_lib/supabase.js";
 export async function onRequestPost(context) {
   if (!sameOrigin(context.request)) return json({ error: "Origine refusée." }, 403);
   try {
-    const body = await readBody(context.request); const name = String(body.name || "").trim(); const email = String(body.email || "").trim().toLowerCase(); const password = String(body.password || "");
+    const body = await readBody(context.request); const firstName = String(body.firstName || "").trim(); const lastName = String(body.lastName || "").trim(); const name = String(body.name || `${firstName} ${lastName}`).trim(); const email = String(body.email || "").trim().toLowerCase(); const password = String(body.password || "");
     if (name.length < 2 || !validEmail(email) || password.length < 6 || password.length > 128) return json({ error: "Vérifiez le nom, l’e-mail et le mot de passe de six caractères minimum." }, 400);
     const existing = await context.env.DB.prepare("SELECT id FROM users WHERE email = ?").bind(email).first();
     if (existing) return json({ error: "Un compte existe déjà avec cette adresse." }, 409);

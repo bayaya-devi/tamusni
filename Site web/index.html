@@ -409,6 +409,12 @@
   }
   @media(max-width:380px){.masthead-name{font-size:26px}.masthead-tools{gap:2px}.masthead-tools .icon-btn{display:none}.mobile-menu-links{grid-template-columns:1fr}.newsletter-form{display:grid}.popular-heading p{display:none}}
 </style>
+<style>
+  .homepage-video-section,.homepage-focus-section,.homepage-interviews-section{display:none}
+  .mobile-menu{position:fixed;z-index:910;top:0;right:0;bottom:0;width:min(360px,88vw);max-height:none!important;height:100vh;padding:82px 28px 28px;background:var(--paper);border-left:1px solid var(--line);box-shadow:-20px 0 50px rgba(0,0,0,.14);transform:translateX(105%);transition:transform .22s ease;overflow:auto}
+  .mobile-menu.is-open{transform:translateX(0)}
+  .masthead{padding:20px 0 16px}.masthead-name{font-size:32px}.hero-main .media-block,.hero-secondary .media-block{max-height:360px}.popular-image{max-height:220px}.site-footer{padding:28px 0 20px}.site-footer .footer-grid{margin-bottom:22px}
+</style>
 </head>
 <body>
 
@@ -663,7 +669,7 @@
   <div class="wrap"><div class="ad-slot ad-slot--strip" data-ad-slot="mid-page">Emplacement publicitaire</div></div>
 
   <!-- ============ VISION ============ -->
-  <section style="border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+  <section class="homepage-video-section" style="border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
     <div class="wrap">
       <div class="section-head" style="border-bottom:none;margin-bottom:0">
         <span class="section-title">Vidéos</span>
@@ -675,7 +681,7 @@
   </section>
 
   <!-- ============ FOCUS ============ -->
-  <section>
+  <section class="homepage-focus-section">
     <div class="wrap">
       <div class="section-head">
         <span class="section-title">Focus</span>
@@ -740,7 +746,7 @@
   </section>
 
   <!-- ============ RENCONTRE ============ -->
-  <section style="border-top:1px solid var(--line)">
+  <section class="homepage-interviews-section" style="border-top:1px solid var(--line)">
     <div class="wrap">
       <div class="section-head"><span class="section-title">Interviews</span></div>
       <div class="empty-editorial" role="status"><p>Aucune interview publiée pour le moment.</p></div>
