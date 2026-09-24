@@ -491,7 +491,7 @@
             <h1 class="hero-lead-title">SEMAINE — Stockage, règles de l’IA et responsabilité orbitale</h1>
           </a>
           <p class="hero-lead-summary">Trois dossiers vérifiables pour suivre l’innovation sans confondre annonce, obligation réglementaire et résultat scientifique.</p>
-          <span class="hero-lead-byline">Rédaction TAMUSNI · Lecture 6&nbsp;min</span>
+          <span class="hero-lead-byline">Rédiger par IA · Sources vérifiées</span>
         </article>
 
         <article class="hero-secondary">
@@ -502,7 +502,7 @@
               <span class="dot" aria-hidden="true"></span>
               <span>Focus</span>
             </div>
-            <a href="#"><h2 class="hero-secondary-title">Ce que révèlent les premiers audits indépendants sur la fiabilité des assistants de code</h2></a>
+            <a href="/articles/enisa-2026-dependances-cyber-risque"><h2 class="hero-secondary-title">Cybersécurité : l’ENISA alerte sur le risque créé par les dépendances numériques</h2></a>
           </div>
         </article>
       </div>
@@ -514,28 +514,28 @@
             <span class="flash-time">09:14</span>
             <div class="flash-body">
               <span class="rubrique-tag">Espace</span>
-              <a href="#"><h4>Un nouveau lanceur réutilisable termine son premier vol d'essai</h4></a>
+              <a href="/articles/esa-mistral-ia-spatial-europeenne"><h4>L’ESA et Mistral encadrent leur coopération sur l’intelligence artificielle</h4></a>
             </div>
           </article>
           <article class="flash-item">
             <span class="flash-time">08:02</span>
             <div class="flash-body">
               <span class="rubrique-tag">Cybersécurité</span>
-              <a href="#"><h4>Une faille critique touche un protocole utilisé par des millions d'appareils connectés</h4></a>
+              <a href="/articles/enisa-2026-dependances-cyber-risque"><h4>L’ENISA publie son panorama européen des cybermenaces 2026</h4></a>
             </div>
           </article>
           <article class="flash-item">
             <span class="flash-time">Hier</span>
             <div class="flash-body">
               <span class="rubrique-tag">Robotique</span>
-              <a href="#"><h4>Un bras robotique open source atteint une précision chirurgicale en laboratoire</h4></a>
+              <a href="/articles/webb-ic348-naines-brunes-deux-jupiter"><h4>Webb explore les objets de très faible masse dans la région IC 348</h4></a>
             </div>
           </article>
           <article class="flash-item">
             <span class="flash-time">Hier</span>
             <div class="flash-body">
               <span class="rubrique-tag">Sciences</span>
-              <a href="#"><h4>Des chercheurs mesurent pour la première fois un signal quantique à température ambiante</h4></a>
+              <a href="/articles/nasa-terran-r-contrat-lancements"><h4>La NASA rend Terran R éligible à de futures commandes de lancement</h4></a>
             </div>
           </article>
         </div>
@@ -941,8 +941,10 @@
 
   Promise.all([fetch('/api/content?sort=recent&limit=50').then(function(response){return response.json()}),fetch('/api/content?sort=popular&limit=5').then(function(response){return response.json()})]).then(function(results){
     var recent=results[0].items||[];var popular=results[1].items||[];recent.forEach(function(item){searchable.push({title:item.title,normalized:normalizeSearch([item.title,item.excerpt,item.category,item.author_name].join(' ')),href:'/articles/'+item.slug})});
-    if(recent[0]){var lead=recent[0];var leadLink=document.querySelector('.hero-main article:first-child > a');var leadTitle=document.querySelector('.hero-lead-title');var leadSummary=document.querySelector('.hero-lead-summary');var leadCategory=document.querySelector('.hero-main article:first-child .rubrique');if(leadLink)leadLink.href='/articles/'+lead.slug;if(leadTitle)leadTitle.textContent=lead.title;if(leadSummary)leadSummary.textContent=lead.excerpt;if(leadCategory)leadCategory.textContent=lead.category}
-    popularCards.forEach(function(card,index){var item=popular[index];if(!item)return;var link=card.querySelector('a');var title=card.querySelector('h3');link.href='/articles/'+item.slug;link.setAttribute('aria-label','Lire '+item.title);title.textContent=item.title});
+    if(recent[0]){var lead=recent[0];var leadLink=document.querySelector('.hero-main article:first-child > a');var leadTitle=document.querySelector('.hero-lead-title');var leadSummary=document.querySelector('.hero-lead-summary');var leadCategory=document.querySelector('.hero-main article:first-child .rubrique');var leadMedia=document.querySelector('.hero-main article:first-child .media-block');if(leadLink)leadLink.href='/articles/'+lead.slug;if(leadTitle)leadTitle.textContent=lead.title;if(leadSummary)leadSummary.textContent=lead.excerpt;if(leadCategory)leadCategory.textContent=lead.category;if(leadMedia&&lead.cover_url){leadMedia.style.backgroundImage='url("'+lead.cover_url.replace(/"/g,'')+'")';leadMedia.style.backgroundSize='cover';leadMedia.style.backgroundPosition='center';leadMedia.setAttribute('aria-label','Illustration éditoriale : '+lead.title)}}
+    if(recent[1]){var secondary=recent[1],secondaryArticle=document.querySelector('.hero-secondary'),secondaryLink=secondaryArticle.querySelector('a'),secondaryTitle=secondaryArticle.querySelector('h2'),secondaryCategory=secondaryArticle.querySelector('.rubrique'),secondaryMedia=secondaryArticle.querySelector('.media-block');secondaryLink.href='/articles/'+secondary.slug;secondaryTitle.textContent=secondary.title;secondaryCategory.textContent=secondary.category;if(secondary.cover_url){secondaryMedia.style.backgroundImage='url("'+secondary.cover_url.replace(/"/g,'')+'")';secondaryMedia.style.backgroundSize='cover';secondaryMedia.style.backgroundPosition='center'}}
+    var liveFeed=document.getElementById('live-feed');if(liveFeed){liveFeed.innerHTML='';recent.slice(0,4).forEach(function(item,index){var article=document.createElement('article');article.className='flash-item';var time=document.createElement('span');time.className='flash-time';time.textContent=index===0?'Aujourd’hui':new Date(item.published_at).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'});var body=document.createElement('div');body.className='flash-body';var category=document.createElement('span');category.className='rubrique-tag';category.textContent=item.category;var link=document.createElement('a');link.href='/articles/'+item.slug;var title=document.createElement('h4');title.textContent=item.title;link.append(title);body.append(category,link);article.append(time,body);liveFeed.append(article)})}
+    popularCards.forEach(function(card,index){var item=popular[index];if(!item)return;var link=card.querySelector('a');var title=card.querySelector('h3');link.href='/articles/'+item.slug;link.setAttribute('aria-label','Lire '+item.title);title.textContent=item.title;if(item.cover_url){link.style.backgroundImage='url("'+item.cover_url.replace(/"/g,'')+'")';link.style.backgroundSize='cover';link.style.backgroundPosition='center'}});
   }).catch(function(){});
 
   fetch('/api/live').then(function(response){return response.ok?response.json():Promise.reject()}).then(function(data){
