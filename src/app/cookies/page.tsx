@@ -1,0 +1,1 @@
+export default function CookiesPage(){return <section className="text-page shell"><h1>Cookies</h1><p>TAMUSNI utilise uniquement un cookie de session sécurisé et indispensable à la connexion. Aucun cookie publicitaire non essentiel n’est actuellement déposé.</p></section>}

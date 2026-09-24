@@ -1,0 +1,1 @@
+export default function PrivacyPage(){return <section className="text-page shell"><h1>Confidentialité</h1><p>TAMUSNI traite les données nécessaires aux comptes, aux favoris et à la revue par e-mail. Les mots de passe ne sont jamais stockés en clair.</p><p>Pour exercer vos droits d’accès, de rectification ou de suppression : aetbconseil@gmail.com.</p></section>}

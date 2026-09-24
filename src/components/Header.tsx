@@ -10,5 +10,5 @@ export async function Header() {
   const session = await getSession();
   const accountHref = session ? session.role === "ADMIN" ? "/admin" : "/compte" : "/connexion";
   const accountLabel = session ? session.role === "ADMIN" ? "Administration" : `Bonjour, ${session.name.split(" ")[0]}` : "Connexion";
-  return <header className="site-header"><div className="masthead shell"><Link href="/" className="brand"><span>TAMUSNI</span></Link><NavigationDrawer categories={categories} accountHref={accountHref} accountLabel={accountLabel}/></div><div className="utility shell"><nav><Link href="/flash">FLASH</Link><Link href="/focus">FOCUS</Link><Link href="/vision">VISION</Link><Link href="/semaine">SEMAINE</Link></nav><div className="utility-account"><Link href={accountHref}>{accountLabel}</Link><Search/><ThemeToggle/><LanguageControls/></div></div></header>;
+  return <header className="site-header"><div className="masthead shell"><Link href="/" className="brand"><span>TAMUSNI</span></Link><div className="masthead-controls"><Search/><LanguageControls/><ThemeToggle/><NavigationDrawer categories={categories} accountHref={accountHref} accountLabel={accountLabel} authenticated={Boolean(session)}/></div></div></header>;
 }

@@ -1,0 +1,1 @@
+export default function LegalPage(){return <section className="text-page shell"><h1>Mentions légales</h1><p>Éditeur : TAMUSNI. Contact : aetbconseil@gmail.com.</p><p>Hébergement : Cloudflare, Inc. Les informations d’immatriculation et l’adresse professionnelle seront complétées avant la monétisation commerciale.</p></section>}
