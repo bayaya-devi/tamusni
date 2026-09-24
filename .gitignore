@@ -6,6 +6,7 @@ data/*.db
 npm-debug.log*
 npm-*.log
 .wrangler/
+supabase/.temp/
 *.tsbuildinfo
 AGENTS.md
 CLAUDE.md

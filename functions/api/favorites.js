@@ -1,4 +1,5 @@
 import { json, readBody, requireSession, sameOrigin } from "../_lib/auth.js";
+import { mirrorFavorite, removeMirroredFavorite } from "../_lib/supabase.js";
 
 const allowedTypes = new Set(["article", "video"]);
 
@@ -21,6 +22,7 @@ export async function onRequestPost(context) {
     const url = String(body.url || "").trim().slice(0, 500);
     if (!itemId || !title || !url.startsWith("/") || !allowedTypes.has(itemType)) return json({ error: "Favori invalide." }, 400);
     await context.env.DB.prepare("INSERT INTO saved_items (user_id, item_id, item_type, title, url, created_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(user_id, item_id) DO UPDATE SET title = excluded.title, url = excluded.url, item_type = excluded.item_type").bind(session.sub, itemId, itemType, title, url, new Date().toISOString()).run();
+    try { await mirrorFavorite(context.env, { user_id: session.sub, item_id: itemId, item_type: itemType, title, url }); } catch (error) { console.error("supabase_favorite_mirror_failed", error); }
     return json({ ok: true, saved: true }, 201);
   } catch (error) { return json({ error: error?.message === "PAYLOAD_TOO_LARGE" ? "Requête trop volumineuse." : "Enregistrement impossible." }, 400); }
 }
@@ -32,6 +34,7 @@ export async function onRequestDelete(context) {
   try {
     const { itemId } = await readBody(context.request);
     await context.env.DB.prepare("DELETE FROM saved_items WHERE user_id = ? AND item_id = ?").bind(session.sub, String(itemId || "").slice(0, 160)).run();
+    try { await removeMirroredFavorite(context.env, session.sub, String(itemId || "").slice(0, 160)); } catch (error) { console.error("supabase_favorite_delete_failed", error); }
     return json({ ok: true, saved: false });
   } catch { return json({ error: "Suppression impossible." }, 400); }
 }

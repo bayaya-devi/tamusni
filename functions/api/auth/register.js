@@ -1,4 +1,5 @@
 import { createSessionCookie, hashPassword, json, readBody, sameOrigin, validEmail } from "../../_lib/auth.js";
+import { mirrorUser } from "../../_lib/supabase.js";
 
 export async function onRequestPost(context) {
   if (!sameOrigin(context.request)) return json({ error: "Origine refusée." }, 403);
@@ -9,6 +10,7 @@ export async function onRequestPost(context) {
     if (existing) return json({ error: "Un compte existe déjà avec cette adresse." }, 409);
     const user = { id: crypto.randomUUID(), name, email, role: "USER" };
     await context.env.DB.prepare("INSERT INTO users (id, name, email, password_hash, role, created_at) VALUES (?, ?, ?, ?, 'USER', ?)").bind(user.id, name, email, await hashPassword(password), new Date().toISOString()).run();
+    try { await mirrorUser(context.env, user); } catch (error) { console.error("supabase_user_mirror_failed", error); }
     if (!context.env.SESSION_SECRET) return json({ error: "Configuration de session indisponible." }, 503);
     return json({ ok: true, redirect: "/" }, 201, { "Set-Cookie": await createSessionCookie(user, context.env.SESSION_SECRET) });
   } catch (error) { console.error("registration_failed", error); return json({ error: error?.message === "PAYLOAD_TOO_LARGE" ? "Requête trop volumineuse." : "Création du compte impossible." }, error?.message === "PAYLOAD_TOO_LARGE" ? 413 : 500); }
