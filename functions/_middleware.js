@@ -4,7 +4,7 @@ export async function onRequest(context) {
   let response = await context.next();
   if (response.status === 200 && (response.headers.get("content-type") || "").includes("text/html")) {
     const html = await response.text();
-    const scripts = `${url.pathname !== "/" ? '<script src="/translate-page.js" defer></script>' : ""}<script src="/consent.js" defer></script>`;
+    const scripts = `${url.pathname !== "/" ? '<script src="/translate-page.js" defer></script>' : ""}<script src="/ads-client.js" defer></script><script src="/consent.js" defer></script>`;
     response = new Response(html.replace("</body>", `${scripts}</body>`), { status: response.status, statusText: response.statusText, headers: response.headers });
   }
   const headers = new Headers(response.headers);
