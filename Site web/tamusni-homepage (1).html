@@ -7,7 +7,7 @@
 <meta name="description" content="TAMUSNI est une revue internationale consacrée à l'intelligence artificielle, l'innovation, les technologies, la robotique, la cybersécurité, le futur, l'espace et les sciences.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=Open+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --ink:#141310;
@@ -364,6 +364,16 @@
     .semaine-list .tag{min-width:96px}
     .hierarchy-side .editorial-card{grid-template-columns:76px 1fr}
   }
+  /* TAMUSNI visual refinement */
+  :root{--ink:#323232;--ink-soft:#323232;--paper:#DDD0C8;--paper-alt:#D4C6BE;--line:#C4C4C4;--line-strong:#aaa;--gray:#656565;--gray-light:#777;--serif:'Playfair Display',Georgia,serif;--sans:'Open Sans',Arial,sans-serif}
+  .site-header{background:rgba(221,208,200,.94)}
+  .masthead{padding:22px 28px;text-align:left;position:relative}.masthead-mark{justify-content:flex-start}.masthead-tagline,.star{display:none}.masthead-name{font-size:36px}
+  .nav-tools .menu-toggle{display:flex;border:1px solid transparent;border-radius:999px;padding:8px;transition:background .18s ease,transform .18s ease}.nav-tools .menu-toggle:hover{background:rgba(50,50,50,.09);border-color:var(--line);transform:translateY(-1px)}
+  .site-main>*,.site-footer{animation:tamusni-reveal .6s both}@keyframes tamusni-reveal{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  .social-links{display:flex;flex-wrap:wrap;gap:7px 12px}.social-links a{border-bottom:1px solid transparent}.social-links a:hover{border-color:var(--ink)}
+  .scroll-navigator{position:fixed;right:24px;bottom:24px;z-index:150;width:42px;height:42px;border:1px solid rgba(50,50,50,.45);border-radius:50%;background:transparent;color:var(--ink);font-size:21px;cursor:pointer;transition:background .18s,color .18s,transform .18s}.scroll-navigator:hover{background:var(--ink);color:var(--paper);transform:translateY(-2px)}
+  @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+  @media(max-width:920px){.masthead{padding:18px 28px}.nav-tools .menu-toggle{display:flex}}@media(max-width:560px){.masthead{padding:16px}.masthead-name{font-size:30px}.scroll-navigator{right:14px;bottom:14px;width:38px;height:38px}}
 </style>
 </head>
 <body>
@@ -846,6 +856,10 @@
         <a href="#">Politique de correction</a>
         <a href="#">Contact</a>
       </div>
+      <div class="footer-col">
+        <h5>Suivre TAMUSNI</h5>
+        <div class="social-links"><a href="#" aria-label="X">X</a><a href="#" aria-label="YouTube">YouTube</a><a href="#" aria-label="Instagram">Instagram</a><a href="#" aria-label="TikTok">TikTok</a><a href="#" aria-label="Facebook">Facebook</a></div>
+      </div>
     </div>
     <div class="footer-bottom">
       <span>© 2026 TAMUSNI</span>
@@ -903,6 +917,17 @@
   }
   if (langSelect) langSelect.addEventListener('change', function(){ syncLang(this.value); });
   if (langSelectMobile) langSelectMobile.addEventListener('change', function(){ syncLang(this.value); });
+
+  var scrollNavigator = document.createElement('button');
+  scrollNavigator.type = 'button'; scrollNavigator.className = 'scroll-navigator';
+  document.body.appendChild(scrollNavigator);
+  function updateScrollNavigator(){
+    var lowerHalf = window.scrollY > Math.max(320, (document.documentElement.scrollHeight - window.innerHeight) / 2);
+    scrollNavigator.textContent = lowerHalf ? '↑' : '↓';
+    scrollNavigator.setAttribute('aria-label', lowerHalf ? 'Revenir en haut de la page' : 'Aller en bas de la page');
+  }
+  scrollNavigator.addEventListener('click', function(){ window.scrollTo({top: scrollNavigator.textContent === '↑' ? 0 : document.documentElement.scrollHeight, behavior:'smooth'}); });
+  window.addEventListener('scroll', updateScrollNavigator, {passive:true}); updateScrollNavigator();
 
   var newsletterForm = document.getElementById('newsletter-form');
   var newsletterSection = document.getElementById('newsletter-section');
