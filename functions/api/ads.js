@@ -5,7 +5,7 @@ export async function onRequestGet(context) {
   const allowed = new Set(["sidebar-hero", "mid-page", "footer-top", "article-inline"]);
   if (!allowed.has(placement)) return json({ item: null });
   const now = new Date().toISOString();
-  const item = await context.env.DB.prepare("SELECT id,placement,ad_type,headline,body,image_url,target_url,advertiser FROM advertisements WHERE placement=? AND status='active' AND (starts_at IS NULL OR starts_at<=?) AND (ends_at IS NULL OR ends_at>?) ORDER BY updated_at DESC LIMIT 1").bind(placement, now, now).first();
+  const item = await context.env.DB.prepare("SELECT id,placement,CASE WHEN provider='adsense' THEN 'adsense' ELSE ad_type END AS ad_type,provider,adsense_client,adsense_slot,adsense_format,headline,body,image_url,target_url,advertiser FROM advertisements WHERE placement=? AND status='active' AND (starts_at IS NULL OR starts_at<=?) AND (ends_at IS NULL OR ends_at>?) ORDER BY updated_at DESC LIMIT 1").bind(placement, now, now).first();
   if (item) await context.env.DB.prepare("UPDATE advertisements SET impressions=impressions+1 WHERE id=?").bind(item.id).run();
   return json({ item: item || null }, 200, { "Cache-Control": "private, max-age=60" });
 }
