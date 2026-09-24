@@ -1,6 +1,7 @@
 import { cleanText, json, readBody, requireAdmin, sameOrigin } from "../../_lib/auth.js";
 const placements = new Set(["sidebar-hero", "mid-page", "footer-top", "article-inline"]);
 const statuses = new Set(["draft", "active", "paused", "ended"]);
+const adTypes = new Set(["display", "native", "sponsored", "affiliate", "house"]);
 const httpsUrl = (value) => /^https:\/\//i.test(String(value || "")) ? String(value) : null;
 
 export async function onRequestGet(context) {
@@ -12,12 +13,13 @@ export async function onRequestGet(context) {
 export async function onRequestPost(context) {
   if (!sameOrigin(context.request)) return json({ error: "Origine refusée." }, 403);
   const admin = await requireAdmin(context); if (!admin) return json({ error: "Accès réservé à l’administration." }, 403);
-  const body = await readBody(context.request); const placement = placements.has(body.placement) ? body.placement : null;
+  const body = await readBody(context.request); const placement = placements.has(body.placement) ? body.placement : null; const adType = adTypes.has(body.adType) ? body.adType : null;
   const name = cleanText(body.name, 120); const headline = cleanText(body.headline, 180); const advertiser = cleanText(body.advertiser, 120); const targetUrl = httpsUrl(body.targetUrl);
-  if (!placement || name.length < 2 || headline.length < 3 || advertiser.length < 2 || !targetUrl) return json({ error: "Campagne publicitaire incomplète." }, 400);
+  const imageUrl = httpsUrl(body.imageUrl);
+  if (!placement || !adType || name.length < 2 || headline.length < 3 || advertiser.length < 2 || !targetUrl || (adType === "display" && !imageUrl)) return json({ error: adType === "display" && !imageUrl ? "Une bannière visuelle exige une image HTTPS." : "Campagne publicitaire incomplète." }, 400);
   const id = crypto.randomUUID(); const now = new Date().toISOString(); const status = statuses.has(body.status) ? body.status : "draft";
-  await context.env.DB.prepare("INSERT INTO advertisements(id,name,placement,headline,body,image_url,target_url,advertiser,status,starts_at,ends_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(id,name,placement,headline,cleanText(body.body,500),httpsUrl(body.imageUrl),targetUrl,advertiser,status,body.startsAt||null,body.endsAt||null,now,now).run();
-  await context.env.DB.prepare("INSERT INTO admin_audit_log(id,admin_user_id,action,target_type,target_id,metadata,created_at) VALUES(?,?,?,?,?,?,?)").bind(crypto.randomUUID(),admin.sub,"ad.create","advertisement",id,JSON.stringify({placement,status}),now).run();
+  await context.env.DB.prepare("INSERT INTO advertisements(id,name,placement,ad_type,headline,body,image_url,target_url,advertiser,status,starts_at,ends_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(id,name,placement,adType,headline,cleanText(body.body,500),imageUrl,targetUrl,advertiser,status,body.startsAt||null,body.endsAt||null,now,now).run();
+  await context.env.DB.prepare("INSERT INTO admin_audit_log(id,admin_user_id,action,target_type,target_id,metadata,created_at) VALUES(?,?,?,?,?,?,?)").bind(crypto.randomUUID(),admin.sub,"ad.create","advertisement",id,JSON.stringify({placement,adType,status}),now).run();
   return json({ ok: true, id }, 201);
 }
 

@@ -65,6 +65,8 @@
   .ad-slot.has-campaign strong{font-family:var(--serif);font-size:19px;color:var(--ink)}
   .ad-slot.has-campaign small{font-size:10px;text-transform:uppercase;letter-spacing:.08em}
   .ad-slot.has-campaign img{width:100%;max-height:230px;object-fit:cover;margin-bottom:5px}
+  .ad-slot.ad-type-display a{padding:0}.ad-slot.ad-type-display img{margin:0;max-height:320px}.ad-slot.ad-type-display strong,.ad-slot.ad-type-display span{padding-inline:15px}.ad-slot.ad-type-display span{padding-bottom:15px}.ad-slot.ad-type-sponsored{background:color-mix(in srgb,var(--paper-alt) 75%,#DDD0C8)}.ad-slot.ad-type-affiliate{border-style:dotted}.ad-slot.ad-type-house{border-color:var(--ink-soft)}
+  .empty-editorial{min-height:110px;display:grid;place-items:center;border:1px dashed var(--line);color:var(--gray);font-size:14px;text-align:center;padding:24px}
 
   /* ============ MASTHEAD ============ */
   .site-header{border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(250,247,240,.94);backdrop-filter:blur(6px);z-index:100}
@@ -663,22 +665,11 @@
   <section style="border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
     <div class="wrap">
       <div class="section-head" style="border-bottom:none;margin-bottom:0">
-        <span class="section-title">Vision</span>
-        <a href="#" class="section-link">Toutes les vidéos</a>
+        <span class="section-title">Vidéos</span>
       </div>
     </div>
     <div class="wrap" style="padding-top:26px">
-      <div class="vision-feature">
-        <a href="#" class="vision-media" aria-label="Lire la vidéo : centre de calcul refroidi sans eau">
-          <span class="vision-play" aria-hidden="true"></span>
-          <span class="vision-duration">6:42</span>
-        </a>
-        <div class="vision-text">
-          <h3>À l'intérieur d'un centre de calcul conçu pour refroidir sans eau</h3>
-          <p>Une visite guidée d'une installation qui teste une nouvelle génération de refroidissement liquide direct, pensée pour des climats arides.</p>
-          <span class="vision-meta">Vision · 6 sept. 2026</span>
-        </div>
-      </div>
+      <div class="empty-editorial" role="status"><p>Aucune vidéo publiée pour le moment.</p></div>
     </div>
   </section>
 
@@ -750,19 +741,8 @@
   <!-- ============ RENCONTRE ============ -->
   <section style="border-top:1px solid var(--line)">
     <div class="wrap">
-      <div class="section-head">
-        <span class="section-title">Rencontre</span>
-        <a href="#" class="section-link">Tous les entretiens</a>
-      </div>
-      <article class="rencontre">
-        <div class="media-block rencontre-photo" role="img" aria-label="Portrait de Nadia El Amrani"></div>
-        <div>
-          <div class="rencontre-role">Chercheuse en robotique · Laboratoire de mécatronique appliquée</div>
-          <h3 class="rencontre-name">Nadia El Amrani</h3>
-          <p class="rencontre-quote">« Le vrai défi n'est plus de faire bouger un robot avec précision, mais de lui apprendre à savoir quand il a tort. »</p>
-          <a href="#" class="rencontre-cta">Lire la rencontre</a>
-        </div>
-      </article>
+      <div class="section-head"><span class="section-title">Interviews</span></div>
+      <div class="empty-editorial" role="status"><p>Aucune interview publiée pour le moment.</p></div>
     </div>
   </section>
 
