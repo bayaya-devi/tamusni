@@ -864,19 +864,34 @@
 
   var langSelect = document.getElementById('lang-select');
   var langSelectMobile = document.getElementById('lang-select-mobile');
+  var translationNodes=Array.from(document.querySelectorAll('header,main,footer')).flatMap(function(root){return Array.from(root.querySelectorAll('h1,h2,h3,h4,h5,p,a,button,span,small,label,li')).filter(function(node){return !node.children.length&&node.textContent.trim()&&!/^([\d\s:·—–©]+|TAMUSNI)$/.test(node.textContent.trim())})});
+  translationNodes.forEach(function(node){node.dataset.tamusniFr=node.textContent.trim()});
   var uiTranslations={
     fr:{search:'Rechercher',searchPlaceholder:'Rechercher un sujet, une rubrique, un entretien…',sections:'Rubriques',nav:['Accueil','Intelligence','Innovation','Technologies','Robotique','Cybersécurité','Futur','Espace','Sciences'],auth:['Inscription','Connexion'],popular:'Les plus populaires',popularHint:'Défilement automatique · survolez pour suspendre',live:'En direct',newsletter:'La revue TAMUSNI dans votre boîte mail',newsletterText:'Un résumé, une fois par semaine. Aucune sollicitation supplémentaire.',subscribe:"S'inscrire",follow:'Suivre TAMUSNI',legal:['Mentions légales','Confidentialité','Cookies']},
     en:{search:'Search',searchPlaceholder:'Search for a topic, section or interview…',sections:'Sections',nav:['Home','Intelligence','Innovation','Technology','Robotics','Cybersecurity','Future','Space','Science'],auth:['Sign up','Log in'],popular:'Most popular',popularHint:'Automatic carousel · hover to pause',live:'Live updates',newsletter:'The TAMUSNI review in your inbox',newsletterText:'One concise summary every week. No additional solicitations.',subscribe:'Subscribe',follow:'Follow TAMUSNI',legal:['Legal notice','Privacy','Cookies']},
     ar:{search:'بحث',searchPlaceholder:'ابحث عن موضوع أو قسم أو مقابلة…',sections:'الأقسام',nav:['الرئيسية','الذكاء','الابتكار','التقنيات','الروبوتات','الأمن السيبراني','المستقبل','الفضاء','العلوم'],auth:['إنشاء حساب','تسجيل الدخول'],popular:'الأكثر قراءة',popularHint:'عرض تلقائي · مرّر المؤشر للإيقاف',live:'مباشر',newsletter:'مجلة TAMUSNI في بريدك',newsletterText:'ملخص واحد كل أسبوع، دون رسائل إضافية.',subscribe:'اشتراك',follow:'تابع TAMUSNI',legal:['الإشعار القانوني','الخصوصية','ملفات الارتباط']}
   };
   function translateInterface(value){var t=uiTranslations[value]||uiTranslations.fr;var searchLabel=searchToggle.querySelector('span');if(searchLabel)searchLabel.textContent=t.search;searchToggle.setAttribute('aria-label',t.search);searchInput.placeholder=t.searchPlaceholder;var sectionLabel=document.querySelector('.mobile-menu-label');if(sectionLabel)sectionLabel.textContent=t.sections;document.querySelectorAll('.mobile-menu-links a').forEach(function(link,index){if(t.nav[index])link.textContent=t.nav[index]});document.querySelectorAll('#menu-auth a').forEach(function(link,index){if(t.auth[index])link.textContent=t.auth[index]});var popularTitle=document.getElementById('popular-title');if(popularTitle)popularTitle.textContent=t.popular;var popularHint=document.querySelector('.popular-heading p');if(popularHint)popularHint.textContent=t.popularHint;var liveHeading=document.querySelector('.flash-heading');if(liveHeading)liveHeading.lastChild.textContent=t.live;var newsletterTitle=document.querySelector('.newsletter-text h3');if(newsletterTitle)newsletterTitle.textContent=t.newsletter;var newsletterText=document.querySelector('.newsletter-text p');if(newsletterText)newsletterText.textContent=t.newsletterText;var subscribe=document.querySelector('.newsletter-form button');if(subscribe)subscribe.textContent=t.subscribe;var follow=document.querySelector('.site-footer h5');if(follow)follow.textContent=t.follow;document.querySelectorAll('.footer-legal a').forEach(function(link,index){if(t.legal[index])link.textContent=t.legal[index]})}
+  async function translateAllContent(value){
+    translationNodes.forEach(function(node){node.textContent=node.dataset.tamusniFr});
+    translateInterface(value);
+    if(value==='fr')return;
+    var originals=translationNodes.map(function(node){return node.dataset.tamusniFr});var cacheKey='tamusni-full-translation-v2-'+value;var translated=null;
+    try{translated=JSON.parse(localStorage.getItem(cacheKey)||'null')}catch(e){}
+    if(!translated||translated.length!==originals.length){
+      langSelect.disabled=true;document.documentElement.classList.add('is-translating');
+      try{translated=[];for(var offset=0;offset<originals.length;offset+=40){var response=await fetch('/api/translate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({target:value,texts:originals.slice(offset,offset+40)})});var result=await response.json();if(!response.ok)throw new Error(result.error);translated=translated.concat(result.translations)}try{localStorage.setItem(cacheKey,JSON.stringify(translated))}catch(e){}}
+      catch(error){console.error(error);translateInterface(value);return}finally{langSelect.disabled=false;document.documentElement.classList.remove('is-translating')}
+    }
+    translationNodes.forEach(function(node,index){if(translated[index])node.textContent=translated[index]});translateInterface(value);
+  }
   function syncLang(value){
     document.documentElement.setAttribute('lang', value);
     document.documentElement.setAttribute('dir', value === 'ar' ? 'rtl' : 'ltr');
     try { localStorage.setItem('tamusni-language', value); } catch (e) {}
     if (langSelect) langSelect.value = value;
     if (langSelectMobile) langSelectMobile.value = value;
-    translateInterface(value);
+    translateAllContent(value);
   }
   if (langSelect) langSelect.addEventListener('change', function(){ syncLang(this.value); });
   if (langSelectMobile) langSelectMobile.addEventListener('change', function(){ syncLang(this.value); });

@@ -3,6 +3,7 @@
   "name": "tamusni",
   "pages_build_output_dir": "./Site web",
   "compatibility_date": "2026-09-24",
+  "ai": { "binding": "AI" },
   "d1_databases": [{ "binding": "DB", "database_name": "tamusni-production", "database_id": "94449680-e5b3-496b-a0f9-27eb55b4b696", "migrations_dir": "migrations" }],
   "observability": { "enabled": true }
 }

@@ -1,7 +1,11 @@
 export async function onRequest(context) {
   const url = new URL(context.request.url);
   if (url.pathname.includes("tamusni-homepage")) return Response.redirect(`${url.origin}/`, 301);
-  const response = await context.next();
+  let response = await context.next();
+  if (url.pathname !== "/" && response.status === 200 && (response.headers.get("content-type") || "").includes("text/html")) {
+    const html = await response.text();
+    response = new Response(html.replace("</body>", '<script src="/translate-page.js" defer></script></body>'), response);
+  }
   const headers = new Headers(response.headers);
   headers.set("X-Content-Type-Options", "nosniff");
   headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
