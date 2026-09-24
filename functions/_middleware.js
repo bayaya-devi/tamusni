@@ -6,7 +6,8 @@ export async function onRequest(context) {
   if (response.status === 200 && (response.headers.get("content-type") || "").includes("text/html")) {
     const html = await response.text();
     const scripts = `${url.pathname !== "/" ? '<script src="/translate-page.js" defer></script>' : ""}<script src="/ads-client.js" defer></script><script src="/consent.js" defer></script>`;
-    const withScripts = html.replace("</body>", `${scripts}</body>`).replace(/<script\b(?![^>]*\bnonce=)/g, `<script nonce="${nonce}"`);
+    const verification = '<meta name="google-adsense-account" content="ca-pub-6628181824999575">';
+    const withScripts = html.replace(/<head>/i, `<head>${verification}`).replace("</body>", `${scripts}</body>`).replace(/<script\b(?![^>]*\bnonce=)/g, `<script nonce="${nonce}"`);
     response = new Response(withScripts, { status: response.status, statusText: response.statusText, headers: response.headers });
   }
   const headers = new Headers(response.headers);
