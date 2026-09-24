@@ -5,8 +5,12 @@ export function json(data, status = 200, headers = {}) {
 }
 
 export async function readBody(request) {
-  if ((request.headers.get("content-length") || "0") > 20_000) throw new Error("PAYLOAD_TOO_LARGE");
-  return request.json();
+  if (Number(request.headers.get("content-length") || 0) > 20_000) throw new Error("PAYLOAD_TOO_LARGE");
+  if (!request.body) return {};
+  const reader=request.body.getReader(); const chunks=[]; let total=0;
+  while(true){const {done,value}=await reader.read();if(done)break;total+=value.byteLength;if(total>20_000){await reader.cancel();throw new Error("PAYLOAD_TOO_LARGE");}chunks.push(value);}
+  const bytes=new Uint8Array(total);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
+  try{return JSON.parse(new TextDecoder().decode(bytes));}catch{throw new Error("INVALID_JSON");}
 }
 
 function toBase64Url(bytes) {
@@ -20,8 +24,8 @@ function fromBase64Url(value) {
 
 export async function hashPassword(password, saltBytes = crypto.getRandomValues(new Uint8Array(16))) {
   const key = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveBits"]);
-  const hash = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: saltBytes, iterations: 100_000 }, key, 256);
-  return `pbkdf2$100000$${toBase64Url(saltBytes)}$${toBase64Url(hash)}`;
+  const hash = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: saltBytes, iterations: 600_000 }, key, 256);
+  return `pbkdf2$600000$${toBase64Url(saltBytes)}$${toBase64Url(hash)}`;
 }
 
 export async function verifyPassword(password, stored) {
@@ -36,11 +40,35 @@ export async function verifyPassword(password, stored) {
 }
 
 export async function createSessionCookie(user, secret) {
-  const payload = toBase64Url(encoder.encode(JSON.stringify({ sub: user.id, name: user.name, email: user.email, role: user.role, exp: Date.now() + 7 * 86_400_000 })));
+  const issuedAt=Date.now(); const maxAge=user.role==="ADMIN"?28_800:604_800;
+  const payload = toBase64Url(encoder.encode(JSON.stringify({ sub: user.id, name: user.name, email: user.email, role: user.role, iat:issuedAt, exp:issuedAt + maxAge * 1000 })));
   const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const signature = toBase64Url(await crypto.subtle.sign("HMAC", key, encoder.encode(payload)));
-  return `tamusni_session=${payload}.${signature}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800`;
+  return `tamusni_session=${payload}.${signature}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`;
 }
+
+export async function createMfaChallengeCookie(user, secret) {
+  const payload = toBase64Url(encoder.encode(JSON.stringify({ sub: user.id, purpose: "mfa", exp: Date.now() + 300_000 })));
+  const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const signature = toBase64Url(await crypto.subtle.sign("HMAC", key, encoder.encode(payload)));
+  return `tamusni_mfa=${payload}.${signature}; Path=/api/auth/; HttpOnly; Secure; SameSite=Strict; Max-Age=300`;
+}
+
+export async function getMfaChallenge(request, secret) {
+  if (!secret) return null;
+  const cookie = request.headers.get("cookie") || "";
+  const token = cookie.split(/;\s*/).find((item) => item.startsWith("tamusni_mfa="))?.slice(12);
+  if (!token) return null;
+  const [payload, signature] = token.split("."); if (!payload || !signature) return null;
+  try {
+    const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["verify"]);
+    if (!await crypto.subtle.verify("HMAC", key, fromBase64Url(signature), encoder.encode(payload))) return null;
+    const challenge = JSON.parse(new TextDecoder().decode(fromBase64Url(payload)));
+    return challenge.purpose === "mfa" && challenge.exp > Date.now() ? challenge : null;
+  } catch { return null; }
+}
+
+export function clearMfaChallengeCookie() { return "tamusni_mfa=; Path=/api/auth/; HttpOnly; Secure; SameSite=Strict; Max-Age=0"; }
 
 export async function getSession(request, secret) {
   if (!secret) return null;
@@ -62,7 +90,12 @@ export async function requireSession(context) {
   const session = await getSession(context.request, context.env.SESSION_SECRET);
   if (!session || !context.env.DB) return null;
   const user = await context.env.DB.prepare("SELECT id, name, email, role FROM users WHERE id = ?").bind(session.sub).first();
-  return user ? { sub: user.id, name: user.name, email: user.email, role: user.role, exp: session.exp } : null;
+  return user ? { sub: user.id, name: user.name, email: user.email, role: user.role, iat: session.iat || null, exp: session.exp } : null;
+}
+
+export async function requireRecentSession(context,maximumAge=900_000) {
+  const session=await requireSession(context);
+  return session?.iat&&Date.now()-session.iat<=maximumAge?session:null;
 }
 
 export async function requireAdmin(context) {
