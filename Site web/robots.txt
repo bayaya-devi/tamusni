@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /compte/
+Disallow: /api/
+Sitemap: https://tamusni.pages.dev/sitemap.xml

@@ -448,15 +448,15 @@
       <div class="mobile-menu-group">
         <div class="mobile-menu-label">Rubriques</div>
         <div class="mobile-menu-links">
-          <a href="#">Accueil</a>
-          <a href="#">Intelligence</a>
-          <a href="#">Innovation</a>
-          <a href="#">Technologies</a>
-          <a href="#">Robotique</a>
-          <a href="#">Cybersécurité</a>
-          <a href="#">Futur</a>
-          <a href="#">Espace</a>
-          <a href="#">Sciences</a>
+          <a href="/">Accueil</a>
+          <a href="/recherche/?category=Intelligence">Intelligence</a>
+          <a href="/recherche/?category=Innovation">Innovation</a>
+          <a href="/recherche/?category=Technologies">Technologies</a>
+          <a href="/recherche/?category=Robotique">Robotique</a>
+          <a href="/recherche/?category=Cybers%C3%A9curit%C3%A9">Cybersécurité</a>
+          <a href="/recherche/?category=Futur">Futur</a>
+          <a href="/recherche/?category=Espace">Espace</a>
+          <a href="/recherche/?category=Sciences">Sciences</a>
         </div>
         <div class="menu-auth" id="menu-auth"><a href="/inscription/">Inscription</a><a href="/connexion/">Connexion</a></div>
       </div>
@@ -932,6 +932,12 @@
   function showPopular(index){popularIndex=(index+popularCards.length)%popularCards.length;popularCards.forEach(function(card,i){card.classList.remove('is-prev','is-active','is-next');if(i===(popularIndex-1+popularCards.length)%popularCards.length)card.classList.add('is-prev');if(i===popularIndex)card.classList.add('is-active');if(i===(popularIndex+1)%popularCards.length)card.classList.add('is-next')});document.querySelectorAll('.popular-control').forEach(function(control,i){control.classList.toggle('is-active',i===popularIndex)})}
   var popularControls=document.getElementById('popular-controls');popularCards.forEach(function(_,i){var button=document.createElement('button');button.type='button';button.className='popular-control';button.setAttribute('aria-label','Afficher le contenu '+(i+1));button.onclick=function(){showPopular(i);restartPopular()};popularControls.appendChild(button)});
   function restartPopular(){clearInterval(popularTimer);popularTimer=setInterval(function(){showPopular(popularIndex+1)},4200)}showPopular(popularIndex);restartPopular();popularStage.addEventListener('mouseenter',function(){clearInterval(popularTimer)});popularStage.addEventListener('mouseleave',restartPopular);
+
+  Promise.all([fetch('/api/content?sort=recent&limit=50').then(function(response){return response.json()}),fetch('/api/content?sort=popular&limit=5').then(function(response){return response.json()})]).then(function(results){
+    var recent=results[0].items||[];var popular=results[1].items||[];recent.forEach(function(item){searchable.push({title:item.title,normalized:normalizeSearch([item.title,item.excerpt,item.category,item.author_name].join(' ')),href:'/articles/'+item.slug})});
+    if(recent[0]){var lead=recent[0];var leadLink=document.querySelector('.hero-main article:first-child > a');var leadTitle=document.querySelector('.hero-lead-title');var leadSummary=document.querySelector('.hero-lead-summary');var leadCategory=document.querySelector('.hero-main article:first-child .rubrique');if(leadLink)leadLink.href='/articles/'+lead.slug;if(leadTitle)leadTitle.textContent=lead.title;if(leadSummary)leadSummary.textContent=lead.excerpt;if(leadCategory)leadCategory.textContent=lead.category}
+    popularCards.forEach(function(card,index){var item=popular[index];if(!item)return;var link=card.querySelector('a');var title=card.querySelector('h3');link.href='/articles/'+item.slug;link.setAttribute('aria-label','Lire '+item.title);title.textContent=item.title});
+  }).catch(function(){});
 
   fetch('/api/live').then(function(response){return response.ok?response.json():Promise.reject()}).then(function(data){
     if(!data.items||!data.items.length)return;var feed=document.getElementById('live-feed');feed.innerHTML='';data.items.slice(0,4).forEach(function(item){var article=document.createElement('article');article.className='flash-item';var time=document.createElement('span');time.className='flash-time';time.textContent=item.display_time;var body=document.createElement('div');body.className='flash-body';var category=document.createElement('span');category.className='rubrique-tag';category.textContent=item.category;var link=document.createElement('a');link.href=item.url||'#';var title=document.createElement('h4');title.textContent=item.title;link.appendChild(title);body.append(category,link);article.append(time,body);feed.appendChild(article)})

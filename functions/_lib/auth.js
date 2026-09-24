@@ -60,9 +60,17 @@ export async function getSession(request, secret) {
 
 export async function requireSession(context) {
   const session = await getSession(context.request, context.env.SESSION_SECRET);
-  return session || null;
+  if (!session || !context.env.DB) return null;
+  const user = await context.env.DB.prepare("SELECT id, name, email, role FROM users WHERE id = ?").bind(session.sub).first();
+  return user ? { sub: user.id, name: user.name, email: user.email, role: user.role, exp: session.exp } : null;
+}
+
+export async function requireAdmin(context) {
+  const session = await requireSession(context);
+  return session?.role === "ADMIN" ? session : null;
 }
 
 export function validEmail(value) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim().toLowerCase()); }
 export function sameOrigin(request) { const origin = request.headers.get("origin"); return !origin || origin === new URL(request.url).origin; }
 export async function hashToken(value) { return toBase64Url(await crypto.subtle.digest("SHA-256", encoder.encode(value))); }
+export function cleanText(value, maximum = 500) { return String(value || "").replace(/[\u0000-\u001F\u007F]/g, " ").replace(/\s+/g, " ").trim().slice(0, maximum); }
