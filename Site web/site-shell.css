@@ -1,15 +1,15 @@
 :root{--shell-paper:#DDD0C8;--shell-ink:#323232;--shell-line:#B8AAA2;--shell-muted:#55514E;--shell-panel:#E8DDD6;--shell-footer-space:94px}
 html[data-theme="dark"]{--shell-paper:#323232;--shell-ink:#EEE7E2;--shell-line:#555;--shell-muted:#C4C4C4}
 html,body{max-width:100%;overflow-x:hidden}
-body{box-sizing:border-box;padding-top:78px;padding-left:58px;padding-bottom:var(--shell-footer-space)!important;background:var(--shell-paper);color:var(--shell-ink);font-family:"Open Sans",Arial,sans-serif;font-size:16px;line-height:1.65;text-rendering:optimizeLegibility}
+body{box-sizing:border-box;padding-top:66px;padding-left:58px;padding-bottom:var(--shell-footer-space)!important;background:var(--shell-paper);color:var(--shell-ink);font-family:"Open Sans",Arial,sans-serif;font-size:16px;line-height:1.65;text-rendering:optimizeLegibility}
 html[dir="rtl"] body{padding-left:0;padding-right:58px}
 
-.global-shell-header{position:fixed;top:0;right:0;left:0;z-index:1200;min-height:78px;background:rgba(221,208,200,.96);backdrop-filter:blur(6px);border-bottom:1px solid #B9ACA5;color:#323232;font-family:"Open Sans",Arial,sans-serif}
-.global-shell-inner{width:min(1180px,calc(100% - 44px));min-height:78px;margin:auto;display:flex;align-items:center;justify-content:flex-start}
-.global-shell-brand{font:600 36px/1 "Playfair Display",Georgia,serif;letter-spacing:.01em;color:inherit;text-decoration:none}
+.global-shell-header{position:fixed;top:0;right:0;left:0;z-index:1200;min-height:66px;background:rgba(221,208,200,.96);backdrop-filter:blur(6px);border-bottom:1px solid #B9ACA5;color:#323232;font-family:"Open Sans",Arial,sans-serif}
+.global-shell-inner{width:min(1180px,calc(100% - 44px));min-height:66px;margin:auto;display:flex;align-items:center;justify-content:flex-start}
+.global-shell-brand{font:600 31px/1 "Playfair Display",Georgia,serif;letter-spacing:.01em;color:inherit;text-decoration:none}
 html[data-theme="dark"] .global-shell-header{background:rgba(50,50,50,.96);border-bottom-color:#555;color:#EEE7E2}
 
-.tamusni-rail{position:fixed;z-index:1100;top:78px;bottom:var(--shell-footer-space);left:0;width:58px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;padding:10px 7px 8px;border:1px solid #323232;border-radius:0 16px 16px 0;background:color-mix(in srgb,var(--shell-paper) 96%,var(--shell-line));box-shadow:4px 0 24px rgba(50,50,50,.12);color:var(--shell-ink);font-family:"Open Sans",Arial,sans-serif;overflow:visible}
+.tamusni-rail{position:fixed;z-index:1100;top:66px;bottom:var(--shell-footer-space);left:0;width:58px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;padding:10px 7px 8px;border:1px solid #323232;border-radius:0 16px 16px 0;background:color-mix(in srgb,var(--shell-paper) 96%,var(--shell-line));box-shadow:4px 0 24px rgba(50,50,50,.12);color:var(--shell-ink);font-family:"Open Sans",Arial,sans-serif;overflow:visible}
 html[dir="rtl"] .tamusni-rail{right:0;left:auto;border-right:0;border-left:1px solid #323232;border-radius:16px 0 0 16px;box-shadow:-4px 0 24px rgba(50,50,50,.12)}
 .rail-brand{width:44px;min-height:44px;display:grid;place-items:center;border-radius:10px;color:inherit;text-decoration:none;font:700 10px/1 "Playfair Display",Georgia,serif;letter-spacing:.01em;transition:background .15s,color .15s,transform .15s}
 .rail-brand:hover,.rail-brand:focus-visible{background:var(--shell-ink);color:var(--shell-paper);transform:translateY(-1px);outline:none}
@@ -44,12 +44,12 @@ footer:not(.global-shell-footer){display:none!important}
 .global-footer-bottom a:hover,.global-footer-bottom a:focus-visible{text-decoration:underline;outline:none}
 
 @media(max-width:640px){
-  body{padding-top:62px;padding-left:54px;padding-right:0}
+  body{padding-top:54px;padding-left:54px;padding-right:0}
   html[dir="rtl"] body{padding-left:0;padding-right:54px}
-  .global-shell-header{min-height:62px}
-  .global-shell-inner{width:calc(100% - 24px);min-height:62px}
-  .global-shell-brand{font-size:29px}
-  .tamusni-rail{top:62px;width:54px;padding-inline:6px;border-radius:0 13px 13px 0}
+  .global-shell-header{min-height:54px}
+  .global-shell-inner{width:calc(100% - 24px);min-height:54px}
+  .global-shell-brand{font-size:26px}
+  .tamusni-rail{top:54px;width:54px;padding-inline:6px;border-radius:0 13px 13px 0}
   html[dir="rtl"] .tamusni-rail{border-radius:13px 0 0 13px}
   .rail-brand{width:40px;font-size:9px;letter-spacing:0}
   .rail-item{width:38px;height:38px}
