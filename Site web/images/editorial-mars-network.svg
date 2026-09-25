@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">Réseau de télécommunications autour de Mars</title>
+  <desc id="desc">Illustration éditoriale abstraite montrant Mars, un satellite et des ondes de communication.</desc>
+  <rect width="1200" height="675" fill="#323232"/>
+  <circle cx="930" cy="410" r="235" fill="#DDD0C8"/>
+  <circle cx="865" cy="340" r="34" fill="#C4C4C4" opacity=".8"/>
+  <circle cx="1020" cy="470" r="52" fill="#C4C4C4" opacity=".55"/>
+  <path d="M90 530C330 340 565 290 820 330" fill="none" stroke="#C4C4C4" stroke-width="5" stroke-dasharray="14 18"/>
+  <g transform="translate(380 235) rotate(-12)">
+    <rect x="-58" y="-38" width="116" height="76" rx="10" fill="#DDD0C8"/>
+    <rect x="-190" y="-45" width="110" height="90" fill="#C4C4C4"/>
+    <rect x="80" y="-45" width="110" height="90" fill="#C4C4C4"/>
+    <circle r="17" fill="#323232"/>
+  </g>
+  <path d="M465 220Q570 135 675 218M490 255Q570 195 650 253" fill="none" stroke="#DDD0C8" stroke-width="8" stroke-linecap="round"/>
+  <text x="72" y="92" fill="#DDD0C8" font-family="Georgia,serif" font-size="34" letter-spacing="5">TAMUSNI · BRÈVE</text>
+  <text x="72" y="620" fill="#C4C4C4" font-family="Arial,sans-serif" font-size="24">Illustration éditoriale</text>
+</svg>

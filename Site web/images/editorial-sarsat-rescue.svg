@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">Balise de détresse et réseau SARSAT</title>
+  <desc id="desc">Illustration éditoriale abstraite montrant une balise en mer et un signal vers un satellite.</desc>
+  <rect width="1200" height="675" fill="#DDD0C8"/>
+  <path d="M0 470Q150 410 300 470T600 470T900 470T1200 470V675H0Z" fill="#323232"/>
+  <path d="M0 515Q150 455 300 515T600 515T900 515T1200 515" fill="none" stroke="#C4C4C4" stroke-width="9" opacity=".8"/>
+  <g transform="translate(560 420)">
+    <path d="M-46 20h92l-10 115h-72z" fill="#C4C4C4"/>
+    <rect x="-28" y="-58" width="56" height="85" rx="18" fill="#323232"/>
+    <circle cy="-31" r="10" fill="#DDD0C8"/>
+  </g>
+  <path d="M560 340Q560 225 675 190M560 300Q560 235 625 215" fill="none" stroke="#323232" stroke-width="9" stroke-linecap="round"/>
+  <g transform="translate(770 150) rotate(12)">
+    <rect x="-42" y="-28" width="84" height="56" rx="8" fill="#323232"/>
+    <rect x="-140" y="-32" width="82" height="64" fill="#C4C4C4"/>
+    <rect x="58" y="-32" width="82" height="64" fill="#C4C4C4"/>
+  </g>
+  <text x="72" y="92" fill="#323232" font-family="Georgia,serif" font-size="34" letter-spacing="5">TAMUSNI · ANALYSE</text>
+  <text x="72" y="620" fill="#DDD0C8" font-family="Arial,sans-serif" font-size="24">Illustration éditoriale</text>
+</svg>
