@@ -1,10 +1,10 @@
 :root{--shell-paper:#DDD0C8;--shell-ink:#323232;--shell-line:#B8AAA2;--shell-muted:#55514E;--shell-panel:#E8DDD6;--shell-footer-space:94px}
 html[data-theme="dark"]{--shell-paper:#323232;--shell-ink:#EEE7E2;--shell-line:#555;--shell-muted:#C4C4C4}
 html,body{max-width:100%;overflow-x:hidden}
-body{box-sizing:border-box;padding-left:58px;padding-bottom:var(--shell-footer-space)!important;background:var(--shell-paper);color:var(--shell-ink);font-family:"Open Sans",Arial,sans-serif;font-size:16px;line-height:1.65;text-rendering:optimizeLegibility}
+body{box-sizing:border-box;padding-top:78px;padding-left:58px;padding-bottom:var(--shell-footer-space)!important;background:var(--shell-paper);color:var(--shell-ink);font-family:"Open Sans",Arial,sans-serif;font-size:16px;line-height:1.65;text-rendering:optimizeLegibility}
 html[dir="rtl"] body{padding-left:0;padding-right:58px}
 
-.global-shell-header{position:sticky;top:0;z-index:1200;min-height:78px;background:rgba(221,208,200,.96);backdrop-filter:blur(6px);border-bottom:1px solid #B9ACA5;color:#323232;font-family:"Open Sans",Arial,sans-serif}
+.global-shell-header{position:fixed;top:0;right:0;left:0;z-index:1200;min-height:78px;background:rgba(221,208,200,.96);backdrop-filter:blur(6px);border-bottom:1px solid #B9ACA5;color:#323232;font-family:"Open Sans",Arial,sans-serif}
 .global-shell-inner{width:min(1180px,calc(100% - 44px));min-height:78px;margin:auto;display:flex;align-items:center;justify-content:flex-start}
 .global-shell-brand{font:600 36px/1 "Playfair Display",Georgia,serif;letter-spacing:.01em;color:inherit;text-decoration:none}
 html[data-theme="dark"] .global-shell-header{background:rgba(50,50,50,.96);border-bottom-color:#555;color:#EEE7E2}
@@ -41,7 +41,7 @@ footer:not(.global-shell-footer){display:none!important}
 .global-footer-bottom a:hover,.global-footer-bottom a:focus-visible{text-decoration:underline;outline:none}
 
 @media(max-width:640px){
-  body{padding-left:54px;padding-right:0}
+  body{padding-top:62px;padding-left:54px;padding-right:0}
   html[dir="rtl"] body{padding-left:0;padding-right:54px}
   .global-shell-header{min-height:62px}
   .global-shell-inner{width:calc(100% - 24px);min-height:62px}
