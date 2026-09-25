@@ -1,7 +1,7 @@
 import { cleanText, json, requireSession, sameOrigin } from "../_lib/auth.js";
 
 const allowedTypes = new Set(["article", "video", "podcast"]);
-const allowedSorts = new Set(["recent", "popular"]);
+const allowedSorts = new Set(["recent", "popular", "oldest"]);
 
 export async function onRequestGet(context) {
   const url = new URL(context.request.url);
@@ -23,8 +23,8 @@ export async function onRequestGet(context) {
   if (/^\d{4}-\d{2}-\d{2}$/.test(from)) { where.push("c.published_at >= ?"); values.push(`${from}T00:00:00Z`); }
   if (/^\d{4}-\d{2}-\d{2}$/.test(to)) { where.push("c.published_at <= ?"); values.push(`${to}T23:59:59Z`); }
   if (tag) { where.push("EXISTS (SELECT 1 FROM content_tags ct JOIN tags t ON t.id=ct.tag_id WHERE ct.content_id=c.id AND t.slug=?)"); values.push(tag.toLowerCase()); }
-  const order = sort === "popular" ? "views DESC, c.published_at DESC" : "c.published_at DESC";
-  const sql = `SELECT c.id,c.slug,c.type,c.title,c.excerpt,c.summary,c.category,c.author_name,c.cover_url,c.media_url,c.fact_check_status,c.sponsored,c.sponsor_name,c.published_at,COUNT(DISTINCT v.id) AS views,COUNT(DISTINCT l.actor_key) AS likes FROM content_items c LEFT JOIN content_views v ON v.content_id=c.id LEFT JOIN content_likes l ON l.content_id=c.id WHERE ${where.join(" AND ")} GROUP BY c.id ORDER BY ${order} LIMIT ?`;
+  const order = sort === "popular" ? "views DESC, c.published_at DESC" : sort === "oldest" ? "c.published_at ASC" : "c.published_at DESC";
+  const sql = `SELECT c.id,c.slug,c.type,c.title,c.excerpt,c.summary,c.category,c.author_name,c.cover_url,c.media_url,c.fact_check_status,c.sponsored,c.sponsor_name,c.published_at,COUNT(DISTINCT v.id) AS views,COUNT(DISTINCT l.actor_key) AS likes,(SELECT s.url FROM content_sources s WHERE s.content_id=c.id ORDER BY s.created_at LIMIT 1) AS source_url,(SELECT s.label FROM content_sources s WHERE s.content_id=c.id ORDER BY s.created_at LIMIT 1) AS source_label FROM content_items c LEFT JOIN content_views v ON v.content_id=c.id LEFT JOIN content_likes l ON l.content_id=c.id WHERE ${where.join(" AND ")} GROUP BY c.id ORDER BY ${order} LIMIT ?`;
   values.push(limit);
   const result = await context.env.DB.prepare(sql).bind(...values).all();
   return json({ items: result.results || [], filters: { query, category, author, type, tag, from, to, sort } });
