@@ -24,7 +24,7 @@ export async function onRequestGet(context) {
   if (/^\d{4}-\d{2}-\d{2}$/.test(to)) { where.push("c.published_at <= ?"); values.push(`${to}T23:59:59Z`); }
   if (tag) { where.push("EXISTS (SELECT 1 FROM content_tags ct JOIN tags t ON t.id=ct.tag_id WHERE ct.content_id=c.id AND t.slug=?)"); values.push(tag.toLowerCase()); }
   const order = sort === "popular" ? "views DESC, c.published_at DESC" : "c.published_at DESC";
-  const sql = `SELECT c.id,c.slug,c.type,c.title,c.excerpt,c.summary,c.category,c.author_name,c.cover_url,c.media_url,c.fact_check_status,c.sponsored,c.sponsor_name,c.published_at,COUNT(DISTINCT v.id) AS views FROM content_items c LEFT JOIN content_views v ON v.content_id=c.id WHERE ${where.join(" AND ")} GROUP BY c.id ORDER BY ${order} LIMIT ?`;
+  const sql = `SELECT c.id,c.slug,c.type,c.title,c.excerpt,c.summary,c.category,c.author_name,c.cover_url,c.media_url,c.fact_check_status,c.sponsored,c.sponsor_name,c.published_at,COUNT(DISTINCT v.id) AS views,COUNT(DISTINCT l.actor_key) AS likes FROM content_items c LEFT JOIN content_views v ON v.content_id=c.id LEFT JOIN content_likes l ON l.content_id=c.id WHERE ${where.join(" AND ")} GROUP BY c.id ORDER BY ${order} LIMIT ?`;
   values.push(limit);
   const result = await context.env.DB.prepare(sql).bind(...values).all();
   return json({ items: result.results || [], filters: { query, category, author, type, tag, from, to, sort } });

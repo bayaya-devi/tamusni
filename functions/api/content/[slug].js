@@ -22,11 +22,37 @@ export async function onRequestPost(context) {
   if (!item) return json({ error: "Contenu introuvable." }, 404);
   const session = await requireSession(context);
   const now = new Date().toISOString();
-  await context.env.DB.prepare("INSERT INTO content_views(id,content_id,user_id,viewed_at) VALUES(?,?,?,?)").bind(crypto.randomUUID(), item.id, session?.sub || null, now).run();
-  if (session) {
-    const body = await readBody(context.request).catch(() => ({}));
+  const body = await readBody(context.request).catch(() => ({}));
+  const cookie = context.request.headers.get("cookie") || "";
+  const savedVisitor = cookie.split(/;\s*/).find((part) => part.startsWith("tamusni_visitor="))?.slice(16) || "";
+  const visitorId = /^[0-9a-f-]{36}$/i.test(savedVisitor) ? savedVisitor : crypto.randomUUID();
+  const actorKey = session ? `u:${session.sub}` : `v:${visitorId}`;
+  const responseHeaders = savedVisitor || session ? {} : { "Set-Cookie": `tamusni_visitor=${visitorId}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=31536000` };
+  let liked = false;
+
+  if (body.action === "like") {
+    const existing = await context.env.DB.prepare("SELECT 1 AS found FROM content_likes WHERE actor_key=? AND content_id=?").bind(actorKey, item.id).first();
+    if (existing) {
+      await context.env.DB.prepare("DELETE FROM content_likes WHERE actor_key=? AND content_id=?").bind(actorKey, item.id).run();
+    } else {
+      await context.env.DB.prepare("INSERT INTO content_likes(actor_key,content_id,user_id,created_at) VALUES(?,?,?,?)").bind(actorKey, item.id, session?.sub || null, now).run();
+      liked = true;
+    }
+  } else {
+    const uniqueView = await context.env.DB.prepare("INSERT OR IGNORE INTO content_view_sessions(actor_key,content_id,viewed_on,created_at) VALUES(?,?,?,?)").bind(actorKey, item.id, now.slice(0, 10), now).run();
+    if (Number(uniqueView.meta?.changes || 0) > 0) {
+      await context.env.DB.prepare("INSERT INTO content_views(id,content_id,user_id,viewed_at) VALUES(?,?,?,?)").bind(crypto.randomUUID(), item.id, session?.sub || null, now).run();
+    }
+    liked = Boolean(await context.env.DB.prepare("SELECT 1 AS found FROM content_likes WHERE actor_key=? AND content_id=?").bind(actorKey, item.id).first());
+  }
+
+  if (session && body.action !== "like") {
     const progress = Math.min(Math.max(Number(body.progress) || 0, 0), 100);
     await context.env.DB.prepare("INSERT INTO reading_history(user_id,content_id,progress,last_read_at) VALUES(?,?,?,?) ON CONFLICT(user_id,content_id) DO UPDATE SET progress=excluded.progress,last_read_at=excluded.last_read_at").bind(session.sub, item.id, progress, now).run();
   }
-  return json({ ok: true }, 201);
+  const [views, likes] = await Promise.all([
+    context.env.DB.prepare("SELECT COUNT(*) AS count FROM content_views WHERE content_id=?").bind(item.id).first(),
+    context.env.DB.prepare("SELECT COUNT(*) AS count FROM content_likes WHERE content_id=?").bind(item.id).first()
+  ]);
+  return json({ ok: true, liked, views: Number(views?.count || 0), likes: Number(likes?.count || 0) }, 200, responseHeaders);
 }
