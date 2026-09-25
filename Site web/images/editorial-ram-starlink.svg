@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Royal Air Maroc et la connectivité Starlink en vol</title>
+  <desc id="desc">Illustration éditoriale d’un avion relié à un réseau satellitaire, créée par TAMUSNI.</desc>
+  <rect width="1600" height="900" fill="#DDD0C8"/>
+  <path d="M0 650C310 565 535 590 805 677C1070 762 1320 753 1600 632V900H0Z" fill="#C4C4C4" opacity=".7"/>
+  <circle cx="1290" cy="178" r="70" fill="none" stroke="#323232" stroke-width="10"/>
+  <path d="M1222 178h136M1290 110v136M1242 130c55 52 55 105 0 155M1338 130c-55 52-55 105 0 155" fill="none" stroke="#323232" stroke-width="7" opacity=".65"/>
+  <path d="M1224 232C1070 306 955 390 858 510M1260 259C1134 342 1046 421 976 524" fill="none" stroke="#323232" stroke-width="8" stroke-dasharray="18 20" opacity=".55"/>
+  <g transform="translate(345 390) rotate(-8 430 130)" fill="#323232">
+    <path d="M36 150L725 58c37-5 87 13 118 42l34 31-51 13-72-24-234 49 161 157-64 18-246-135-210 44-58 70-71 18 41-117-57-54z"/>
+    <path d="M328 181L199 77l61-15 195 94z" opacity=".76"/>
+  </g>
+  <rect x="88" y="78" width="560" height="178" rx="4" fill="#323232"/>
+  <text x="130" y="137" fill="#C4C4C4" font-family="Arial, sans-serif" font-size="28" font-weight="700" letter-spacing="5">VÉRIFICATION</text>
+  <text x="130" y="198" fill="#DDD0C8" font-family="Georgia, serif" font-size="49" font-weight="700">RAM × STARLINK</text>
+  <text x="90" y="838" fill="#323232" font-family="Arial, sans-serif" font-size="25" font-weight="700" letter-spacing="4">TAMUSNI · TECHNOLOGIES · 2026</text>
+</svg>
