@@ -76,3 +76,14 @@ export async function onRequestPatch(context) {
   if(status==="published")await context.env.DB.prepare("INSERT INTO notifications(id,user_id,title,url,created_at) SELECT lower(hex(randomblob(16))),user_id,?,?,? FROM topic_subscriptions WHERE LOWER(topic)=LOWER(?)").bind(`Nouveau contenu : ${existing.title}`,`/articles/${existing.slug}`,now,existing.category).run();
   await audit(context,admin,"content.status",id,{status}); return json({ok:true});
 }
+
+export async function onRequestDelete(context) {
+  if (!sameOrigin(context.request)) return json({ error: "Origine refusée." }, 403);
+  const admin = await requireAdmin(context); if (!admin) return json({ error: "Accès réservé à l’administration." }, 403);
+  const body = await readBody(context.request); const id = cleanText(body.id,160);
+  const existing = id ? await context.env.DB.prepare("SELECT id,slug,title FROM content_items WHERE id=?").bind(id).first() : null;
+  if (!existing) return json({ error: "Contenu introuvable." }, 404);
+  await context.env.DB.prepare("DELETE FROM content_items WHERE id=?").bind(id).run();
+  await audit(context,admin,"content.delete",id,{slug:existing.slug,title:existing.title});
+  return json({ ok:true });
+}
