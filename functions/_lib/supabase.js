@@ -11,7 +11,16 @@ async function request(env, table, { method = "GET", query = "", body, prefer = 
   return response;
 }
 
-export async function mirrorUser(env, user) { return request(env, "tamusni_users", { method: "POST", query: "?on_conflict=id", prefer: "resolution=merge-duplicates,return=minimal", body: { id: user.id, name: user.name, email: user.email, role: user.role, created_at: user.created_at || new Date().toISOString(), preferred_topic: user.preferredTopic || null, terms_accepted_at: user.termsAcceptedAt || null, sponsored_in_app: Boolean(user.sponsoredInApp), sponsored_email: Boolean(user.sponsoredEmail) } }); }
+export async function mirrorUser(env, user) {
+  const base = { id: user.id, name: user.name, email: user.email, role: user.role, created_at: user.created_at || new Date().toISOString() };
+  const options = { method: "POST", query: "?on_conflict=id", prefer: "resolution=merge-duplicates,return=minimal" };
+  try {
+    return await request(env, "tamusni_users", { ...options, body: { ...base, preferred_topic: user.preferredTopic || null, terms_accepted_at: user.termsAcceptedAt || null, sponsored_in_app: Boolean(user.sponsoredInApp), sponsored_email: Boolean(user.sponsoredEmail) } });
+  } catch (error) {
+    if (!/PGRST204|preferred_topic|terms_accepted_at|sponsored_/i.test(String(error?.message || ""))) throw error;
+    return request(env, "tamusni_users", { ...options, body: base });
+  }
+}
 export async function mirrorNewsletter(env, email, locale) { return request(env, "tamusni_newsletter_subscribers", { method: "POST", query: "?on_conflict=email", prefer: "resolution=merge-duplicates,return=minimal", body: { email, locale } }); }
 export async function mirrorFavorite(env, item) { return request(env, "tamusni_saved_items", { method: "POST", query: "?on_conflict=user_id,item_id", prefer: "resolution=merge-duplicates,return=minimal", body: item }); }
 export async function removeMirroredFavorite(env, userId, itemId) { return request(env, "tamusni_saved_items", { method: "DELETE", query: `?user_id=eq.${encodeURIComponent(userId)}&item_id=eq.${encodeURIComponent(itemId)}` }); }
