@@ -12,6 +12,7 @@ export async function onRequest(context){
   if(!html.includes('tamusni-rail'))html=html.replace(/<body([^>]*)>/i,function(match,attributes){return '<body'+attributes+'>'+rail});
   if(!html.includes('global-shell-footer'))html=html.replace('</body>',footer+'</body>');
   if(!html.includes('/site-shell.js'))html=html.replace('</body>','<script src="/site-shell.js" defer></script></body>');
+  if(new URL(context.request.url).pathname.startsWith('/admin')&&!html.includes('/admin-controls.js'))html=html.replace('</body>','<script src="/admin-controls.js" defer></script></body>');
   const headers=new Headers(response.headers);headers.delete('content-length');
   return new Response(html,{status:response.status,statusText:response.statusText,headers});
 }

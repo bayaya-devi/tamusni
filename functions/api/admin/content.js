@@ -1,5 +1,5 @@
 import { cleanText, json, readBody, requireAdmin, sameOrigin } from "../../_lib/auth.js";
-const types = new Set(["article", "video", "podcast"]);
+const types = new Set(["article", "brief", "video", "interview", "podcast"]);
 const statuses = new Set(["draft", "review", "scheduled", "published", "archived"]);
 const checks = new Set(["verified", "context", "correction", "opinion"]);
 const httpsUrl = (value) => /^https:\/\//i.test(String(value || "")) ? String(value) : null;

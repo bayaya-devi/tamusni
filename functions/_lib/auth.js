@@ -89,8 +89,8 @@ export async function getSession(request, secret) {
 export async function requireSession(context) {
   const session = await getSession(context.request, context.env.SESSION_SECRET);
   if (!session || !context.env.DB) return null;
-  const user = await context.env.DB.prepare("SELECT id, name, email, role FROM users WHERE id = ?").bind(session.sub).first();
-  return user ? { sub: user.id, name: user.name, email: user.email, role: user.role, iat: session.iat || null, exp: session.exp } : null;
+  const user = await context.env.DB.prepare("SELECT id, name, email, role, is_banned FROM users WHERE id = ?").bind(session.sub).first();
+  return user && !user.is_banned ? { sub: user.id, name: user.name, email: user.email, role: user.role, iat: session.iat || null, exp: session.exp } : null;
 }
 
 export async function requireRecentSession(context,maximumAge=900_000) {
