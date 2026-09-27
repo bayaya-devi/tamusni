@@ -55,4 +55,5 @@ export async function recordAuthEvent(context,{userId=null,email="",event,suspic
   const now=new Date().toISOString();
   await context.env.DB.prepare("INSERT INTO auth_events(id,user_id,email_hash,ip_hash,user_agent_hash,country,event,suspicious,created_at) VALUES(?,?,?,?,?,?,?,?,?)").bind(crypto.randomUUID(),userId,emailHash,ipHash,agentHash,String(request.cf?.country||"").slice(0,2)||null,event,flagged?1:0,now).run();
   if(flagged&&userId)await context.env.DB.prepare("INSERT INTO notifications(id,user_id,title,url,created_at) VALUES(?,?,?,?,?)").bind(crypto.randomUUID(),userId,"Nouvelle connexion détectée","/compte/",now).run();
+  if(flagged)try{await context.env.DB.prepare("INSERT INTO admin_notifications(id,type,title,body,target_url,target_type,target_id,created_at) VALUES(?,?,?,?,?,?,?,?)").bind(crypto.randomUUID(),"security","Connexion inhabituelle détectée","Une connexion a nécessité une attention supplémentaire.","/admin/#notifications","user",userId,now).run()}catch(error){console.error("admin_security_notification_failed",error)}
 }

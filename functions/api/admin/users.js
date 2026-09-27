@@ -51,5 +51,6 @@ export async function onRequestDelete(context) {
   const admin=await requireAdmin(context);if(!admin)return json({error:"Accès réservé à l’administration."},403);
   const body=await readBody(context.request);const id=cleanText(body.id,160);if(!id||id===admin.sub)return json({error:"Suppression interdite."},400);
   const target=await context.env.DB.prepare("SELECT id,role,email FROM users WHERE id=?").bind(id).first();if(!target)return json({error:"Compte introuvable."},404);if(target.role==="ADMIN")return json({error:"Un compte administrateur ne peut pas être supprimé ici."},400);
+  await context.env.DB.prepare("INSERT INTO admin_notifications(id,type,title,body,target_url,target_type,target_id,created_at) VALUES(?,?,?,?,?,?,?,?)").bind(crypto.randomUUID(),"account","Compte supprimé","Une suppression définitive a été confirmée dans l’administration.","/admin/#accounts","user",id,new Date().toISOString()).run();
   await context.env.DB.prepare("DELETE FROM users WHERE id=?").bind(id).run();await audit(context,admin,"user.delete",id,{email:target.email});return json({ok:true});
 }
