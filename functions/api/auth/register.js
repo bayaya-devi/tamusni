@@ -12,6 +12,7 @@ export async function onRequestPost(context) {
     if (existing) return json({ error: "Un compte existe déjà avec cette adresse." }, 409);
     const now = new Date().toISOString(); const user = { id: crypto.randomUUID(), name, email, role: "USER", preferredTopic, termsAcceptedAt: now, sponsoredInApp, sponsoredEmail, created_at: now };
     await context.env.DB.prepare("INSERT INTO users (id,name,email,password_hash,role,created_at,preferred_topic,terms_accepted_at,sponsored_in_app,sponsored_email) VALUES (?,?,?,?,?,?,?,?,?,?)").bind(user.id,name,email,await hashPassword(password),"USER",now,preferredTopic,now,sponsoredInApp,sponsoredEmail).run();
+    try { await context.env.DB.prepare("INSERT INTO admin_notifications(id,type,title,body,target_url,target_type,target_id,created_at) VALUES(?,?,?,?,?,?,?,?)").bind(crypto.randomUUID(),"account","Nouveau compte","Un compte vient d’être créé.","/admin/#accounts","user",user.id,now).run(); } catch (error) { console.error("admin_notification_failed", error); }
     try { await mirrorUser(context.env, user); } catch (error) { console.error("supabase_user_mirror_failed", error); }
     if (!context.env.SESSION_SECRET) return json({ error: "Configuration de session indisponible." }, 503);
     return json({ ok: true, redirect: "/" }, 201, { "Set-Cookie": await createSessionCookie(user, context.env.SESSION_SECRET) });

@@ -5,6 +5,21 @@ const audit = async (context, admin, action, targetId, metadata = {}) => context
 
 export async function onRequestGet(context) {
   if (!await requireAdmin(context)) return json({ error:"Accès réservé à l’administration." },403);
+  const id=cleanText(new URL(context.request.url).searchParams.get("id"),160);
+  if(id){
+    const user=await context.env.DB.prepare("SELECT id,name,email,role,is_banned,avatar_url,bio,preferred_topic,preferred_language,preferred_theme,text_size,display_density,notifications_enabled,terms_accepted_at,sponsored_in_app,sponsored_email,mfa_enabled,created_at FROM users WHERE id=?").bind(id).first();
+    if(!user)return json({error:"Compte introuvable."},404);
+    const [saved,history,searches,subscriptions,reactions,comments,events]=await Promise.all([
+      context.env.DB.prepare("SELECT item_type,title,url,created_at FROM saved_items WHERE user_id=? ORDER BY created_at DESC LIMIT 20").bind(id).all(),
+      context.env.DB.prepare("SELECT h.progress,h.last_read_at,c.title,c.slug FROM reading_history h LEFT JOIN content_items c ON c.id=h.content_id WHERE h.user_id=? ORDER BY h.last_read_at DESC LIMIT 20").bind(id).all(),
+      context.env.DB.prepare("SELECT query,searched_at FROM search_history WHERE user_id=? ORDER BY searched_at DESC LIMIT 20").bind(id).all(),
+      context.env.DB.prepare("SELECT topic,created_at FROM topic_subscriptions WHERE user_id=? ORDER BY created_at DESC LIMIT 20").bind(id).all(),
+      context.env.DB.prepare("SELECT reaction,created_at,c.title,c.slug FROM reactions r LEFT JOIN content_items c ON c.id=r.content_id WHERE r.user_id=? ORDER BY r.created_at DESC LIMIT 20").bind(id).all(),
+      context.env.DB.prepare("SELECT body,status,created_at FROM comments WHERE user_id=? ORDER BY created_at DESC LIMIT 20").bind(id).all(),
+      context.env.DB.prepare("SELECT event,country,suspicious,created_at FROM auth_events WHERE user_id=? ORDER BY created_at DESC LIMIT 20").bind(id).all()
+    ]);
+    return json({user,saved:saved.results||[],history:history.results||[],searches:searches.results||[],subscriptions:subscriptions.results||[],reactions:reactions.results||[],comments:comments.results||[],events:events.results||[]});
+  }
   const result = await context.env.DB.prepare("SELECT id,name,email,role,is_banned,preferred_topic,sponsored_in_app,sponsored_email,created_at FROM users ORDER BY created_at DESC LIMIT 200").all();
   return json({ items:result.results||[] });
 }
