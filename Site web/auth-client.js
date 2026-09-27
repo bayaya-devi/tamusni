@@ -2,15 +2,23 @@
   var form=document.querySelector('[data-auth-form]');
   if(!form)return;
   var message=document.getElementById('form-message');
+  var isSignup=location.pathname.indexOf('/inscription/')===0;
+
   form.querySelectorAll('input[type="password"]').forEach(function(input){var wrap=input.parentElement;wrap.classList.add('password-control');var toggle=document.createElement('button');toggle.type='button';toggle.className='password-toggle';toggle.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>';toggle.setAttribute('aria-label','Afficher le mot de passe');toggle.setAttribute('title','Afficher le mot de passe');toggle.onclick=function(){var visible=input.type==='text';input.type=visible?'password':'text';var label=visible?'Afficher le mot de passe':'Masquer le mot de passe';toggle.setAttribute('aria-label',label);toggle.setAttribute('title',label)};wrap.appendChild(toggle)});
+
   function showMfaStep(text){form.dataset.endpoint='/api/auth/mfa-login';form.innerHTML='<label>Code à six chiffres<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required></label><button type="submit">Vérifier le code</button><p class="message" id="form-message" role="status"></p>';message=form.querySelector('#form-message');message.textContent=text||'Ouvrez votre application d’authentification.';form.querySelector('input').focus()}
-  form.addEventListener('submit',async function(event){
-    event.preventDefault();var button=form.querySelector('button[type="submit"]');button.disabled=true;message.textContent='Traitement…';
-    var body=Object.fromEntries(new FormData(form).entries());
-    try{var response=await window.TamusniApi.request(form.dataset.endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});var result=await response.json();if(!response.ok)throw new Error(result.error||'Opération impossible.');if(result.mfaRequired){showMfaStep(result.message);return}if(form.hasAttribute('data-no-redirect')){message.textContent=result.message||'Demande enregistrée.';button.disabled=false;return}message.textContent='Succès. Redirection…';location.href=result.redirect||'/compte/';}
-    catch(error){message.textContent=error.message||'Opération impossible.';button.disabled=false;}
-  });
+
+  function prepareGoogleSignup(accessToken){
+    history.replaceState(null,'',location.pathname+'?oauth=google');
+    form.dataset.endpoint='/api/auth/oauth-session';
+    var password=form.querySelector('input[name="password"]');if(password){password.required=false;password.closest('label').hidden=true;}
+    var token=document.createElement('input');token.type='hidden';token.name='accessToken';token.value=accessToken;form.appendChild(token);
+    message.textContent='Complétez ces informations pour terminer votre inscription avec Google.';
+  }
+
+  form.addEventListener('submit',async function(event){event.preventDefault();var button=form.querySelector('button[type="submit"]');button.disabled=true;message.textContent='Traitement…';var body=Object.fromEntries(new FormData(form).entries());try{var response=await window.TamusniApi.request(form.dataset.endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});var result=await response.json();if(!response.ok)throw new Error(result.error||'Opération impossible.');if(result.mfaRequired){showMfaStep(result.message);return}if(form.hasAttribute('data-no-redirect')){message.textContent=result.message||'Demande enregistrée.';button.disabled=false;return}message.textContent='Succès. Redirection…';location.href=result.redirect||'/compte/';}catch(error){message.textContent=error.message||'Opération impossible.';button.disabled=false;}});
+
   var oauthBox=document.createElement('div');oauthBox.innerHTML='<div class="oauth-divider">ou</div><div class="oauth-buttons"><button class="oauth-button" type="button" data-provider="google" disabled>Continuer avec Google</button></div>';form.parentNode.appendChild(oauthBox);
-  window.TamusniApi.request('/api/config').then(function(response){return response.json()}).then(function(config){var button=oauthBox.querySelector('[data-provider="google"]');button.disabled=!config.oauth.google;button.onclick=function(){location.href='/api/auth/oauth?provider=google'}}).catch(function(){});
-  var hash=new URLSearchParams(location.hash.slice(1));var accessToken=hash.get('access_token');if(accessToken){history.replaceState(null,'',location.pathname);window.TamusniApi.request('/api/auth/oauth-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accessToken:accessToken})}).then(async function(response){var result=await response.json();if(!response.ok)throw new Error(result.error);if(result.mfaRequired){showMfaStep(result.message);return}location.href=result.redirect}).catch(function(error){message.textContent=error.message})}
+  window.TamusniApi.request('/api/config').then(function(response){return response.json()}).then(function(config){var button=oauthBox.querySelector('[data-provider="google"]');button.disabled=!config.oauth.google;button.onclick=function(){location.href='/api/auth/oauth?provider=google'+(isSignup?'&intent=signup':'')}}).catch(function(){});
+  var hash=new URLSearchParams(location.hash.slice(1));var accessToken=hash.get('access_token');if(accessToken){if(isSignup&&new URLSearchParams(location.search).get('oauth')==='google'){prepareGoogleSignup(accessToken)}else{history.replaceState(null,'',location.pathname);window.TamusniApi.request('/api/auth/oauth-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accessToken:accessToken})}).then(async function(response){var result=await response.json();if(!response.ok)throw new Error(result.error);if(result.mfaRequired){showMfaStep(result.message);return}location.href=result.redirect}).catch(function(error){message.textContent=error.message})}}
 })();
