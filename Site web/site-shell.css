@@ -27,6 +27,7 @@ html[dir="rtl"] .tamusni-rail{right:0;left:auto;border-right:0;border-left:1px s
 html[dir="rtl"] .rail-item::after{right:calc(100% + 10px);left:auto;transform:translateY(-50%) translateX(3px)}
 html[dir="rtl"] .rail-item:hover::after,html[dir="rtl"] .rail-item:focus-visible::after{transform:translateY(-50%) translateX(0)}
 .rail-language{width:44px;height:40px;border:1px solid var(--shell-line);border-radius:8px;background:transparent;color:inherit;text-align:center;font:700 12px "Open Sans",Arial,sans-serif;cursor:pointer}
+.scroll-reveal{opacity:0;transform:translateY(18px);transition:opacity .52s ease var(--reveal-delay,0ms),transform .52s cubic-bezier(.2,.7,.2,1) var(--reveal-delay,0ms)}.scroll-reveal.is-revealed{opacity:1;transform:none}
 
 .article-header,.top,.site-header{display:none!important}
 .global-shell-header{display:block!important}
