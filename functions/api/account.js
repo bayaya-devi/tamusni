@@ -4,12 +4,13 @@ const languages = new Set(["fr", "en", "ar"]);
 const themes = new Set(["auto", "light", "dark"]);
 const textSizes = new Set(["small", "normal", "large"]);
 const densities = new Set(["compact", "comfortable"]);
+const topics = new Set(["Intelligence artificielle", "Innovation", "Robotique", "Cybersécurité", "Espace"]);
 
 export async function onRequestGet(context) {
   const session = await requireSession(context);
   if (!session) return json({ error: "Connexion requise." }, 401);
   const [profile, history, topics, searches, notifications] = await Promise.all([
-    context.env.DB.prepare("SELECT id,name,email,role,avatar_url,bio,preferred_language,preferred_theme,text_size,display_density,notifications_enabled,created_at FROM users WHERE id=?").bind(session.sub).first(),
+    context.env.DB.prepare("SELECT id,name,email,role,avatar_url,bio,preferred_language,preferred_theme,text_size,display_density,notifications_enabled,preferred_topic,sponsored_in_app,sponsored_email,created_at FROM users WHERE id=?").bind(session.sub).first(),
     context.env.DB.prepare("SELECT c.slug,c.type,c.title,c.category,h.progress,h.last_read_at FROM reading_history h JOIN content_items c ON c.id=h.content_id WHERE h.user_id=? ORDER BY h.last_read_at DESC LIMIT 50").bind(session.sub).all(),
     context.env.DB.prepare("SELECT topic,created_at FROM topic_subscriptions WHERE user_id=? ORDER BY topic").bind(session.sub).all(),
     context.env.DB.prepare("SELECT query,searched_at FROM search_history WHERE user_id=? ORDER BY searched_at DESC LIMIT 20").bind(session.sub).all(),
@@ -32,8 +33,11 @@ export async function onRequestPatch(context) {
     const textSize = textSizes.has(body.textSize) ? body.textSize : "normal";
     const density = densities.has(body.density) ? body.density : "comfortable";
     const notifications = body.notifications === false ? 0 : 1;
+    const preferredTopic = topics.has(body.preferredTopic) ? body.preferredTopic : "Intelligence artificielle";
+    const sponsoredInApp = body.sponsoredInApp === true ? 1 : 0;
+    const sponsoredEmail = body.sponsoredEmail === true ? 1 : 0;
     if (name.length < 2 || (avatar && !/^https:\/\//i.test(avatar))) return json({ error: "Profil invalide. La photo doit utiliser une adresse HTTPS." }, 400);
-    await context.env.DB.prepare("UPDATE users SET name=?,bio=?,avatar_url=?,preferred_language=?,preferred_theme=?,text_size=?,display_density=?,notifications_enabled=? WHERE id=?").bind(name, bio, avatar || null, language, theme, textSize, density, notifications, session.sub).run();
+    await context.env.DB.prepare("UPDATE users SET name=?,bio=?,avatar_url=?,preferred_language=?,preferred_theme=?,text_size=?,display_density=?,notifications_enabled=?,preferred_topic=?,sponsored_in_app=?,sponsored_email=? WHERE id=?").bind(name, bio, avatar || null, language, theme, textSize, density, notifications, preferredTopic, sponsoredInApp, sponsoredEmail, session.sub).run();
     return json({ ok: true });
   } catch (error) { return json({ error: error?.message === "PAYLOAD_TOO_LARGE" ? "Requête trop volumineuse." : "Modification impossible." }, 400); }
 }
