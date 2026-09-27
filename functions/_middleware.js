@@ -13,7 +13,7 @@ export async function onRequest(context){
   if(!html.includes('global-shell-header'))html=html.replace(/<body([^>]*)>/i,function(match,attributes){return '<body'+attributes+'>'+header});
   if(!html.includes('tamusni-rail'))html=html.replace(/<body([^>]*)>/i,function(match,attributes){return '<body'+attributes+'>'+(isAdmin?adminRail:rail)});
   if(!html.includes('global-shell-footer'))html=html.replace('</body>',footer+'</body>');
-  if(!html.includes('/site-shell.js'))html=html.replace('</body>','<script src="/site-shell.js" defer></script></body>');
+  if(!isAdmin&&!html.includes('/site-shell.js'))html=html.replace('</body>','<script src="/site-shell.js" defer></script></body>');
   if(isAdmin&&!html.includes('/admin.css'))html=html.replace('</head>','<link rel="stylesheet" href="/admin.css"></head>');
   if(isAdmin&&!html.includes('/admin-app.js'))html=html.replace('</body>','<script src="/admin-app.js" defer></script></body>');
   const headers=new Headers(response.headers);headers.delete('content-length');

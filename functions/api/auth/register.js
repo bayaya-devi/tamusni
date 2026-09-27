@@ -15,6 +15,6 @@ export async function onRequestPost(context) {
     try { await context.env.DB.prepare("INSERT INTO admin_notifications(id,type,title,body,target_url,target_type,target_id,created_at) VALUES(?,?,?,?,?,?,?,?)").bind(crypto.randomUUID(),"account","Nouveau compte","Un compte vient d’être créé.","/admin/#accounts","user",user.id,now).run(); } catch (error) { console.error("admin_notification_failed", error); }
     try { await mirrorUser(context.env, user); } catch (error) { console.error("supabase_user_mirror_failed", error); }
     if (!context.env.SESSION_SECRET) return json({ error: "Configuration de session indisponible." }, 503);
-    return json({ ok: true, redirect: "/" }, 201, { "Set-Cookie": await createSessionCookie(user, context.env.SESSION_SECRET) });
+    return json({ ok: true, redirect: "/mon-espace/" }, 201, { "Set-Cookie": await createSessionCookie(user, context.env.SESSION_SECRET) });
   } catch (error) { console.error("registration_failed", error); return json({ error: error?.message === "PAYLOAD_TOO_LARGE" ? "Requête trop volumineuse." : "Création du compte impossible." }, error?.message === "PAYLOAD_TOO_LARGE" ? 413 : 500); }
 }

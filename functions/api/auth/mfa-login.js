@@ -17,6 +17,6 @@ export async function onRequestPost(context) {
       try{await recordAuthEvent(context,{userId:user.id,email:user.email,event:"mfa_failure"})}catch{} return json({error:"Code incorrect."},401);
     }
     await context.env.DB.prepare("DELETE FROM login_attempts WHERE key_hash=?").bind(attemptKey).run(); try{await recordAuthEvent(context,{userId:user.id,email:user.email,event:"login_success"})}catch{}
-    return json({ok:true,redirect:user.role==="ADMIN"?"/admin/":"/compte/"},200,{"Set-Cookie":await createSessionCookie(user,context.env.SESSION_SECRET)});
+    return json({ok:true,redirect:user.role==="ADMIN"?"/admin/":"/mon-espace/"},200,{"Set-Cookie":await createSessionCookie(user,context.env.SESSION_SECRET)});
   } catch(error){console.error("mfa_login_failed",error);return json({error:"Vérification impossible."},500)}
 }

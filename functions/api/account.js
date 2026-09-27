@@ -1,4 +1,4 @@
-import { cleanText, json, readBody, requireSession, sameOrigin, verifyPassword } from "../_lib/auth.js";
+import { cleanText, hashPassword, json, readBody, requireSession, sameOrigin, validEmail, verifyPassword } from "../_lib/auth.js";
 
 const languages = new Set(["fr", "en", "ar"]);
 const themes = new Set(["auto", "light", "dark"]);
@@ -25,7 +25,15 @@ export async function onRequestPatch(context) {
   if (!session) return json({ error: "Connexion requise." }, 401);
   try {
     const body = await readBody(context.request);
-    const name = cleanText(body.name, 80);
+    if (body.action === "password") {
+      const user = await context.env.DB.prepare("SELECT password_hash FROM users WHERE id=?").bind(session.sub).first();
+      const currentPassword = String(body.currentPassword || ""); const newPassword = String(body.newPassword || "");
+      if (!user || !(await verifyPassword(currentPassword, user.password_hash))) return json({ error: "Mot de passe actuel incorrect." }, 403);
+      if (newPassword.length < 6 || newPassword.length > 128) return json({ error: "Le nouveau mot de passe doit contenir au moins 6 caractères." }, 400);
+      await context.env.DB.prepare("UPDATE users SET password_hash=? WHERE id=?").bind(await hashPassword(newPassword), session.sub).run();
+      return json({ ok: true });
+    }
+    const name = cleanText(body.name, 80); const email = cleanText(body.email, 254).toLowerCase();
     const bio = cleanText(body.bio, 500);
     const avatar = cleanText(body.avatarUrl, 500);
     const language = languages.has(body.language) ? body.language : "fr";
@@ -36,8 +44,8 @@ export async function onRequestPatch(context) {
     const preferredTopic = topics.has(body.preferredTopic) ? body.preferredTopic : "Intelligence artificielle";
     const sponsoredInApp = body.sponsoredInApp === true ? 1 : 0;
     const sponsoredEmail = body.sponsoredEmail === true ? 1 : 0;
-    if (name.length < 2 || (avatar && !/^https:\/\//i.test(avatar))) return json({ error: "Profil invalide. La photo doit utiliser une adresse HTTPS." }, 400);
-    await context.env.DB.prepare("UPDATE users SET name=?,bio=?,avatar_url=?,preferred_language=?,preferred_theme=?,text_size=?,display_density=?,notifications_enabled=?,preferred_topic=?,sponsored_in_app=?,sponsored_email=? WHERE id=?").bind(name, bio, avatar || null, language, theme, textSize, density, notifications, preferredTopic, sponsoredInApp, sponsoredEmail, session.sub).run();
+    if (name.length < 2 || !validEmail(email) || (avatar && !/^https:\/\//i.test(avatar))) return json({ error: "Profil invalide." }, 400);
+    try { await context.env.DB.prepare("UPDATE users SET name=?,email=?,bio=?,avatar_url=?,preferred_language=?,preferred_theme=?,text_size=?,display_density=?,notifications_enabled=?,preferred_topic=?,sponsored_in_app=?,sponsored_email=? WHERE id=?").bind(name, email, bio, avatar || null, language, theme, textSize, density, notifications, preferredTopic, sponsoredInApp, sponsoredEmail, session.sub).run(); } catch { return json({ error: "Cette adresse e-mail est déjà utilisée." }, 409); }
     return json({ ok: true });
   } catch (error) { return json({ error: error?.message === "PAYLOAD_TOO_LARGE" ? "Requête trop volumineuse." : "Modification impossible." }, 400); }
 }
@@ -49,6 +57,7 @@ export async function onRequestDelete(context) {
   const body = await readBody(context.request).catch(() => ({}));
   const user = await context.env.DB.prepare("SELECT password_hash FROM users WHERE id=?").bind(session.sub).first();
   if (!user || !(await verifyPassword(String(body.password || ""), user.password_hash))) return json({ error: "Mot de passe incorrect." }, 403);
+  try { await context.env.DB.prepare("INSERT INTO admin_notifications(id,type,title,body,target_url,target_type,target_id,created_at) VALUES(?,?,?,?,?,?,?,?)").bind(crypto.randomUUID(), "account", "Compte supprimé par son titulaire", "Un utilisateur a confirmé la suppression définitive de son compte.", "/admin/#accounts", "user", session.sub, new Date().toISOString()).run(); } catch (error) { console.error("admin_notification_failed", error); }
   await context.env.DB.prepare("DELETE FROM users WHERE id=? AND role<>'ADMIN'").bind(session.sub).run();
   return json({ ok: true }, 200, { "Set-Cookie": "tamusni_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0" });
 }

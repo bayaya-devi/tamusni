@@ -22,6 +22,6 @@ export async function onRequestPost(context) {
     try { await mirrorUser(context.env, user); } catch (error) { console.error("supabase_oauth_mirror_failed", error); }
     if(user.mfa_enabled)return json({ok:true,mfaRequired:true,message:"Saisissez le code de votre application d’authentification."},202,{"Set-Cookie":await createMfaChallengeCookie(user,context.env.SESSION_SECRET)});
     try{await recordAuthEvent(context,{userId:user.id,email:user.email,event:"oauth_success"})}catch{}
-    return json({ ok: true, redirect: user.role === "ADMIN" ? "/admin/" : "/compte/" }, 200, { "Set-Cookie": await createSessionCookie(user, context.env.SESSION_SECRET) });
+    return json({ ok: true, redirect: user.role === "ADMIN" ? "/admin/" : "/mon-espace/" }, 200, { "Set-Cookie": await createSessionCookie(user, context.env.SESSION_SECRET) });
   } catch (error) { console.error("oauth_session_failed", error); return json({ error: "Connexion sociale impossible." }, 500); }
 }
