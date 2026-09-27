@@ -35,5 +35,6 @@ Pour le compte administrateur local, utiliser `ADMIN_EMAIL` et `ADMIN_PASSWORD` 
 7. Vérifier le domaine expéditeur dans Resend. Le domaine est indispensable pour envoyer au-delà du destinataire de test Resend.
 
 La répartition détaillée et les règles de continuité sont décrites dans [`docs/BACKEND_ARCHITECTURE.md`](docs/BACKEND_ARCHITECTURE.md).
+La frontière stricte entre l'interface publique et l'API est documentée dans [`docs/FRONTEND_BACKEND_BOUNDARY.md`](docs/FRONTEND_BACKEND_BOUNDARY.md).
 
 Ne jamais versionner les secrets.

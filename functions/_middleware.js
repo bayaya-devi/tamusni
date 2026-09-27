@@ -8,6 +8,7 @@ export async function onRequest(context){
   if(!contentType.includes('text/html'))return response;
   let html=await response.text();
   if(!html.includes('/site-shell.css'))html=html.replace('</head>','<link rel="stylesheet" href="/site-shell.css"></head>');
+  if(!html.includes('/api-client.js'))html=html.replace('</head>','<script src="/api-client.js" defer></script></head>');
   if(!html.includes('global-shell-header'))html=html.replace(/<body([^>]*)>/i,function(match,attributes){return '<body'+attributes+'>'+header});
   if(!html.includes('tamusni-rail'))html=html.replace(/<body([^>]*)>/i,function(match,attributes){return '<body'+attributes+'>'+rail});
   if(!html.includes('global-shell-footer'))html=html.replace('</body>',footer+'</body>');

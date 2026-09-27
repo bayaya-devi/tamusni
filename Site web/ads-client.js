@@ -6,7 +6,7 @@
   document.querySelectorAll('[data-ad-slot]').forEach(async function(slot){
     var placement=slot.dataset.adSlot;
     try{
-      var response=await fetch('/api/ads?placement='+encodeURIComponent(placement));var data=await response.json();if(!data.item)return;var item=data.item;
+      var response=await window.TamusniApi.request('/api/ads?placement='+encodeURIComponent(placement));var data=await response.json();if(!data.item)return;var item=data.item;
       slot.innerHTML='';slot.classList.add('has-campaign','ad-type-'+(item.ad_type||'native'));
       if(item.provider==='adsense'){
         function renderAdsense(){slot.innerHTML='';var disclosure=document.createElement('small');disclosure.textContent='Publicité';var ad=document.createElement('ins');ad.className='adsbygoogle';ad.style.display='block';ad.dataset.adClient=item.adsense_client;ad.dataset.adSlot=item.adsense_slot;ad.dataset.adFormat=item.adsense_format||'auto';ad.dataset.fullWidthResponsive='true';slot.append(disclosure,ad);loadAdsenseScript(item.adsense_client);setTimeout(function(){try{(window.adsbygoogle=window.adsbygoogle||[]).push({})}catch(_){}},0)}
