@@ -15,7 +15,7 @@ export async function onRequest(context){
   const contentType=response.headers.get('content-type')||'';
   if(!contentType.includes('text/html'))return response;
   let html=await response.text(); const isAdmin=new URL(context.request.url).pathname.startsWith('/admin');
-  if(!html.includes('/site-shell.css'))html=html.replace('</head>','<link rel="stylesheet" href="/site-shell.css"></head>');
+  if(!html.includes('/site-shell.css'))html=html.replace('</head>','<link rel="stylesheet" href="/site-shell.css?v=visual-1"></head>');
   if(!html.includes('/api-client.js'))html=html.replace('</head>','<script src="/api-client.js" defer></script></head>');
   if(!html.includes('global-shell-header'))html=html.replace(/<body([^>]*)>/i,function(match,attributes){return '<body'+attributes+'>'+header});
   if(!html.includes('tamusni-rail'))html=html.replace(/<body([^>]*)>/i,function(match,attributes){return '<body'+attributes+'>'+(isAdmin?adminRail:rail)});
