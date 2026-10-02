@@ -5,413 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TAMUSNI — Technologies • Sciences • Futur</title>
 <meta name="description" content="TAMUSNI est une revue internationale consacrée à l'intelligence artificielle, l'innovation, les technologies, la robotique, la cybersécurité, le futur, l'espace et les sciences.">
-<style>
-  :root{
-    --ink:#141310;
-    --ink-soft:#2b2924;
-    --paper:#FAF7F0;
-    --paper-alt:#F3EFE5;
-    --line:#DAD5C7;
-    --line-strong:#C7C1AF;
-    --gray:#78746A;
-    --gray-light:#9B968A;
-    --serif:'Fraunces', Georgia, serif;
-    --sans:'Inter', -apple-system, sans-serif;
-    --radius:2px;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  html{-webkit-font-smoothing:antialiased;scroll-behavior:smooth}
-  body{
-    background:var(--paper);
-    color:var(--ink);
-    font-family:var(--sans);
-    font-size:16px;
-    line-height:1.5;
-  }
-  a{color:inherit;text-decoration:none}
-  img{max-width:100%;display:block}
-  button{font-family:var(--sans)}
-  .wrap{max-width:1200px;margin:0 auto;padding:0 28px}
-
-  a:focus-visible,
-  button:focus-visible,
-  input:focus-visible,
-  select:focus-visible{
-    outline:2px solid var(--ink);
-    outline-offset:3px;
-  }
-
-  /* ============ STAR MARK ============ */
-  .star{display:inline-flex;width:13px;height:13px;flex-shrink:0}
-  .star svg{width:100%;height:100%;display:block}
-
-  /* ============ AD SLOT ============ */
-  .ad-slot{
-    border:1px dashed var(--line-strong);
-    color:var(--gray-light);
-    font-size:11px;
-    letter-spacing:.06em;
-    text-transform:uppercase;
-    text-align:center;
-    padding:14px;
-    margin:0 0 8px;
-  }
-  .ad-slot--strip{margin:0}
-  .ad-slot.has-campaign{border-style:solid;text-align:left;text-transform:none;letter-spacing:0;padding:0}
-  .ad-slot.has-campaign a{display:grid;gap:5px;padding:15px;color:inherit;text-decoration:none}
-  .ad-slot.has-campaign strong{font-family:var(--serif);font-size:19px;color:var(--ink)}
-  .ad-slot.has-campaign small{font-size:10px;text-transform:uppercase;letter-spacing:.08em}
-  .ad-slot.has-campaign img{width:100%;max-height:230px;object-fit:cover;margin-bottom:5px}
-  .ad-slot.ad-type-display a{padding:0}.ad-slot.ad-type-display img{margin:0;max-height:320px}.ad-slot.ad-type-display strong,.ad-slot.ad-type-display span{padding-inline:15px}.ad-slot.ad-type-display span{padding-bottom:15px}.ad-slot.ad-type-sponsored{background:color-mix(in srgb,var(--paper-alt) 75%,#DDD0C8)}.ad-slot.ad-type-affiliate{border-style:dotted}.ad-slot.ad-type-house{border-color:var(--ink-soft)}
-  .ad-slot.ad-type-adsense{display:block;min-height:100px;padding:8px}.ad-slot.ad-type-adsense>small{display:block;margin-bottom:5px;color:var(--gray-light)}
-  .empty-editorial{min-height:110px;display:grid;place-items:center;border:1px dashed var(--line);color:var(--gray);font-size:14px;text-align:center;padding:24px}
-
-  /* ============ MASTHEAD ============ */
-  .site-header{border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(250,247,240,.94);backdrop-filter:blur(6px);z-index:100}
-
-  .masthead{padding:26px 0 20px;text-align:center;border-bottom:1px solid var(--line)}
-  .masthead-mark{display:inline-flex;align-items:center;gap:12px;justify-content:center}
-  .masthead-name{
-    font-family:var(--serif);
-    font-weight:600;
-    font-size:38px;
-    letter-spacing:.01em;
-    line-height:1;
-  }
-  .masthead-tagline{
-    display:block;
-    margin-top:9px;
-    font-size:11.5px;
-    letter-spacing:.14em;
-    color:var(--gray);
-  }
-
-  .nav-primary{border-bottom:1px solid var(--line)}
-  .nav-primary-inner{display:flex;align-items:center;justify-content:center;gap:30px;padding:14px 0;flex-wrap:wrap}
-  .nav-primary a{font-size:14px;color:var(--ink-soft);white-space:nowrap;position:relative;padding-bottom:3px}
-  .nav-primary a:hover{color:var(--ink)}
-  .nav-primary a[aria-current="page"]{color:var(--ink)}
-  .nav-primary a[aria-current="page"]::after{content:"";position:absolute;left:0;right:0;bottom:-15px;height:2px;background:var(--ink)}
-
-  .nav-secondary-bar{display:flex;align-items:center;justify-content:space-between;padding:9px 0;gap:20px}
-  .nav-formats{display:flex;gap:20px;overflow-x:auto}
-  .nav-formats a{font-size:12px;color:var(--gray);letter-spacing:.03em;white-space:nowrap}
-  .nav-formats a:hover{color:var(--ink)}
-  .nav-tools{display:flex;align-items:center;gap:16px;flex-shrink:0}
-
-  .icon-btn{background:none;border:none;padding:4px;cursor:pointer;color:var(--gray);display:flex;align-items:center;gap:7px;font-size:12.5px}
-  .icon-btn:hover{color:var(--ink)}
-  .icon-btn svg{width:15px;height:15px}
-
-  .lang-select{border:1px solid var(--line);border-radius:var(--radius);padding:4px 8px;font-size:12.5px;color:var(--ink-soft);background:transparent;font-family:var(--sans);cursor:pointer}
-
-  .menu-toggle{display:none;background:none;border:none;cursor:pointer;padding:4px;color:var(--ink)}
-  .menu-toggle svg{width:20px;height:20px;display:block}
-
-  /* ---- search panel ---- */
-  .search-panel{
-    max-height:0;
-    overflow:hidden;
-    border-bottom:0 solid var(--line);
-    transition:max-height .22s ease;
-  }
-  .search-panel.is-open{max-height:520px;border-bottom-width:1px}
-  .search-panel-inner{display:flex;align-items:center;gap:14px;padding:16px 0;flex-wrap:wrap}
-  .search-panel-inner input{
-    flex:1;
-    border:none;
-    background:transparent;
-    font-family:var(--serif);
-    font-size:20px;
-    color:var(--ink);
-  }
-  .search-panel-inner input:focus{outline:none}
-  .search-panel-inner input::placeholder{color:var(--gray-light)}
-  .search-close{background:none;border:1px solid var(--line);border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--gray);flex-shrink:0}
-  .search-close:hover{color:var(--ink);border-color:var(--ink)}
-  .search-results{flex:0 0 100%;display:grid;gap:0}.search-results:empty{display:none}.search-result{display:flex;justify-content:space-between;gap:18px;padding:10px 0;border-top:1px solid var(--line);font:500 15px/1.3 var(--serif)}.search-result small{font:11px var(--sans);color:var(--gray);white-space:nowrap}.search-empty{padding:10px 0;color:var(--gray);font-size:13px}
-
-  /* ---- mobile menu ---- */
-  .mobile-menu{
-    display:none;
-    max-height:0;
-    overflow:hidden;
-    border-bottom:0 solid var(--line);
-    transition:max-height .25s ease;
-  }
-  .mobile-menu.is-open{max-height:600px;border-bottom-width:1px}
-  .mobile-menu-inner{padding:8px 0 22px}
-  .mobile-menu-group{padding:14px 0;border-top:1px solid var(--line)}
-  .mobile-menu-group:first-child{border-top:none}
-  .mobile-menu-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--gray-light);margin-bottom:10px}
-  .mobile-menu-links{display:flex;flex-direction:column}
-  .mobile-menu-links a{padding:8px 0;font-size:15.5px;font-family:var(--serif)}
-  .mobile-menu-links.is-compact a{font-family:var(--sans);font-size:14px;padding:6px 0;color:var(--gray)}
-  .mobile-menu-tools{display:flex;align-items:center;justify-content:space-between;gap:14px}
-
-  section{padding:52px 0}
-  .section-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:26px;border-bottom:1px solid var(--line);padding-bottom:14px}
-  .section-title{font-family:var(--serif);font-size:22px;font-weight:500}
-  .homepage-rubrique{display:none}
-  .section-link{font-size:13px;color:var(--gray)}
-  .section-link:hover{color:var(--ink)}
-
-  .kicker{font-size:12.5px;color:var(--gray);display:flex;align-items:center;gap:9px;margin-bottom:14px}
-  .kicker .rubrique{color:var(--ink);font-weight:500}
-  .kicker .dot{width:3px;height:3px;background:var(--gray-light);border-radius:50%;flex-shrink:0}
-
-  .media-block{
-    width:100%;
-    background:var(--paper-alt);
-    border:1px solid var(--line);
-    position:relative;
-    display:flex;
-    align-items:flex-end;
-  }
-  .media-block::after{
-    content:"Image";
-    position:absolute;
-    top:10px;
-    left:10px;
-    font-size:10px;
-    letter-spacing:.06em;
-    text-transform:uppercase;
-    color:var(--gray-light);
-    background:var(--paper);
-    border:1px solid var(--line);
-    padding:2px 7px;
-  }
-
-  /* ============ HERO ============ */
-  .hero{padding-top:40px;padding-bottom:40px;border-bottom:1px solid var(--line)}
-  .hero-grid{display:grid;grid-template-columns:1.7fr 1fr;gap:52px;align-items:start}
-  .hero-main .media-block{aspect-ratio:16/10;margin-bottom:22px}
-  .hero-lead-title{font-family:var(--serif);font-size:48px;line-height:1.06;font-weight:500;margin-bottom:16px;letter-spacing:-.005em}
-  .hero-lead-summary{font-size:17.5px;color:var(--ink-soft);line-height:1.55;max-width:54ch;margin-bottom:16px}
-  .hero-lead-byline{font-size:12.5px;color:var(--gray-light)}
-
-  .hero-secondary{border-top:1px solid var(--line);margin-top:32px;padding-top:26px;display:grid;grid-template-columns:130px 1fr;gap:18px}
-  .hero-secondary .media-block{aspect-ratio:4/3}
-  .hero-secondary-title{font-family:var(--serif);font-size:20px;line-height:1.28;font-weight:500}
-
-  .hero-side{display:flex;flex-direction:column}
-  .flash-heading{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--gray);margin-bottom:6px}
-  .flash-list{display:flex;flex-direction:column}
-  .flash-item{display:flex;gap:14px;padding:14px 0;border-top:1px solid var(--line)}
-  .flash-item:first-of-type{border-top:none}
-  .flash-time{font-size:12px;color:var(--gray-light);white-space:nowrap;padding-top:2px;min-width:76px;letter-spacing:.01em}
-  .flash-body .rubrique-tag{font-size:11.5px;color:var(--gray);display:block;margin-bottom:4px}
-  .flash-body h4{font-family:var(--serif);font-size:16.5px;font-weight:500;line-height:1.3}
-  .flash-body h4:hover{text-decoration:underline;text-underline-offset:3px}
-  .live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#b33;margin-right:7px;animation:live-pulse 1.6s infinite}
-  @keyframes live-pulse{50%{opacity:.35}}
-
-  /* ============ POPULAR CAROUSEL ============ */
-  .popular-section{padding:42px 0;border-bottom:1px solid var(--line);overflow:hidden}
-  .popular-heading{display:flex;align-items:end;justify-content:space-between;margin-bottom:26px}.popular-heading h2{font-family:var(--serif);font-size:25px;font-weight:500}
-  .popular-stage{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;align-items:center;min-height:300px;perspective:1100px}
-  .popular-card{display:none;opacity:.68;transform:scale(.91) rotateY(7deg);transform-style:preserve-3d;transition:transform .55s cubic-bezier(.2,.75,.2,1),opacity .55s}.popular-card.is-prev,.popular-card.is-active,.popular-card.is-next{display:block}.popular-card.is-prev{transform:scale(.91) rotateY(8deg)}.popular-card.is-next{transform:scale(.91) rotateY(-8deg)}.popular-card.is-active{opacity:1;transform:scale(1.08) translateZ(34px);z-index:1}.popular-image{display:block;aspect-ratio:16/10;background:linear-gradient(135deg,#7f786c,#343434);margin-bottom:13px;box-shadow:0 16px 36px rgba(20,20,20,.14)}.popular-card:nth-child(2n) .popular-image{background:linear-gradient(135deg,#24303a,#a89f91)}.popular-card:nth-child(3n) .popular-image{background:linear-gradient(135deg,#777f69,#d0c2b7)}.popular-card h3{font:500 18px/1.28 var(--serif)}.popular-card.is-active h3{font-size:21px}.popular-controls{display:flex;justify-content:center;gap:9px;margin-top:22px}.popular-control{width:28px;height:3px;border:0;background:var(--line-strong);padding:0}.popular-control.is-active{background:var(--ink)}
-
-  /* ============ EDITORIAL CARD GRID ============ */
-  .cards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:32px}
-  .cards-grid.two{grid-template-columns:repeat(2,1fr)}
-
-  .editorial-card .media-block{aspect-ratio:4/3;margin-bottom:14px}
-  .editorial-card .card-title{font-family:var(--serif);font-size:19px;font-weight:500;line-height:1.28;margin-bottom:8px}
-  .editorial-card .card-summary{font-size:14px;color:var(--gray);line-height:1.5}
-  .editorial-card:hover .card-title{text-decoration:underline;text-underline-offset:3px}
-
-  .editorial-card--feature{display:grid;grid-template-columns:1.3fr 1fr;gap:28px;align-items:center;margin-bottom:34px;padding-bottom:34px;border-bottom:1px solid var(--line)}
-  .editorial-card--feature .media-block{aspect-ratio:16/11;margin-bottom:0}
-  .editorial-card--feature .card-title{font-size:26px}
-  .editorial-card--feature .card-summary{font-size:15px;max-width:44ch}
-
-  /* ============ INNOVATION ============ */
-  .innovation-section{background:var(--paper-alt);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-  .innovation-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:36px}
-  .innovation-secondary{display:flex;flex-direction:column;gap:22px}
-  .innovation-secondary .editorial-card .media-block{aspect-ratio:16/10}
-  .innovation-secondary .card-title{font-size:16.5px}
-
-  .company-watch{
-    border:1px solid var(--line-strong);
-    padding:18px 20px;
-    margin-top:4px;
-  }
-  .company-watch-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--gray);margin-bottom:8px;display:flex;align-items:center;gap:7px}
-  .company-watch-name{font-family:var(--serif);font-size:18px;font-weight:500;margin-bottom:6px}
-  .company-watch-desc{font-size:13.5px;color:var(--gray);line-height:1.5}
-
-  /* ============ INTELLIGENCE / hierarchy grid ============ */
-  .hierarchy-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:36px}
-  .hierarchy-grid .editorial-card--primary .media-block{aspect-ratio:16/10;margin-bottom:16px}
-  .hierarchy-grid .editorial-card--primary .card-title{font-size:24px}
-  .hierarchy-side{display:flex;flex-direction:column;gap:22px}
-  .hierarchy-side .editorial-card{display:grid;grid-template-columns:96px 1fr;gap:14px}
-  .hierarchy-side .editorial-card .media-block{aspect-ratio:1/1;margin-bottom:0}
-  .hierarchy-side .card-title{font-size:16px}
-
-  /* ============ TECHNOLOGIES contrast pair ============ */
-  .contrast-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:32px}
-  .contrast-grid .editorial-card--major .media-block{aspect-ratio:16/9;margin-bottom:16px}
-  .contrast-grid .editorial-card--major .card-title{font-size:23px}
-  .contrast-grid .editorial-card--minor .media-block{aspect-ratio:4/3}
-
-  /* ============ VISION ============ */
-  .vision-feature{display:grid;grid-template-columns:1.1fr 1fr;gap:44px;align-items:center}
-  .vision-media{
-    position:relative;
-    aspect-ratio:16/9;
-    background:linear-gradient(135deg,#1f1e1a,#3a382f);
-    border:1px solid var(--line);
-  }
-  .vision-play{
-    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-    width:58px;height:58px;border:1.5px solid rgba(250,247,240,.85);border-radius:50%;
-    display:flex;align-items:center;justify-content:center;background:rgba(20,19,16,.15);
-    cursor:pointer;
-  }
-  .vision-play:hover{background:rgba(20,19,16,.3)}
-  .vision-play::after{content:"";border-left:13px solid #FAF7F0;border-top:8px solid transparent;border-bottom:8px solid transparent;margin-left:4px}
-  .vision-duration{
-    position:absolute;bottom:12px;right:12px;
-    background:rgba(20,19,16,.72);color:var(--paper);
-    font-size:11.5px;padding:3px 8px;letter-spacing:.03em;
-  }
-  .vision-text h3{font-family:var(--serif);font-size:29px;font-weight:500;line-height:1.2;margin-bottom:14px}
-  .vision-text p{color:var(--gray);font-size:15px;line-height:1.6;max-width:46ch;margin-bottom:14px}
-  .vision-meta{font-size:12.5px;color:var(--gray-light)}
-
-  /* ============ SECONDARY RUBRIQUES ============ */
-  .rubriques-secondaires{display:grid;grid-template-columns:repeat(5,1fr)}
-  .rubrique-col{padding:0 20px;border-left:1px solid var(--line)}
-  .rubrique-col:first-child{padding-left:0;border-left:none}
-  .rubrique-col h4{font-family:var(--serif);font-size:16.5px;font-weight:500;margin-bottom:14px}
-  .rubrique-col .mini-item{display:block;padding:10px 0;border-top:1px solid var(--line);font-size:13.5px;line-height:1.4;color:var(--ink-soft)}
-  .rubrique-col .mini-item:first-of-type{border-top:none}
-  .rubrique-col .mini-item:hover{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
-
-  /* ============ RENCONTRE ============ */
-  .rencontre{display:grid;grid-template-columns:220px 1fr;gap:40px;align-items:start}
-  .rencontre-photo{width:220px;aspect-ratio:3/4}
-  .rencontre-role{font-size:13px;color:var(--gray);margin-bottom:6px}
-  .rencontre-name{font-family:var(--serif);font-size:27px;font-weight:500;margin-bottom:16px}
-  .rencontre-quote{font-family:var(--serif);font-style:italic;font-size:19px;line-height:1.5;color:var(--ink-soft);max-width:58ch;margin-bottom:18px}
-  .rencontre-cta{font-size:13px;color:var(--ink);border-bottom:1px solid var(--ink);padding-bottom:2px;display:inline-block}
-  .rencontre-cta:hover{color:var(--gray)}
-
-  /* ============ SEMAINE ============ */
-  .semaine-box{border:1px solid var(--line-strong);padding:38px;display:grid;grid-template-columns:1fr 1.6fr;gap:38px}
-  .semaine-edition{font-size:12.5px;color:var(--gray);letter-spacing:.04em;margin-bottom:10px}
-  .semaine-title{font-family:var(--serif);font-size:27px;font-weight:500;line-height:1.2;margin-bottom:16px}
-  .semaine-cta{font-size:13px;color:var(--ink);border-bottom:1px solid var(--ink);padding-bottom:2px;display:inline-block}
-  .semaine-cta:hover{color:var(--gray)}
-  .semaine-list{list-style:none}
-  .semaine-list li{padding:11px 0;border-top:1px solid var(--line);font-size:14.5px;display:flex;gap:12px}
-  .semaine-list li:first-child{border-top:none}
-  .semaine-list .tag{font-size:11.5px;color:var(--gray);min-width:118px;flex-shrink:0}
-
-  /* ============ NEWSLETTER ============ */
-  .newsletter{border-top:1px solid var(--line);padding:44px 0}
-  .newsletter-inner{display:flex;align-items:center;justify-content:space-between;gap:32px;flex-wrap:wrap}
-  .newsletter-text h3{font-family:var(--serif);font-size:20px;font-weight:500;margin-bottom:6px}
-  .newsletter-text p{font-size:14px;color:var(--gray)}
-  .newsletter-form{display:flex;border:1px solid var(--line-strong)}
-  .newsletter-form label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
-  .newsletter-form input{border:none;background:transparent;padding:11px 14px;font-family:var(--sans);font-size:14px;width:240px;color:var(--ink)}
-  .newsletter-form input:focus{outline:none}
-  .newsletter-form button{background:var(--ink);color:var(--paper);border:none;padding:11px 20px;font-size:13.5px;cursor:pointer;white-space:nowrap}
-  .newsletter-form button:hover{background:var(--ink-soft)}
-  .newsletter-success{display:none;font-size:14px;color:var(--ink-soft)}
-  .newsletter-success.is-shown{display:block}
-  .newsletter.is-submitted .newsletter-form{display:none}
-  .favorite-button{margin-top:12px;border:1px solid var(--line-strong);border-radius:999px;background:transparent;color:var(--ink);padding:7px 12px;font:600 11px var(--sans);cursor:pointer;transition:background .18s,color .18s}
-  .favorite-button:hover,.favorite-button.is-saved{background:var(--ink);color:var(--paper)}
-  .reveal-item{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.75,.2,1)}.reveal-item.is-visible{opacity:1;transform:none}
-  .editorial-card,.flash-item,.vision-feature,.company-watch{transform-style:preserve-3d;transition:transform .28s ease,box-shadow .28s ease}.editorial-card:hover,.vision-feature:hover,.company-watch:hover{transform:perspective(900px) rotateX(1.3deg) rotateY(-1.6deg) translateY(-4px);box-shadow:0 18px 38px rgba(30,30,30,.10)}.flash-item:hover{transform:translateX(5px)}
-
-  /* ============ FOOTER ============ */
-  .site-footer{border-top:1px solid var(--line);padding:44px 0 30px}
-  .footer-grid{display:grid;grid-template-columns:1.6fr repeat(3,1fr);gap:32px;margin-bottom:36px}
-  .footer-col h5{font-size:12px;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
-  .footer-col a{display:block;font-size:13.5px;color:var(--ink-soft);padding:5px 0}
-  .footer-col a:hover{color:var(--ink)}
-  .footer-brand-desc{font-size:13px;color:var(--gray);max-width:32ch;line-height:1.6;margin-top:10px}
-  .footer-bottom{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:22px;font-size:12.5px;color:var(--gray-light);flex-wrap:wrap;gap:10px}
-  .footer-legal{display:flex;gap:18px;flex-wrap:wrap}
-
-  .visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-  .skip-link{
-    position:absolute;top:-40px;left:12px;background:var(--ink);color:var(--paper);
-    padding:8px 14px;font-size:13px;z-index:200;transition:top .15s;
-  }
-  .skip-link:focus{top:12px}
-
-  /* ============ RESPONSIVE ============ */
-  @media (max-width:1024px){
-    .hero-grid{grid-template-columns:1fr}
-    .hero-side{border-top:1px solid var(--line);padding-top:26px}
-    .innovation-grid{grid-template-columns:1fr}
-    .hierarchy-grid{grid-template-columns:1fr}
-    .contrast-grid{grid-template-columns:1fr}
-    .editorial-card--feature{grid-template-columns:1fr}
-    .semaine-box{grid-template-columns:1fr}
-  }
-  @media (max-width:920px){
-    .nav-primary,.nav-formats,.nav-tools .lang-select{display:none}
-    .nav-secondary-bar{justify-content:flex-end}
-    .menu-toggle{display:flex}
-    .mobile-menu{display:block}
-    .cards-grid{grid-template-columns:1fr 1fr}
-    .vision-feature{grid-template-columns:1fr}
-    .rubriques-secondaires{grid-template-columns:1fr 1fr;row-gap:28px}
-    .rubrique-col:nth-child(odd){padding-left:0;border-left:none}
-    .rubrique-col:nth-child(even){padding-left:20px}
-    .rencontre{grid-template-columns:1fr}
-    .rencontre-photo{width:140px}
-    .newsletter-inner{flex-direction:column;align-items:flex-start}
-    .footer-grid{grid-template-columns:1fr 1fr}
-    .masthead-name{font-size:32px}
-  }
-  @media (max-width:560px){
-    .hero-lead-title{font-size:32px}
-    .hero-secondary{grid-template-columns:100px 1fr}
-    .cards-grid{grid-template-columns:1fr}
-    .rubriques-secondaires{grid-template-columns:1fr}
-    .rubrique-col{padding-left:0 !important;border-left:none !important}
-    .footer-grid{grid-template-columns:1fr}
-    .semaine-list .tag{min-width:96px}
-    .hierarchy-side .editorial-card{grid-template-columns:76px 1fr}
-    .popular-stage{grid-template-columns:1fr;min-height:280px}.popular-card.is-prev,.popular-card.is-next{display:none}.popular-card.is-active{transform:none}
-  }
-  /* TAMUSNI visual refinement */
-  :root{--ink:#323232;--ink-soft:#323232;--paper:#DDD0C8;--paper-alt:#D4C6BE;--line:#C4C4C4;--line-strong:#aaa;--gray:#656565;--gray-light:#777;--serif:'Playfair Display',Georgia,serif;--sans:'Open Sans',Arial,sans-serif}
-  :root[data-theme="dark"]{--ink:#e7e0dc;--ink-soft:#ddd5d0;--paper:#323232;--paper-alt:#292929;--line:#555;--line-strong:#686868;--gray:#C4C4C4;--gray-light:#aaa}
-  .site-header{background:rgba(221,208,200,.94)}
-  :root[data-theme="dark"] .site-header{background:rgba(50,50,50,.94)}
-  .masthead{padding:18px 0;text-align:left;position:relative;display:flex;align-items:center;justify-content:space-between;gap:20px}.masthead-mark{justify-content:flex-start;margin-inline:8px}.masthead-tagline,.star{display:none}.masthead-name{font-size:36px}
-  .masthead-tools{display:flex;align-items:center;gap:10px}.masthead-tools .icon-btn span{display:none}.masthead-tools .lang-select{width:58px;padding:7px 6px;text-align:center}.masthead-tools .menu-toggle{display:flex;border:1px solid transparent;border-radius:999px;padding:8px;transition:background .18s ease,transform .18s ease}.masthead-tools .menu-toggle:hover{background:rgba(50,50,50,.09);border-color:var(--line);transform:translateY(-1px)}
-  .theme-toggle{display:grid;place-items:center;width:34px;height:34px;border:1px solid var(--line);border-radius:50%;background:transparent;color:var(--ink);cursor:pointer}
-  .mobile-menu{display:block;background:var(--paper)}.mobile-menu.is-open{max-height:720px}.mobile-menu-links{display:grid;grid-template-columns:1fr;gap:2px 24px}.mobile-menu-links a{transition:opacity .18s ease,transform .18s ease}.mobile-menu-links a:hover{opacity:.58;transform:translateX(3px)}
-  .site-main>*,.site-footer{animation:tamusni-reveal .6s both}@keyframes tamusni-reveal{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-  .social-links{display:flex;flex-wrap:wrap;gap:7px 12px}.social-links a{border-bottom:1px solid transparent}.social-links a:hover{border-color:var(--ink)}
-  .menu-auth{display:flex;gap:10px;padding-top:14px}.menu-auth a{padding:7px 11px;border:1px solid var(--line);border-radius:999px;font:600 11px var(--sans);letter-spacing:.03em}.menu-auth a:hover{background:var(--ink);color:var(--paper)}
-  .site-footer{background:#323232;color:#DDD0C8;border-top-color:#484848}.site-footer .footer-col a,.site-footer .footer-brand-desc,.site-footer .footer-bottom,.site-footer .footer-col h5{color:#C4C4C4}.site-footer .masthead-name{color:#DDD0C8}.site-footer .footer-bottom{border-top-color:#555}.site-footer .social-links a:hover{border-color:#DDD0C8;color:#DDD0C8}
-  .site-footer .footer-grid{grid-template-columns:1fr}
-  @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}.reveal-item{opacity:1!important;transform:none!important}}
-  @media(max-width:920px){.masthead{padding:16px 28px}}@media(max-width:560px){.masthead{padding:14px 16px}.masthead-name{font-size:30px}.masthead-tools{gap:5px}.mobile-menu-links{grid-template-columns:1fr 1fr}}
-  @media(max-width:560px){
-    body{overflow-x:hidden}.wrap{width:min(100% - 28px,1180px)}section{padding:38px 0}.masthead-tools .lang-select{width:48px}.masthead-tools .icon-btn,.theme-toggle,.masthead-tools .menu-toggle{min-width:40px;min-height:40px}.search-panel-inner{padding:12px 14px}.search-panel input{font-size:16px}.mobile-menu-inner{padding-inline:14px}.mobile-menu-links a{padding:11px 0}.menu-auth a{padding:10px 13px}.hero{padding-top:28px}.hero-grid{gap:30px}.hero-main .media-block{aspect-ratio:4/3}.hero-secondary{margin-top:25px}.popular-heading{align-items:start;gap:12px}.popular-heading p{max-width:18ch;text-align:right}.newsletter-form{width:100%}.newsletter-form input{width:100%;min-width:0}.newsletter-form button{padding-inline:14px}.footer-bottom{align-items:flex-start;gap:12px}.footer-legal{display:flex;flex-wrap:wrap;gap:8px 14px}.ad-slot{min-height:80px}
-  }
-  @media(max-width:380px){.masthead-name{font-size:26px}.masthead-tools{gap:2px}.masthead-tools .icon-btn{display:none}.mobile-menu-links{grid-template-columns:1fr}.newsletter-form{display:grid}.popular-heading p{display:none}}
-</style>
-<style>
-  .homepage-rubrique,.homepage-video-section,.homepage-focus-section,.homepage-interviews-section,.homepage-weekly-section{display:none}
-  .mobile-menu{position:fixed;z-index:910;top:0;right:0;bottom:0;width:min(360px,88vw);max-height:none!important;height:100vh;padding:82px 28px 28px;background:var(--paper);border-left:1px solid var(--line);box-shadow:-20px 0 50px rgba(0,0,0,.14);transform:translateX(105%);transition:transform .22s ease;overflow:auto}
-  .mobile-menu.is-open{transform:translateX(0)}
-  .masthead{padding:20px 0 16px}.masthead-name{font-size:32px}.hero-main .media-block,.hero-secondary .media-block{max-height:360px}.popular-image{max-height:220px}.site-footer{padding:28px 0 20px}.site-footer .footer-grid{margin-bottom:22px}
-</style>
-<link rel="stylesheet" href="/site-shell.css?v=visual-1">
+<link rel="stylesheet" href="/home.css?v=design-2">
 </head>
 <body>
 
@@ -421,7 +15,7 @@
 
   <!-- MASTHEAD -->
   <div class="masthead wrap">
-    <a href="#" class="masthead-mark" aria-label="TAMUSNI — Accueil">
+    <a href="/" class="masthead-mark" aria-label="TAMUSNI — Accueil">
       <span class="star" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M12 1 L13.4 10.6 L23 12 L13.4 13.4 L12 23 L10.6 13.4 L1 12 L10.6 10.6 Z" fill="#141310"/>
@@ -493,12 +87,12 @@
             <span>24 septembre 2026</span>
           </div>
           <div class="media-block" role="img" aria-label="Illustration : modèles de raisonnement"></div>
-          <a href="#">
+          <a href="/recherche/">
             <h1 class="hero-lead-title">SEMAINE — Stockage, règles de l’IA et responsabilité orbitale</h1>
           </a>
           <p class="hero-lead-summary">Trois dossiers vérifiables pour suivre l’innovation sans confondre annonce, obligation réglementaire et résultat scientifique.</p>
           <span class="hero-lead-byline">Rédiger par IA · Sources vérifiées</span>
-          <a class="hero-lead-cta" href="#">Lire l’article</a>
+          <a class="hero-lead-cta" href="/recherche/">Lire l’article</a>
         </article>
 
         <article class="hero-secondary">
@@ -571,28 +165,28 @@
     <div class="wrap">
       <div class="section-head">
         <span class="section-title">Innovation</span>
-        <a href="#" class="section-link">Toute la rubrique</a>
+        <a href="/recherche/" class="section-link">Toute la rubrique</a>
       </div>
       <div class="innovation-grid">
         <article class="editorial-card editorial-card--feature" style="margin-bottom:0;padding-bottom:0;border-bottom:none">
-          <a href="#" class="media-block" role="img" aria-label="Illustration : stockage d'énergie de quartier"></a>
+          <a href="/recherche/" class="media-block" role="img" aria-label="Illustration : stockage d'énergie de quartier"></a>
           <div>
             <div class="kicker"><span class="rubrique">Focus</span><span class="dot"></span><span>6 sept.</span></div>
-            <a href="#"><h3 class="card-title">Cette jeune pousse veut réinventer le stockage d'énergie à l'échelle d'un quartier</h3></a>
+            <a href="/recherche/"><h3 class="card-title">Cette jeune pousse veut réinventer le stockage d'énergie à l'échelle d'un quartier</h3></a>
             <p class="card-summary">Un pari technique risqué, mais un modèle économique qui pourrait changer la donne pour les réseaux locaux.</p>
           </div>
         </article>
 
         <div class="innovation-secondary">
           <article class="editorial-card">
-            <a href="#" class="media-block" role="img" aria-label="Illustration : fonds semi-conducteurs"></a>
+            <a href="/recherche/" class="media-block" role="img" aria-label="Illustration : fonds semi-conducteurs"></a>
             <div class="kicker"><span class="rubrique">Flash</span><span class="dot"></span><span>5 sept.</span></div>
-            <a href="#"><h3 class="card-title">Un fonds européen lève 400 millions pour l'industrie des semi-conducteurs</h3></a>
+            <a href="/recherche/"><h3 class="card-title">Un fonds européen lève 400 millions pour l'industrie des semi-conducteurs</h3></a>
           </article>
           <article class="editorial-card">
-            <a href="#" class="media-block" role="img" aria-label="Illustration : laboratoires de matériaux"></a>
+            <a href="/recherche/" class="media-block" role="img" aria-label="Illustration : laboratoires de matériaux"></a>
             <div class="kicker"><span class="rubrique">Focus</span><span class="dot"></span><span>4 sept.</span></div>
-            <a href="#"><h3 class="card-title">Pourquoi les grandes entreprises rachètent en silence des laboratoires de matériaux</h3></a>
+            <a href="/recherche/"><h3 class="card-title">Pourquoi les grandes entreprises rachètent en silence des laboratoires de matériaux</h3></a>
           </article>
           <div class="company-watch">
             <div class="company-watch-label">
@@ -612,28 +206,28 @@
     <div class="wrap">
       <div class="section-head">
         <span class="section-title">Intelligence</span>
-        <a href="#" class="section-link">Toute la rubrique</a>
+        <a href="/recherche/" class="section-link">Toute la rubrique</a>
       </div>
       <div class="hierarchy-grid">
         <article class="editorial-card editorial-card--primary">
-          <a href="#" class="media-block" role="img" aria-label="Illustration : modèles de raisonnement"></a>
+          <a href="/recherche/" class="media-block" role="img" aria-label="Illustration : modèles de raisonnement"></a>
           <div class="kicker"><span class="rubrique">Focus</span><span class="dot"></span><span>7 sept.</span></div>
-          <a href="#"><h3 class="card-title">Comment les modèles de raisonnement changent la manière dont les machines résolvent les problèmes</h3></a>
+          <a href="/recherche/"><h3 class="card-title">Comment les modèles de raisonnement changent la manière dont les machines résolvent les problèmes</h3></a>
           <p class="card-summary">Ce que cela change concrètement, et ce qui reste à prouver.</p>
         </article>
         <div class="hierarchy-side">
           <article class="editorial-card">
-            <a href="#" class="media-block" role="img" aria-label="Illustration : jeu de données ouvert"></a>
+            <a href="/recherche/" class="media-block" role="img" aria-label="Illustration : jeu de données ouvert"></a>
             <div>
               <div class="kicker" style="margin-bottom:6px"><span class="rubrique">Flash</span><span class="dot"></span><span>6 sept.</span></div>
-              <a href="#"><h3 class="card-title">Un laboratoire public publie le plus grand jeu de données d'entraînement en libre accès</h3></a>
+              <a href="/recherche/"><h3 class="card-title">Un laboratoire public publie le plus grand jeu de données d'entraînement en libre accès</h3></a>
             </div>
           </article>
           <article class="editorial-card">
-            <a href="#" class="media-block" role="img" aria-label="Illustration : audits de fiabilité"></a>
+            <a href="/recherche/" class="media-block" role="img" aria-label="Illustration : audits de fiabilité"></a>
             <div>
               <div class="kicker" style="margin-bottom:6px"><span class="rubrique">Focus</span><span class="dot"></span><span>3 sept.</span></div>
-              <a href="#"><h3 class="card-title">Ce que révèlent les premiers audits indépendants sur la fiabilité des assistants de code</h3></a>
+              <a href="/recherche/"><h3 class="card-title">Ce que révèlent les premiers audits indépendants sur la fiabilité des assistants de code</h3></a>
             </div>
           </article>
         </div>
@@ -646,19 +240,19 @@
     <div class="wrap">
       <div class="section-head">
         <span class="section-title">Technologies</span>
-        <a href="#" class="section-link">Toute la rubrique</a>
+        <a href="/recherche/" class="section-link">Toute la rubrique</a>
       </div>
       <div class="contrast-grid">
         <article class="editorial-card editorial-card--major">
-          <a href="#" class="media-block" role="img" aria-label="Illustration : puces basse consommation"></a>
+          <a href="/recherche/" class="media-block" role="img" aria-label="Illustration : puces basse consommation"></a>
           <div class="kicker"><span class="rubrique">Focus</span><span class="dot"></span><span>7 sept.</span></div>
-          <a href="#"><h3 class="card-title">L'informatique de bord fait un bond : ce que permettent vraiment les nouvelles puces basse consommation</h3></a>
+          <a href="/recherche/"><h3 class="card-title">L'informatique de bord fait un bond : ce que permettent vraiment les nouvelles puces basse consommation</h3></a>
           <p class="card-summary">Une avancée discrète qui redessine l'équilibre entre cloud et calcul local.</p>
         </article>
         <article class="editorial-card editorial-card--minor">
-          <a href="#" class="media-block" role="img" aria-label="Illustration : connectivité basse latence"></a>
+          <a href="/recherche/" class="media-block" role="img" aria-label="Illustration : connectivité basse latence"></a>
           <div class="kicker"><span class="rubrique">Flash</span><span class="dot"></span><span>6 sept.</span></div>
-          <a href="#"><h3 class="card-title">Un nouveau standard promet de diviser par trois la latence des objets connectés</h3></a>
+          <a href="/recherche/"><h3 class="card-title">Un nouveau standard promet de diviser par trois la latence des objets connectés</h3></a>
         </article>
       </div>
     </div>
@@ -683,27 +277,27 @@
     <div class="wrap">
       <div class="section-head">
         <span class="section-title">Focus</span>
-        <a href="#" class="section-link">Tous les articles</a>
+        <a href="/recherche/" class="section-link">Tous les articles</a>
       </div>
       <article class="editorial-card editorial-card--feature">
-        <a href="#" class="media-block" role="img" aria-label="Illustration : cellule de réponse à incident"></a>
+        <a href="/recherche/" class="media-block" role="img" aria-label="Illustration : cellule de réponse à incident"></a>
         <div>
           <div class="kicker"><span class="rubrique">Cybersécurité</span><span class="dot"></span><span>7 sept.</span></div>
-          <a href="#"><h3 class="card-title">Dans les coulisses d'une cellule de réponse à incident, quand chaque minute compte</h3></a>
+          <a href="/recherche/"><h3 class="card-title">Dans les coulisses d'une cellule de réponse à incident, quand chaque minute compte</h3></a>
           <p class="card-summary">Récit d'une intervention, des premiers signaux à la résolution.</p>
         </div>
       </article>
       <div class="cards-grid two">
         <article class="editorial-card">
-          <a href="#" class="media-block" role="img" aria-label="Illustration : satellites en désorbitation"></a>
+          <a href="/recherche/" class="media-block" role="img" aria-label="Illustration : satellites en désorbitation"></a>
           <div class="kicker"><span class="rubrique">Espace</span><span class="dot"></span><span>5 sept.</span></div>
-          <a href="#"><h3 class="card-title">Pourquoi la prochaine génération de satellites sera pensée pour se désorbiter seule</h3></a>
+          <a href="/recherche/"><h3 class="card-title">Pourquoi la prochaine génération de satellites sera pensée pour se désorbiter seule</h3></a>
           <p class="card-summary">Un enjeu technique devenu une urgence réglementaire.</p>
         </article>
         <article class="editorial-card">
-          <a href="#" class="media-block" role="img" aria-label="Illustration : fusion à confinement inertiel"></a>
+          <a href="/recherche/" class="media-block" role="img" aria-label="Illustration : fusion à confinement inertiel"></a>
           <div class="kicker"><span class="rubrique">Sciences</span><span class="dot"></span><span>2 sept.</span></div>
-          <a href="#"><h3 class="card-title">Ce que change vraiment la fusion nucléaire à confinement inertiel, expliqué simplement</h3></a>
+          <a href="/recherche/"><h3 class="card-title">Ce que change vraiment la fusion nucléaire à confinement inertiel, expliqué simplement</h3></a>
           <p class="card-summary">Entre percée scientifique réelle et attentes disproportionnées.</p>
         </article>
       </div>
@@ -716,28 +310,28 @@
       <div class="rubriques-secondaires">
         <div class="rubrique-col">
           <h4>Robotique</h4>
-          <a href="#" class="mini-item">Un exosquelette léger conçu pour les métiers du soin fait ses premiers essais cliniques</a>
-          <a href="#" class="mini-item">Ces robots agricoles autonomes désherbent sans pesticide</a>
+          <a href="/recherche/" class="mini-item">Un exosquelette léger conçu pour les métiers du soin fait ses premiers essais cliniques</a>
+          <a href="/recherche/" class="mini-item">Ces robots agricoles autonomes désherbent sans pesticide</a>
         </div>
         <div class="rubrique-col">
           <h4>Cybersécurité</h4>
-          <a href="#" class="mini-item">Une faille critique touche un protocole utilisé par des millions d'appareils connectés</a>
-          <a href="#" class="mini-item">Comment une petite équipe a détecté une attaque avant qu'elle ne se propage</a>
+          <a href="/recherche/" class="mini-item">Une faille critique touche un protocole utilisé par des millions d'appareils connectés</a>
+          <a href="/recherche/" class="mini-item">Comment une petite équipe a détecté une attaque avant qu'elle ne se propage</a>
         </div>
         <div class="rubrique-col">
           <h4>Futur</h4>
-          <a href="#" class="mini-item">Ce que les urbanistes anticipent pour les villes de 2050</a>
-          <a href="#" class="mini-item">Trois scénarios pour l'avenir du travail à l'ère des agents autonomes</a>
+          <a href="/recherche/" class="mini-item">Ce que les urbanistes anticipent pour les villes de 2050</a>
+          <a href="/recherche/" class="mini-item">Trois scénarios pour l'avenir du travail à l'ère des agents autonomes</a>
         </div>
         <div class="rubrique-col">
           <h4>Espace</h4>
-          <a href="#" class="mini-item">Un nouveau lanceur réutilisable termine son premier vol d'essai</a>
-          <a href="#" class="mini-item">La prochaine mission lunaire habitée dévoile son calendrier</a>
+          <a href="/recherche/" class="mini-item">Un nouveau lanceur réutilisable termine son premier vol d'essai</a>
+          <a href="/recherche/" class="mini-item">La prochaine mission lunaire habitée dévoile son calendrier</a>
         </div>
         <div class="rubrique-col">
           <h4>Sciences</h4>
-          <a href="#" class="mini-item">Un signal quantique mesuré pour la première fois à température ambiante</a>
-          <a href="#" class="mini-item">Ce que cette découverte change pour la recherche fondamentale</a>
+          <a href="/recherche/" class="mini-item">Un signal quantique mesuré pour la première fois à température ambiante</a>
+          <a href="/recherche/" class="mini-item">Ce que cette découverte change pour la recherche fondamentale</a>
         </div>
       </div>
     </div>
@@ -756,13 +350,13 @@
     <div class="wrap">
       <div class="section-head">
         <span class="section-title">Semaine</span>
-        <a href="#" class="section-link">Toutes les éditions</a>
+        <a href="/recherche/" class="section-link">Toutes les éditions</a>
       </div>
       <div class="semaine-box">
         <div>
           <div class="semaine-edition">Édition du 1 — 7 septembre 2026</div>
           <h3 class="semaine-title">Ce qu'il fallait retenir cette semaine</h3>
-          <a href="#" class="semaine-cta">Ouvrir l'édition complète</a>
+          <a href="/recherche/" class="semaine-cta">Ouvrir l'édition complète</a>
         </div>
         <ul class="semaine-list">
           <li><span class="tag">Innovation</span><span>Un fonds européen lève 400 millions pour les semi-conducteurs</span></li>
@@ -799,7 +393,6 @@
     <div class="footer-grid">
       <div class="footer-col">
         <h5>Suivre TAMUSNI</h5>
-        <div class="social-links"><a href="#" aria-label="X">X</a><a href="#" aria-label="YouTube">YouTube</a><a href="#" aria-label="Instagram">Instagram</a><a href="#" aria-label="TikTok">TikTok</a><a href="#" aria-label="Facebook">Facebook</a></div>
       </div>
     </div>
     <div class="footer-bottom">
@@ -922,7 +515,7 @@
   }).catch(function(){});
 
   fetch('/api/live').then(function(response){return response.ok?response.json():Promise.reject()}).then(function(data){
-    if(!data.items||!data.items.length)return;var feed=document.getElementById('live-feed');feed.innerHTML='';data.items.slice(0,4).forEach(function(item){var article=document.createElement('article');article.className='flash-item';var time=document.createElement('span');time.className='flash-time';time.textContent=item.display_time;var body=document.createElement('div');body.className='flash-body';var category=document.createElement('span');category.className='rubrique-tag';category.textContent=item.category;var link=document.createElement('a');link.href=item.url||'#';var title=document.createElement('h4');title.textContent=item.title;link.appendChild(title);body.append(category,link);article.append(time,body);feed.appendChild(article)})
+    if(!data.items||!data.items.length)return;var feed=document.getElementById('live-feed');feed.innerHTML='';data.items.slice(0,4).forEach(function(item){var article=document.createElement('article');article.className='flash-item';var time=document.createElement('span');time.className='flash-time';time.textContent=item.display_time;var body=document.createElement('div');body.className='flash-body';var category=document.createElement('span');category.className='rubrique-tag';category.textContent=item.category;var link=document.createElement('a');link.href=item.url||'/recherche/';var title=document.createElement('h4');title.textContent=item.title;link.appendChild(title);body.append(category,link);article.append(time,body);feed.appendChild(article)})
   }).catch(function(){});
 
   async function initializeAccount(){

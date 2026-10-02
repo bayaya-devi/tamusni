@@ -1,0 +1,43 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Sans+Tifinagh:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap");
+
+:root {
+  color-scheme: light;
+  --tm-night: #111a2e;
+  --tm-night-elevated: #17233b;
+  --tm-blue: #2563eb;
+  --tm-blue-hover: #3b76f0;
+  --tm-white: #f8fafc;
+  --tm-silver: #bfc7d5;
+  --tm-silver-light: #e2e7ee;
+  --tm-silver-dark: #6b778b;
+  --tm-ink: #111a2e;
+  --tm-muted: #5c6678;
+  --tm-surface: #ffffff;
+  --tm-surface-soft: #f1f5f9;
+  --tm-surface-glass: rgba(255, 255, 255, .72);
+  --tm-border: #e2e7ee;
+  --tm-border-strong: #bfc7d5;
+  --tm-shadow: 0 8px 30px rgba(17, 26, 46, .08);
+  --tm-shadow-float: 0 14px 38px rgba(17, 26, 46, .13);
+  --tm-radius-sm: 8px;
+  --tm-radius: 12px;
+  --tm-radius-lg: 20px;
+  --tm-font-display: "Space Grotesk", "Noto Sans Arabic", "Noto Sans Tifinagh", "Noto Sans SC", sans-serif;
+  --tm-font-body: "Inter", "Noto Sans Arabic", "Noto Sans Tifinagh", "Noto Sans SC", sans-serif;
+  --tm-header-height: 58px;
+  --tm-footer-height: 76px;
+  --tm-rail-width: 68px;
+  --tm-ease: cubic-bezier(.2, .75, .2, 1);
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --tm-ink: #f8fafc;
+  --tm-muted: #bfc7d5;
+  --tm-surface: #111a2e;
+  --tm-surface-soft: #17233b;
+  --tm-surface-glass: rgba(23, 35, 59, .72);
+  --tm-border: rgba(191, 199, 213, .16);
+  --tm-border-strong: rgba(191, 199, 213, .4);
+  --tm-shadow: 0 10px 30px rgba(0, 0, 0, .18);
+}
