@@ -15,7 +15,7 @@ export async function sendEmail(env, { to, subject, html, text }) {
     const response = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: { "api-key": env.BREVO_API_KEY, "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({ sender: { name: env.BREVO_SENDER_NAME || "TAMUSNI", email: env.BREVO_SENDER_EMAIL || "aetbconseil@gmail.com" }, to: [{ email: to }], subject, htmlContent: html, textContent: text || "" })
+      body: JSON.stringify({ sender: { name: env.BREVO_SENDER_NAME || "TAMUSNI", email: env.BREVO_SENDER_EMAIL || "aetbconseil@gmail.com" }, replyTo: { name: "TAMUSNI", email: "aetbconseil@gmail.com" }, to: [{ email: to }], subject, htmlContent: html, textContent: text || "" })
     });
     if (!response.ok) throw new Error("EMAIL_REJECTED");
     return "brevo";
@@ -30,7 +30,7 @@ export async function sendEmail(env, { to, subject, html, text }) {
 }
 
 export function emailLayout(title, content) {
-  return `<!doctype html><html lang="fr"><body style="margin:0;background:#f4f0ed;color:#323232;font-family:Arial,sans-serif"><main style="max-width:560px;margin:32px auto;background:#fff;padding:36px;border:1px solid #ddd0c8"><p style="font-family:Georgia,serif;font-size:24px;margin:0 0 24px">TAMUSNI</p><h1 style="font-size:22px">${escapeHtml(title)}</h1>${content}<p style="font-size:12px;color:#666;margin-top:28px">TAMUSNI · A&amp;B TECHNOLOGIES</p></main></body></html>`;
+  return `<!doctype html><html lang="fr"><body style="margin:0;background:#f8fafc;color:#111a2e;font-family:Arial,sans-serif"><main style="max-width:560px;margin:32px auto;background:#fff;padding:36px;border:1px solid #dce1e8;border-radius:16px"><p style="font-size:24px;font-weight:700;letter-spacing:-.03em;margin:0 0 24px;color:#111a2e">TAMUSNI</p><h1 style="font-size:22px;color:#111a2e">${escapeHtml(title)}</h1>${content}<p style="font-size:12px;color:#5c6678;margin-top:28px;border-top:1px solid #dce1e8;padding-top:18px">TAMUSNI · A&amp;B TECHNOLOGIES</p></main></body></html>`;
 }
 
 export { escapeHtml };

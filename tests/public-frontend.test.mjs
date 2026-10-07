@@ -1,6 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { publicResponse } from '../functions/_lib/public-frontend.js';
+import { emailLayout } from '../functions/_lib/email.js';
+
+test('transactional emails use the new brand palette', () => {
+  const html=emailLayout('Confirmer mon adresse','<p>Essai</p>');
+  assert.match(html, /#111a2e/);
+  assert.match(html, /#f8fafc/);
+  assert.doesNotMatch(html, /#ddd0c8|#f4f0ed/i);
+});
 
 const sample = {id:'content-1',slug:'essai-source',type:'article',title:'Une actualité vérifiée',excerpt:'Un résumé sourcé.',body:'Un contenu sourcé.',summary:'',category:'Intelligence',author_name:'Rédigé par IA',cover_url:'/images/editorial-ai-space.svg',published_at:'2026-10-06T12:00:00.000Z',views:10,likes:2};
 function context(path) {

@@ -1,0 +1,19 @@
+-- Restore the original source citations for published editorial items.
+-- These citations were present in earlier migrations but are absent from the
+-- current production source table. Existing source rows are left untouched.
+INSERT OR IGNORE INTO content_sources(id,content_id,label,url,publisher,published_at,created_at) VALUES
+('source-ai-act','content-ai-act','Cadre réglementaire européen sur l’IA','https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai','Commission européenne','2026-08-02','2026-09-24T08:00:00Z'),
+('source-battery','content-battery','Global Energy Review 2026 — Battery storage','https://www.iea.org/reports/global-energy-review-2026/technology-battery-storage','Agence internationale de l’énergie','2026-01-01','2026-09-24T08:00:00Z'),
+('source-debris','content-debris','Process for Limiting Orbital Debris','https://standards.nasa.gov/node/272','NASA','2021-11-05','2026-09-24T08:00:00Z'),
+('src-esa-mistral','news-esa-mistral-2026','ESA and Mistral strengthen cooperation on artificial intelligence','https://www.esa.int/Newsroom/Press_Releases/ESA_and_Mistral_strengthen_cooperation_on_artificial_intelligence','Agence spatiale européenne','2026-09-23','2026-09-24T09:00:00Z'),
+('src-enisa-2026','news-enisa-2026','ENISA Threat Landscape 2026','https://www.enisa.europa.eu/publications/enisa-threat-landscape-2026','ENISA','2026-09-22','2026-09-23T08:30:00Z'),
+('src-webb-ic348','news-webb-ic348','Webb reveals stunning panorama of star formation','https://www.esa.int/Science_Exploration/Space_Science/Webb/Webb_reveals_stunning_panorama_of_star_formation','Agence spatiale européenne','2026-09-15','2026-09-16T10:00:00Z'),
+('src-iea-lithium','news-batteries-iea','The rise of lithium-ion batteries','https://www.iea.org/commentaries/the-rise-of-lithium-ion-batteries','Agence internationale de l’énergie','2026-09-07','2026-09-08T08:00:00Z'),
+('src-nasa-terran','news-nasa-terran-r','NASA Adds Relativity Space’s Terran R to Launch Services Contract','https://www.nasa.gov/news-release/nasa-adds-relativity-spaces-terran-r-to-launch-services-contract/','NASA','2026-09-09','2026-09-10T08:00:00Z'),
+('src-mars-network-nasa','news-mars-network-2026','NASA Selects Blue Origin as Mars Telecommunications Network Provider','https://www.nasa.gov/news-release/nasa-selects-blue-origin-as-mars-telecommunications-network-provider/','NASA','2026-09-01','2026-09-25T12:00:00Z'),
+('src-sarsat-nasa','news-sarsat-rescue-2026','NASA’s Life-Saving Technology Where Cell Signals Can’t Go','https://www.nasa.gov/technology/tech-transfer-spinoffs/nasas-life-saving-technology-where-cell-signals-cant-go/','NASA','2026-09-10','2026-09-25T10:00:00Z'),
+('src-ai-energy-iea','news-ai-electricity-factcheck-2026','Key Questions on Energy and AI — Executive summary','https://www.iea.org/reports/key-questions-on-energy-and-ai/executive-summary','Agence internationale de l’énergie','2026-04-16','2026-09-25T08:00:00Z'),
+('src-ram-starlink-africa-intelligence','news-ram-starlink-wifi-2026','Royal Air Maroc hook-up with Starlink Wi-Fi to go ahead','https://www.africaintelligence.com/north-africa/2026/08/18/royal-air-maroc-hook-up-with-starlink-wi-fi-to-go-ahead,110861011-art','Africa Intelligence','2026-08-18','2026-09-25T14:00:00Z'),
+('src-ram-starlink-assahifa','news-ram-starlink-wifi-2026','Royal Air Maroc Still Seeking In-Flight Internet Provider, No Final Starlink Deal','https://en.assahifa.com/economy/royal-air-maroc-starlink/','Assahifa English','2026-08-18','2026-09-25T14:00:00Z'),
+('src-ram-starlink-medias24','news-ram-starlink-wifi-2026','Le Wi-Fi Starlink à bord des avions de la RAM en 2027','https://medias24.com/2026/08/19/le-wi-fi-starlink-a-bord-des-avions-de-la-ram-en-2027-1741761/','Médias24','2026-08-19','2026-09-25T14:00:00Z'),
+('src-ram-starlink-official','news-ram-starlink-wifi-2026','Starlink Aviation','https://www.starlink.com/business/aviation','Starlink',NULL,'2026-09-25T14:00:00Z');

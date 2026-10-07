@@ -48,7 +48,24 @@ test('article sources and actions render', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await expect(page.locator('.article-head .eyebrow')).toHaveText('Technologies');
   await expect(page.getByRole('heading', { name: 'Sources' })).toBeVisible();
+  await expect(page.locator('.article-sources a').first()).toHaveAttribute('href', /^https:\/\//);
   await expect(page.getByRole('button', { name: 'Partager' })).toBeVisible();
+});
+
+test('like and save buttons settle after an asynchronous response', async ({ page }) => {
+  await page.route('**/api/content/esa-mistral-ia-spatial-europeenne', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ views: 3, likes: 2, liked: true }) });
+  });
+  await page.route('**/api/favorites', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) });
+  });
+  await page.goto('/fr/articles/esa-mistral-ia-spatial-europeenne/');
+  await page.evaluate(() => { document.body.dataset.auth = 'true'; });
+  await page.getByRole('button', { name: 'J’aime' }).click();
+  await expect(page.getByRole('button', { name: 'J’aime' })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'Enregistrer' }).click();
+  await expect(page.getByRole('button', { name: 'Enregistrer' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('status')).not.toContainText('Cannot read properties');
 });
 
 test('rubric search tolerates a typing error', async ({ page }) => {
