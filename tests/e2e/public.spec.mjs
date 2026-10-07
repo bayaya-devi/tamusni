@@ -1,6 +1,19 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
+async function activePopularIndex(page) {
+  return page.locator('.popular-card').evaluateAll(cards => cards.findIndex(card => card.classList.contains('is-active')));
+}
+
+async function expectStableScroll(page, before, tolerance = 2) {
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThanOrEqual(before - tolerance);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThanOrEqual(before + tolerance);
+}
+
+async function clickMenuWithoutViewportAssistance(page) {
+  await page.locator('#menu-toggle').evaluate(button => button.click());
+}
+
 test('French homepage, menu, rubric and article navigation', async ({ page }) => {
   await page.goto('/fr/');
   await expect(page.getByRole('heading', { name: 'Les plus lus' })).toBeVisible();
@@ -154,4 +167,38 @@ test('mobile header hides on downward scroll and returns upward', async ({ page 
   await expect(page.locator('#site-header')).toHaveClass(/is-hidden/);
   await page.evaluate(() => scrollTo(0, 200));
   await expect(page.locator('#site-header')).not.toHaveClass(/is-hidden/);
+});
+
+test('desktop menu and carousel autoplay never change vertical scroll', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/fr/');
+  await page.mouse.move(0, 0);
+  for (const ratio of [0.25, 0.5, 0.8]) {
+    await page.evaluate(value => scrollTo({ top: (document.documentElement.scrollHeight - innerHeight) * value, behavior: 'instant' }), ratio);
+    const before = await page.evaluate(() => scrollY);
+    await clickMenuWithoutViewportAssistance(page);
+    await expectStableScroll(page, before);
+    await clickMenuWithoutViewportAssistance(page);
+    await expectStableScroll(page, before);
+    const active = await activePopularIndex(page);
+    await expect.poll(() => activePopularIndex(page), { timeout: 4_500 }).not.toBe(active);
+    await expectStableScroll(page, before);
+  }
+});
+
+test('mobile menu, header and carousel preserve the settled scroll position', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 });
+  await page.goto('/fr/');
+  const target = await page.evaluate(() => (document.documentElement.scrollHeight - innerHeight) * 0.6);
+  await page.evaluate(value => scrollTo({ top: value + 30, behavior: 'instant' }), target);
+  await page.evaluate(value => scrollTo({ top: value, behavior: 'instant' }), target);
+  await expect(page.locator('#site-header')).not.toHaveClass(/is-hidden/);
+  const before = await page.evaluate(() => scrollY);
+  await clickMenuWithoutViewportAssistance(page);
+  await expectStableScroll(page, before);
+  await clickMenuWithoutViewportAssistance(page);
+  await expectStableScroll(page, before);
+  const active = await activePopularIndex(page);
+  await expect.poll(() => activePopularIndex(page), { timeout: 4_500 }).not.toBe(active);
+  await expectStableScroll(page, before);
 });
