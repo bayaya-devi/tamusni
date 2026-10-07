@@ -8,5 +8,8 @@ npm-*.log
 .wrangler/
 supabase/.temp/
 *.tsbuildinfo
+test-results/
+playwright-report/
+_worker.bundle
 AGENTS.md
 CLAUDE.md

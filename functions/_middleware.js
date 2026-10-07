@@ -1,4 +1,5 @@
 import { requireAdmin } from "./_lib/auth.js";
+import { locales, publicResponse } from "./_lib/public-frontend.js";
 
 const header='<header class="global-shell-header"><div class="global-shell-inner"><a class="global-shell-brand" href="/">TAMUSNI</a></div></header>';
 const rail='<aside class="tamusni-rail" aria-label="Navigation TAMUSNI"><a class="rail-brand" href="/" aria-label="TAMUSNI — Retour à l’accueil" title="Retour à l’accueil">TAMUSNI</a><nav class="tamusni-rail-nav"><a class="rail-item" href="/intelligence-artificielle/" aria-label="Intelligence artificielle" data-label="Intelligence artificielle" title="Intelligence artificielle"><span class="rail-symbol" aria-hidden="true">IA</span></a><a class="rail-item" href="/innovation/" aria-label="Innovation" data-label="Innovation" title="Innovation"><span class="rail-symbol" aria-hidden="true">✦</span></a><a class="rail-item" href="/robotique/" aria-label="Robotique" data-label="Robotique" title="Robotique"><span class="rail-symbol" aria-hidden="true">⚙</span></a><a class="rail-item" href="/cybersecurite/" aria-label="Cybersécurité" data-label="Cybersécurité" title="Cybersécurité"><span class="rail-symbol" aria-hidden="true">◈</span></a><a class="rail-item" href="/espace/" aria-label="Espace" data-label="Espace" title="Espace"><span class="rail-symbol" aria-hidden="true">☼</span></a></nav><div class="tamusni-rail-tools"><select class="rail-language" id="global-language" aria-label="Langue" title="Langue"><option value="fr">FR</option><option value="ar">AR</option><option value="en">EN</option></select><button class="rail-item" id="rail-theme" type="button" aria-label="Changer de thème" data-label="Thème" title="Thème">◐</button><a class="rail-item rail-account rail-symbol" href="/connexion/" aria-label="Inscription et connexion" data-label="Inscription / Connexion" title="Inscription / Connexion">◎</a></div></aside>';
@@ -7,6 +8,24 @@ const footer='<footer class="global-shell-footer"><div class="global-footer-inne
 
 export async function onRequest(context){
   const requestUrl=new URL(context.request.url);
+  if (context.request.method === 'GET' || context.request.method === 'HEAD') {
+    const pathname=requestUrl.pathname;
+    if (pathname === '/' || pathname === '/index.html') {
+      const preferred=(context.request.headers.get('accept-language')||'fr').split(',')[0].split('-')[0].toLowerCase();
+      return Response.redirect(new URL(`/${locales.includes(preferred)?preferred:'fr'}/`,requestUrl.origin),302);
+    }
+    const match=pathname.match(/^\/(fr|ar|en|es|pt)(?:\/(.*))?$/);
+    if(match){
+      const locale=match[1];const rest=match[2]||'';
+      const path=rest&&!rest.endsWith('/')?`${rest}/`:rest;
+      if(rest&&!rest.endsWith('/')&&!rest.includes('.'))return Response.redirect(new URL(`/${locale}/${path}${requestUrl.search}`,requestUrl.origin),308);
+      const rendered=await publicResponse(context,locale,path);
+      if(rendered)return rendered;
+    }
+    const legacy=pathname.match(/^\/(intelligence-artificielle|innovation|robotique|cybersecurite|espace|articles\/[^/]+|mentions-legales|confidentialite|cookies|conditions-utilisation|mon-espace)\/?$/);
+    if(legacy)return Response.redirect(new URL(`/fr/${legacy[1]}/`,requestUrl.origin),308);
+    if(pathname==='/connexion/'||pathname==='/inscription/')return publicResponse(context,'fr',pathname.slice(1));
+  }
   if(requestUrl.pathname.startsWith('/admin')){
     const admin=await requireAdmin(context);
     if(!admin)return Response.redirect(new URL('/connexion/',requestUrl.origin),302);

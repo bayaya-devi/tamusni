@@ -1,18 +1,28 @@
-(function(){
-  function loadAdsenseScript(client){
+(() => {
+  const locale=document.body.dataset.locale||'fr';
+  const words={fr:['Publicité','Contenu sponsorisé','Publicité désactivée selon vos préférences.'],en:['Advertisement','Sponsored content','Ads disabled by your preferences.'],ar:['إعلان','محتوى برعاية','الإعلانات معطلة حسب تفضيلاتك.'],es:['Publicidad','Contenido patrocinado','Anuncios desactivados según tus preferencias.'],pt:['Publicidade','Conteúdo patrocinado','Anúncios desativados nas suas preferências.']}[locale];
+  if(!words)return;
+  function loadAdsense(client){
     if(document.querySelector('script[data-tamusni-adsense]'))return;
-    var script=document.createElement('script');script.async=true;script.crossOrigin='anonymous';script.dataset.tamusniAdsense='true';script.src='https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='+encodeURIComponent(client);document.head.append(script);
+    const script=document.createElement('script');script.async=true;script.crossOrigin='anonymous';script.dataset.tamusniAdsense='true';script.src=`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(client)}`;document.head.append(script);
   }
-  document.querySelectorAll('[data-ad-slot]').forEach(async function(slot){
-    var placement=slot.dataset.adSlot;
-    try{
-      var response=await window.TamusniApi.request('/api/ads?placement='+encodeURIComponent(placement));var data=await response.json();if(!data.item)return;var item=data.item;
-      slot.innerHTML='';slot.classList.add('has-campaign','ad-type-'+(item.ad_type||'native'));
+  for(const slot of document.querySelectorAll('[data-ad-slot]')){
+    const placement=slot.dataset.adSlot;
+    window.TamusniApi.request(`/api/ads?placement=${encodeURIComponent(placement)}`).then(response=>response.json()).then(({item})=>{
+      if(!item)return;
+      slot.classList.add('has-campaign');
+      const disclosure=document.createElement('small');disclosure.className='ad-disclosure';disclosure.textContent=item.ad_type==='sponsored'?words[1]:words[0];
       if(item.provider==='adsense'){
-        function renderAdsense(){slot.innerHTML='';var disclosure=document.createElement('small');disclosure.textContent='Publicité';var ad=document.createElement('ins');ad.className='adsbygoogle';ad.style.display='block';ad.dataset.adClient=item.adsense_client;ad.dataset.adSlot=item.adsense_slot;ad.dataset.adFormat=item.adsense_format||'auto';ad.dataset.fullWidthResponsive='true';slot.append(disclosure,ad);loadAdsenseScript(item.adsense_client);setTimeout(function(){try{(window.adsbygoogle=window.adsbygoogle||[]).push({})}catch(_){}},0)}
-        var consent='';try{consent=localStorage.getItem('tamusni-cookie-consent')||''}catch(_){}if(consent==='accepted')renderAdsense();else{var notice=document.createElement('small');notice.textContent='Publicité désactivée selon vos préférences.';slot.append(notice);window.addEventListener('tamusni-consent-changed',function(event){if(event.detail==='accepted')renderAdsense()},{once:true})}return;
+        function render(){slot.replaceChildren(disclosure);const ad=document.createElement('ins');ad.className='adsbygoogle';ad.style.display='block';ad.dataset.adClient=item.adsense_client;ad.dataset.adSlot=item.adsense_slot;ad.dataset.adFormat=item.adsense_format||'auto';ad.dataset.fullWidthResponsive='true';slot.append(ad);loadAdsense(item.adsense_client);try{(window.adsbygoogle=window.adsbygoogle||[]).push({})}catch{}}
+        let consent='';try{consent=localStorage.getItem('tamusni-cookie-consent')||''}catch{}
+        if(consent==='accepted')render();else{const note=document.createElement('p');note.textContent=words[2];slot.replaceChildren(disclosure,note);addEventListener('tamusni-consent-changed',event=>{if(event.detail==='accepted')render();});}
+        return;
       }
-      var labels={display:'Publicité',native:'Publicité native',sponsored:'Contenu sponsorisé',affiliate:'Lien affilié',house:'À découvrir sur TAMUSNI'};var link=document.createElement('a');link.href=item.target_url;link.target='_blank';link.rel=(item.ad_type==='affiliate'?'sponsored nofollow noopener':'sponsored noopener');link.dataset.adId=item.id;var label=document.createElement('small');label.textContent=(labels[item.ad_type]||'Publicité')+' · '+item.advertiser;var title=document.createElement('strong');title.textContent=item.headline;var copy=document.createElement('span');copy.textContent=item.body||'';if(item.image_url){var image=document.createElement('img');image.src=item.image_url;image.alt='Visuel publicitaire de '+item.advertiser;link.append(image)}link.append(label,title,copy);link.onclick=function(){navigator.sendBeacon('/api/ads',new Blob([JSON.stringify({id:item.id})],{type:'application/json'}))};slot.append(link)
-    }catch(_){}
-  })
+      const link=document.createElement('a');link.href=item.target_url;link.target='_blank';link.rel=item.ad_type==='affiliate'?'sponsored nofollow noopener':'sponsored noopener';
+      if(item.image_url){const image=document.createElement('img');image.src=item.image_url;image.alt='';image.loading='lazy';link.append(image);}
+      const title=document.createElement('strong');title.textContent=item.headline||'';const description=document.createElement('span');description.textContent=item.body||'';
+      link.append(title,description);link.addEventListener('click',()=>{navigator.sendBeacon('/api/ads',new Blob([JSON.stringify({id:item.id})],{type:'application/json'}));});
+      slot.replaceChildren(disclosure,link);
+    }).catch(()=>{});
+  }
 })();
