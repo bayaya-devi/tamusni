@@ -156,5 +156,5 @@ export async function publicResponse(context,locale,path) {
  if(path==='inscription/')result=result.replace(t.terms,`<a href="${href(locale,'conditions-utilisation/')}">${t.terms}</a>`);
  let html=layout({locale,title,description,path,main:result,session,origin,robots,structuredData,imageUrl}).replace('</head>','<script src="/api-client.js" defer></script></head>');
  if(showAds)html=html.replace('</head>','<script src="/consent.js?v=2" defer></script><script src="/ads-client.js?v=2" defer></script></head>');
- return new Response(html,{status,headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'strict-origin-when-cross-origin','Permissions-Policy':'camera=(), microphone=(), geolocation=()'}});
+ return new Response(html,{status,headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'private, no-store','Content-Security-Policy':"frame-ancestors 'none'; base-uri 'self'; object-src 'none'",'X-Frame-Options':'DENY','X-Content-Type-Options':'nosniff','Referrer-Policy':'strict-origin-when-cross-origin','Permissions-Policy':'camera=(), microphone=(), geolocation=()'}});
 }
