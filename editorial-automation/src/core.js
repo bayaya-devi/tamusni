@@ -75,11 +75,28 @@ export function safeJson(value) {
   try { return JSON.parse(String(value || "")); } catch { return null; }
 }
 
-export function isCompletePublication(publication) {
-  if (!publication || typeof publication !== "object") return false;
-  if (!publication.factSheet || !Array.isArray(publication.sources) || publication.sources.length < 1) return false;
-  return LOCALES.every((locale) => {
+export function publicationQualityIssues(publication, type = "article") {
+  const issues = [];
+  if (!publication || typeof publication !== "object") return ["missing_publication"];
+  if (!publication.factSheet || typeof publication.factSheet.event !== "string" || publication.factSheet.event.trim().length < 20) issues.push("incomplete_fact_sheet");
+  if (!Array.isArray(publication.factSheet?.claims) || publication.factSheet.claims.length < 2) issues.push("insufficient_claims");
+  if (!Array.isArray(publication.sources) || publication.sources.length < 1) issues.push("missing_source");
+  const minimumBody = type === "brief" ? 350 : 1200;
+  for (const locale of LOCALES) {
     const entry = publication.translations?.[locale];
-    return entry && typeof entry.title === "string" && entry.title.length >= 12 && typeof entry.excerpt === "string" && entry.excerpt.length >= 30 && typeof entry.body === "string" && entry.body.length >= 150;
-  });
+    if (!entry) { issues.push(`missing_${locale}`); continue; }
+    const title = plainText(entry.title, 500);
+    const excerpt = plainText(entry.excerpt, 1000);
+    const body = plainText(entry.body, 20_000);
+    if (title.length < 20 || title.length > 180) issues.push(`invalid_title_${locale}`);
+    if (excerpt.length < 60 || excerpt.length > 420) issues.push(`invalid_excerpt_${locale}`);
+    if (body.length < minimumBody || body.length > 12_000) issues.push(`invalid_body_${locale}`);
+    if (body === excerpt || /(?:lorem ipsum|texte à venir|coming soon|placeholder)/i.test(`${title} ${excerpt} ${body}`)) issues.push(`placeholder_${locale}`);
+  }
+  return issues;
+}
+
+export function isCompletePublication(publication, type = "article") {
+  if (!publication || typeof publication !== "object") return false;
+  return publicationQualityIssues(publication, type).length === 0;
 }

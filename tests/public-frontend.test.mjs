@@ -39,6 +39,7 @@ for(const locale of ['fr','ar','en','es','pt']){
     assert.doesNotMatch(html,/tamusni-rail/);
     assert.match(html,new RegExp(`\/brand\/tamusni-${locale==='ar'?'ar':'latin'}\.png`));
     assert.match(html,/hreflang="es"/);
+    assert.doesNotMatch(html,/data-ad-slot|ads-client\.js|consent\.js/);
   });
 }
 
@@ -49,6 +50,17 @@ test('article cites its actual source and escapes user-facing text',async()=>{
   assert.match(html,/https:\/\/example\.org\/article/);
   assert.match(html,/Une actualité vérifiée/);
   assert.match(html,/class="article-actions/);
+  assert.match(html,/application\/ld\+json/);
+  assert.match(html,/"@type":"Article"/);
+});
+
+test('institutional pages and localized 404 are rendered by the shared shell',async()=>{
+  const about=await publicResponse(context('/fr/a-propos/'),'fr','a-propos/');
+  assert.equal(about.status,200);
+  assert.match(await about.text(),/À propos de TAMUSNI/);
+  const missing=await publicResponse(context('/fr/introuvable/'),'fr','introuvable/');
+  assert.equal(missing.status,404);
+  assert.match(await missing.text(),/noindex,follow/);
 });
 
 test('rubric search is scoped to its category',async()=>{

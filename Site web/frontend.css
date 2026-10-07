@@ -15,6 +15,21 @@
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.reveal{opacity:1;transform:none}}
 .auth-form .check a{color:var(--tm-blue);text-decoration:underline;text-underline-offset:2px}
 .popular-card:not(.is-active){opacity:1}
+
+/* Institutional and advertising-readiness components. */
+.ad-placement:empty{display:none}
+.article-kickers{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.content-format{padding:3px 8px;border:1px solid var(--tm-line);border-radius:999px;color:var(--tm-muted);font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.institutional-page h2{margin:48px 0 12px;font-size:clamp(1.45rem,2.5vw,2rem)}
+.institutional-intro{font-size:clamp(1.15rem,2vw,1.35rem)!important;line-height:1.7}
+.not-found-page .primary-button{display:inline-flex;align-items:center;margin-top:18px;text-decoration:none}
+.not-found-page .primary-button:hover{color:#fff}
+.footer-top{align-items:flex-start;gap:36px}
+.footer-trust{display:grid;gap:8px;min-width:180px;font-size:.84rem;color:#bfc7d5}
+.footer-trust strong{color:#f8fafc;font-size:.75rem;letter-spacing:.08em;text-transform:uppercase}
+.footer-bottom{align-items:center}
+.footer-bottom nav{flex-wrap:wrap}
+@media(max-width:650px){.footer-trust{min-width:0}.institutional-page h2{margin-top:36px}}
 .ad-placement.has-campaign{min-height:130px;padding:20px 0}.ad-placement .ad-disclosure{display:block;margin-bottom:8px;color:var(--tm-muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.1em}.ad-placement a{display:flex;flex-direction:column;gap:5px;max-width:700px}.ad-placement a img{max-height:220px;object-fit:contain;object-position:left}.ad-placement a strong{font-family:Manrope,sans-serif;font-size:1.1rem}.ad-placement a span,.ad-placement p{font-size:.82rem;color:var(--tm-muted)}
 .text-link{min-height:44px;padding:8px 0}
 .hero-copy{padding-bottom:145px}

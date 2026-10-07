@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { allowedExternalUrl, localClock, parseFeed, slugify } from "../src/core.js";
+import { allowedExternalUrl, isCompletePublication, localClock, parseFeed, publicationQualityIssues, slugify } from "../src/core.js";
 
 test("rejects local and non-https source URLs", () => {
   assert.equal(allowedExternalUrl("http://example.com"), false);
@@ -18,3 +18,9 @@ test("keeps fresh https items while parsing a feed", () => {
   assert.equal(parseFeed(xml, { publisher: "Example", category: "Innovation", tier: 1 }, now).length, 1);
 });
 test("creates stable public slugs", () => assert.equal(slugify("L’IA, aujourd’hui !"), "l-ia-aujourd-hui"));
+test("blocks thin or placeholder automated publications", () => {
+  const publication={factSheet:{event:"A sufficiently described verified event",claims:["claim one","claim two"]},sources:[{url:"https://example.org/source"}],translations:{}};
+  for(const locale of ["fr","en","ar"])publication.translations[locale]={title:"A sufficiently precise editorial title",excerpt:"A sufficiently detailed excerpt that explains the central verified information.",body:"Lorem ipsum"};
+  assert.equal(isCompletePublication(publication,"article"),false);
+  assert.ok(publicationQualityIssues(publication,"article").some(issue=>issue.startsWith("invalid_body")));
+});

@@ -10,6 +10,7 @@ export async function onRequest(context){
   const requestUrl=new URL(context.request.url);
   if (context.request.method === 'GET' || context.request.method === 'HEAD') {
     const pathname=requestUrl.pathname;
+    if(pathname.endsWith('/index.html'))return Response.redirect(new URL(pathname.slice(0,-10)||'/',requestUrl.origin),308);
     if (pathname === '/' || pathname === '/index.html') {
       const preferred=(context.request.headers.get('accept-language')||'fr').split(',')[0].split('-')[0].toLowerCase();
       return Response.redirect(new URL(`/${locales.includes(preferred)?preferred:'fr'}/`,requestUrl.origin),302);
@@ -22,9 +23,12 @@ export async function onRequest(context){
       const rendered=await publicResponse(context,locale,path);
       if(rendered)return rendered;
     }
-    const legacy=pathname.match(/^\/(intelligence-artificielle|innovation|robotique|cybersecurite|espace|articles\/[^/]+|mentions-legales|confidentialite|cookies|conditions-utilisation|mon-espace)\/?$/);
+    const legacy=pathname.match(/^\/(intelligence-artificielle|innovation|robotique|cybersecurite|espace|articles\/[^/]+|a-propos|contact|methodologie-editoriale|politique-ia|politique-corrections|mentions-legales|confidentialite|cookies|conditions-utilisation|mon-espace)\/?$/);
     if(legacy)return Response.redirect(new URL(`/fr/${legacy[1]}/`,requestUrl.origin),308);
     if(pathname==='/connexion/'||pathname==='/inscription/')return publicResponse(context,'fr',pathname.slice(1));
+    if(pathname==='/compte/')return Response.redirect(new URL('/fr/mon-espace/',requestUrl.origin),308);
+    if(pathname==='/mot-de-passe-oublie/'||pathname==='/reinitialiser-mot-de-passe/')return Response.redirect(new URL('/fr/connexion/',requestUrl.origin),308);
+    if(pathname==='/forums/'||pathname==='/recherche/'||pathname==='/404.html'||pathname==='/500.html')return publicResponse(context,'fr',pathname.slice(1));
   }
   if(requestUrl.pathname.startsWith('/admin')){
     const admin=await requireAdmin(context);

@@ -2,5 +2,8 @@ User-agent: *
 Allow: /
 Disallow: /admin/
 Disallow: /compte/
+Disallow: /*/mon-espace/
+Disallow: /*/connexion/
+Disallow: /*/inscription/
 Disallow: /api/
 Sitemap: https://tamusni.pages.dev/sitemap.xml

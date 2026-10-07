@@ -97,13 +97,38 @@ test('French homepage has no serious axe errors', async ({ page }) => {
   expect(serious, serious.map(item => `${item.id}: ${item.nodes.map(node => node.target.join(' ')).join(', ')}`).join('\n')).toEqual([]);
 });
 
-test('consent prevents advertising scripts until acceptance', async ({ page }) => {
+test('advertising is completely disabled before AdSense approval', async ({ page }) => {
   await page.goto('/fr/');
-  await expect(page.getByRole('complementary', { name: 'Préférences de confidentialité' })).toBeVisible();
+  await expect(page.locator('[data-ad-slot], .ad-placement')).toHaveCount(0);
+  await expect(page.locator('script[src*="googlesyndication"], script[data-tamusni-adsense]')).toHaveCount(0);
+  await expect(page.locator('script[src*="ads-client"]')).toHaveCount(0);
+  await expect(page.getByText(/^Publicité$/)).toHaveCount(0);
+  await expect(page.getByText(/^Contenu sponsorisé$/)).toHaveCount(0);
+});
+
+test('institutional trust pages are public and linked from the footer', async ({ page }) => {
+  await page.goto('/fr/');
+  await page.getByRole('contentinfo').getByRole('link', { name: 'Méthodologie éditoriale' }).click();
+  await expect(page).toHaveURL(/\/fr\/methodologie-editoriale\/$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Méthodologie éditoriale' })).toBeVisible();
+  await page.goto('/fr/politique-ia/');
+  await expect(page.getByRole('heading', { level: 1, name: 'Politique d’utilisation de l’IA' })).toBeVisible();
+  await page.goto('/fr/contact/');
+  await expect(page.getByRole('main').getByRole('link', { name: 'aetbconseil@gmail.com' })).toHaveAttribute('href', /^mailto:aetbconseil@gmail\.com/);
+});
+
+test('unknown localized URLs return a useful 404', async ({ page }) => {
+  const response=await page.goto('/fr/page-qui-n-existe-pas/');
+  expect(response.status()).toBe(404);
+  await expect(page.getByRole('heading', { level: 1, name: 'Page introuvable' })).toBeVisible();
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex,follow');
+});
+
+test('articles expose truthful structured metadata', async ({ page }) => {
+  await page.goto('/fr/articles/esa-mistral-ia-spatial-europeenne/');
+  const data=await page.locator('script[type="application/ld+json"]').allTextContents();
+  expect(data.some(value => value.includes('"@type":"Article"') && value.includes('"author":{"@type":"Organization","name":"TAMUSNI"}'))).toBeTruthy();
   await expect(page.locator('script[data-tamusni-adsense]')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Refuser' }).click();
-  await expect(page.getByRole('complementary', { name: 'Préférences de confidentialité' })).toHaveCount(0);
-  expect(await page.evaluate(() => localStorage.getItem('tamusni-cookie-consent'))).toBe('necessary');
 });
 
 test('legal contact links have the right address and subject', async ({ page }) => {

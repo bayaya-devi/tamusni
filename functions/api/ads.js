@@ -1,6 +1,8 @@
 import { cleanText, json, readBody, sameOrigin } from "../_lib/auth.js";
+import { adsEnabled } from "../_lib/ads-config.js";
 
 export async function onRequestGet(context) {
+  if (!adsEnabled(context.env)) return json({ item: null }, 200, { "Cache-Control": "public, max-age=300" });
   const placement = cleanText(new URL(context.request.url).searchParams.get("placement"), 40);
   const allowed = new Set(["sidebar-hero", "mid-page", "footer-top", "article-inline"]);
   if (!allowed.has(placement)) return json({ item: null });
@@ -11,6 +13,7 @@ export async function onRequestGet(context) {
 }
 
 export async function onRequestPost(context) {
+  if (!adsEnabled(context.env)) return json({ error: "Publicité désactivée." }, 404);
   if (!sameOrigin(context.request)) return json({ error: "Origine refusée." }, 403);
   const body = await readBody(context.request); const id = cleanText(body.id, 160);
   if (!id) return json({ error: "Publicité invalide." }, 400);

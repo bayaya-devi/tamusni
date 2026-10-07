@@ -8,7 +8,7 @@ Revue technologique internationale : Technologies • Sciences • Futur.
 - Comptes gratuits facultatifs, session sécurisée et rôles `USER` / `ADMIN` avec une page de connexion commune.
 - E-mails d’accueil utilisateur et notification d’inscription à `aetbconseil@gmail.com` via Resend.
 - Frontend public localisé en français, arabe, anglais, espagnol et portugais ; thème clair/sombre suivant l’appareil.
-- Emplacements publicitaires propres : colonne de Une, milieu de page et article, fin d’article. Ils sont inactifs par défaut.
+- Architecture publicitaire conservée mais entièrement inactive par défaut : aucun emplacement ni script publicitaire n’est rendu tant que `ADS_ENABLED=true` n’est pas défini après approbation.
 - Backend hybride Cloudflare + Supabase, surveillé par `/api/backend-status`.
 - Cloudflare Pages Functions et D1 pour l’exécution, les contenus, l’administration et les compteurs à faible latence.
 - Supabase Auth pour Google OAuth et miroir durable des comptes, abonnements newsletter et favoris.
@@ -46,5 +46,6 @@ La refonte publique est décrite dans [`docs/frontend-constitution.md`](docs/fro
 
 La répartition détaillée et les règles de continuité sont décrites dans [`docs/BACKEND_ARCHITECTURE.md`](docs/BACKEND_ARCHITECTURE.md).
 La frontière stricte entre l'interface publique et l'API est documentée dans [`docs/FRONTEND_BACKEND_BOUNDARY.md`](docs/FRONTEND_BACKEND_BOUNDARY.md).
+Le mécanisme de désactivation et de réactivation future des annonces est documenté dans [`docs/ADSENSE_READINESS.md`](docs/ADSENSE_READINESS.md).
 
 Ne jamais versionner les secrets.

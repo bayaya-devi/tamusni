@@ -4,6 +4,18 @@ const statuses = new Set(["draft", "review", "scheduled", "published", "archived
 const checks = new Set(["verified", "context", "correction", "opinion"]);
 const httpsUrl = (value) => /^https:\/\//i.test(String(value || "")) ? String(value) : null;
 const slugify = (value) => cleanText(value,160).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9-]/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,"");
+const publishable = (item, hasSource) => {
+  if (!['published','scheduled'].includes(item.status)) return null;
+  if (!item.title || item.title.length < 12 || !item.excerpt || item.excerpt.length < 60) return "Un titre précis et un résumé substantiel sont requis avant publication.";
+  if (['article','brief'].includes(item.type)) {
+    const minimum = item.type === 'brief' ? 250 : 900;
+    if (!item.body || item.body.length < minimum) return `Le texte est insuffisant pour un contenu de type ${item.type}.`;
+    if (!hasSource) return "Au moins une source HTTPS identifiable est requise avant publication.";
+  }
+  if (item.type === 'video' && !item.media_url) return "Une vidéo réelle est requise avant publication.";
+  if (item.type === 'interview' && !item.body && !item.media_url) return "Une interview réelle, écrite ou filmée, est requise avant publication.";
+  return null;
+};
 
 async function audit(context, admin, action, targetId, metadata = {}) {
   await context.env.DB.prepare("INSERT INTO admin_audit_log(id,admin_user_id,action,target_type,target_id,metadata,created_at) VALUES(?,?,?,?,?,?,?)").bind(crypto.randomUUID(),admin.sub,action,"content",targetId,JSON.stringify(metadata),new Date().toISOString()).run();
@@ -46,6 +58,9 @@ export async function onRequestPost(context) {
   const body = await readBody(context.request); const title = cleanText(body.title,240); const slug = slugify(body.slug); const now = new Date().toISOString();
   const type = types.has(body.type) ? body.type : "article"; const status = statuses.has(body.status) ? body.status : "draft";
   if (title.length < 5 || slug.length < 3) return json({ error: "Titre ou URL invalide." }, 400);
+  const candidate={title,type,status,excerpt:cleanText(body.excerpt,500),body:cleanText(body.body,15000),media_url:httpsUrl(body.mediaUrl)};
+  const qualityError=publishable(candidate,Boolean(httpsUrl(body.sourceUrl)&&cleanText(body.sourceLabel,200)));
+  if(qualityError)return json({error:qualityError},400);
   const id = crypto.randomUUID();
   try {
     await context.env.DB.prepare("INSERT INTO content_items(id,slug,type,status,title,excerpt,body,summary,category,author_name,cover_url,media_url,transcript,subtitles_url,fact_check_status,sponsored,sponsor_name,published_at,scheduled_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(id,slug,type,status,title,cleanText(body.excerpt,500),cleanText(body.body,15000),cleanText(body.summary,1000),cleanText(body.category,80)||"Actualité",cleanText(body.authorName,100)||"Rédaction TAMUSNI",httpsUrl(body.coverUrl),httpsUrl(body.mediaUrl),cleanText(body.transcript,15000),httpsUrl(body.subtitlesUrl),checks.has(body.factCheckStatus)?body.factCheckStatus:"verified",body.sponsored?1:0,cleanText(body.sponsorName,100)||null,status==="published"?(body.publishedAt||now):null,status==="scheduled"?(body.scheduledAt||null):null,now,now).run();
@@ -65,6 +80,9 @@ export async function onRequestPatch(context) {
     await context.env.DB.prepare("INSERT INTO content_revisions(id,content_id,editor_user_id,snapshot_json,created_at) VALUES(?,?,?,?,?)").bind(crypto.randomUUID(),id,admin.sub,JSON.stringify(existing),now).run();
     const title=cleanText(body.title,240), slug=slugify(body.slug), type=types.has(body.type)?body.type:existing.type, status=statuses.has(body.status)?body.status:existing.status;
     if(title.length<5||slug.length<3)return json({error:"Titre ou URL invalide."},400);
+    const candidate={title,type,status,excerpt:cleanText(body.excerpt,500),body:cleanText(body.body,15000),media_url:httpsUrl(body.mediaUrl)};
+    const qualityError=publishable(candidate,Boolean(httpsUrl(body.sourceUrl)&&cleanText(body.sourceLabel,200)));
+    if(qualityError)return json({error:qualityError},400);
     try {
       await context.env.DB.prepare("UPDATE content_items SET slug=?,type=?,status=?,title=?,excerpt=?,body=?,summary=?,category=?,author_name=?,cover_url=?,media_url=?,transcript=?,subtitles_url=?,fact_check_status=?,sponsored=?,sponsor_name=?,published_at=?,scheduled_at=?,updated_at=? WHERE id=?").bind(slug,type,status,title,cleanText(body.excerpt,500),cleanText(body.body,15000),cleanText(body.summary,1000),cleanText(body.category,80)||"Actualité",cleanText(body.authorName,100)||"Rédaction TAMUSNI",httpsUrl(body.coverUrl),httpsUrl(body.mediaUrl),cleanText(body.transcript,15000),httpsUrl(body.subtitlesUrl),checks.has(body.factCheckStatus)?body.factCheckStatus:"verified",body.sponsored?1:0,cleanText(body.sponsorName,100)||null,status==="published"?(existing.published_at||now):existing.published_at,status==="scheduled"?(body.scheduledAt||existing.scheduled_at):null,now,id).run();
       if(status==="scheduled"&&existing.status!=="scheduled")await context.env.DB.prepare("INSERT INTO admin_notifications(id,type,title,body,target_url,target_type,target_id,created_at) VALUES(?,?,?,?,?,?,?,?)").bind(crypto.randomUUID(),"content","Contenu programmé",`Publication prévue : ${title}`,"/admin/#content","content",id,now).run();
@@ -73,6 +91,9 @@ export async function onRequestPatch(context) {
     } catch { return json({error:"Cette URL est déjà utilisée."},409); }
   }
   const status=statuses.has(body.status)?body.status:null; if(!status)return json({error:"Modification invalide."},400);
+  const source=await context.env.DB.prepare("SELECT COUNT(*) AS count FROM content_sources WHERE content_id=? AND url LIKE 'https://%'").bind(id).first();
+  const qualityError=publishable({...existing,status},Number(source?.count||0)>0);
+  if(qualityError)return json({error:qualityError},400);
   const publishedAt=status==="published"?(body.publishedAt||existing.published_at||now):existing.published_at; const scheduledAt=status==="scheduled"?(body.scheduledAt||existing.scheduled_at):null;
   await context.env.DB.prepare("UPDATE content_items SET status=?,published_at=?,scheduled_at=?,updated_at=? WHERE id=?").bind(status,publishedAt,scheduledAt,now,id).run();
   if(status==="published")await context.env.DB.prepare("INSERT INTO notifications(id,user_id,title,url,created_at) SELECT lower(hex(randomblob(16))),user_id,?,?,? FROM topic_subscriptions WHERE LOWER(topic)=LOWER(?)").bind(`Nouveau contenu : ${existing.title}`,`/articles/${existing.slug}`,now,existing.category).run();
