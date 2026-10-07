@@ -46,6 +46,7 @@ test('signup links to readable terms of use', async ({ page }) => {
 test('article sources and actions render', async ({ page }) => {
   await page.goto('/fr/articles/royal-air-maroc-starlink-wifi-avions/');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await expect(page.locator('.article-head .eyebrow')).toHaveText('Technologies');
   await expect(page.getByRole('heading', { name: 'Sources' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Partager' })).toBeVisible();
 });
