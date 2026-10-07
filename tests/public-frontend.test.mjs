@@ -77,3 +77,11 @@ test('signup and login preserve their forms and OAuth links',async()=>{
     assert.match(html,/type="password"/);
   }
 });
+
+test('signup supports multiple preferred topics',async()=>{
+  const response=await publicResponse(context('/fr/inscription/'),'fr','inscription/');
+  const html=await response.text();
+  assert.match(html,/name="preferredTopics"/);
+  assert.doesNotMatch(html,/name="preferredTopic"/);
+  assert.match(html,/Choisissez au moins une rubrique/);
+});

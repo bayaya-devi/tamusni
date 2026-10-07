@@ -1,10 +1,10 @@
 import { cleanText, hashPassword, json, readBody, requireSession, sameOrigin, validEmail, verifyPassword } from "../_lib/auth.js";
+import { normalizeTopics, replaceTopicSubscriptions } from "../_lib/topics.js";
 
 const languages = new Set(["fr", "en", "ar"]);
 const themes = new Set(["auto", "light", "dark"]);
 const textSizes = new Set(["small", "normal", "large"]);
 const densities = new Set(["compact", "comfortable"]);
-const topics = new Set(["Intelligence artificielle", "Innovation", "Robotique", "Cybersécurité", "Espace"]);
 
 export async function onRequestGet(context) {
   const session = await requireSession(context);
@@ -41,11 +41,15 @@ export async function onRequestPatch(context) {
     const textSize = textSizes.has(body.textSize) ? body.textSize : "normal";
     const density = densities.has(body.density) ? body.density : "comfortable";
     const notifications = body.notifications === false ? 0 : 1;
-    const preferredTopic = topics.has(body.preferredTopic) ? body.preferredTopic : "Intelligence artificielle";
+    const preferredTopics = normalizeTopics(body.preferredTopics, body.preferredTopic);
+    const preferredTopic = preferredTopics[0];
     const sponsoredInApp = body.sponsoredInApp === true ? 1 : 0;
     const sponsoredEmail = body.sponsoredEmail === true ? 1 : 0;
-    if (name.length < 2 || !validEmail(email) || (avatar && !/^https:\/\//i.test(avatar))) return json({ error: "Profil invalide." }, 400);
-    try { await context.env.DB.prepare("UPDATE users SET name=?,email=?,bio=?,avatar_url=?,preferred_language=?,preferred_theme=?,text_size=?,display_density=?,notifications_enabled=?,preferred_topic=?,sponsored_in_app=?,sponsored_email=? WHERE id=?").bind(name, email, bio, avatar || null, language, theme, textSize, density, notifications, preferredTopic, sponsoredInApp, sponsoredEmail, session.sub).run(); } catch { return json({ error: "Cette adresse e-mail est déjà utilisée." }, 409); }
+    if (name.length < 2 || !validEmail(email) || !preferredTopics.length || (avatar && !/^https:\/\//i.test(avatar))) return json({ error: "Profil invalide : choisissez au moins une rubrique." }, 400);
+    try {
+      await context.env.DB.prepare("UPDATE users SET name=?,email=?,bio=?,avatar_url=?,preferred_language=?,preferred_theme=?,text_size=?,display_density=?,notifications_enabled=?,preferred_topic=?,sponsored_in_app=?,sponsored_email=? WHERE id=?").bind(name, email, bio, avatar || null, language, theme, textSize, density, notifications, preferredTopic, sponsoredInApp, sponsoredEmail, session.sub).run();
+      await replaceTopicSubscriptions(context.env.DB, session.sub, preferredTopics);
+    } catch { return json({ error: "Cette adresse e-mail est déjà utilisée." }, 409); }
     return json({ ok: true });
   } catch (error) { return json({ error: error?.message === "PAYLOAD_TOO_LARGE" ? "Requête trop volumineuse." : "Modification impossible." }, 400); }
 }
