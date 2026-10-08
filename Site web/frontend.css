@@ -43,3 +43,18 @@ html[dir=rtl] .hero-controls{right:auto;left:max(32px,calc((100vw - var(--tm-max
 .icon-button[title]{position:relative}
 .icon-button[title]:hover::after,.icon-button[title]:focus-visible::after{content:attr(title);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);white-space:nowrap;padding:5px 9px;border-radius:7px;background:var(--tm-night);color:#fff;font:500 .73rem Inter,sans-serif;box-shadow:var(--tm-shadow);z-index:5;pointer-events:none}
 @media(max-width:650px){.hero-copy{padding-bottom:115px}.hero-controls{left:auto;right:18px}html[dir=rtl] .hero-controls{right:auto;left:18px}}
+
+/* Global reflow and floating-control hardening. */
+*,*::before,*::after{min-width:0}
+html,body{max-width:100%;overflow-x:clip}
+main,header,footer,section,article,nav,form{max-width:100%}
+img,svg,video,canvas,iframe,embed,object{max-width:100%}
+video,canvas,iframe,embed,object{height:auto}
+.site-header{background:color-mix(in srgb,var(--tm-surface) 91%,transparent);isolation:isolate}
+.site-menu{max-height:calc(100vh - 96px);overflow-y:auto;overscroll-behavior:contain}
+.header-actions{padding:4px;border:1px solid var(--tm-line);border-radius:15px;background:color-mix(in srgb,var(--tm-surface) 90%,transparent);box-shadow:0 8px 26px rgba(17,26,46,.08)}
+.menu-toggle{background:var(--tm-surface);border-color:var(--tm-silver);color:var(--tm-ink)}
+.menu-toggle:hover,.menu-toggle:focus-visible,.menu-toggle[aria-expanded=true]{border-color:var(--tm-blue);background:rgba(37,99,235,.11);color:var(--tm-blue)}
+.back-top{inset-inline-end:22px;right:auto;z-index:120;width:50px;height:50px;border-color:color-mix(in srgb,var(--tm-blue) 68%,var(--tm-line));background:color-mix(in srgb,var(--tm-surface) 88%,transparent);color:var(--tm-blue);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 12px 34px rgba(17,26,46,.2)}
+.back-top:hover,.back-top:focus-visible{background:var(--tm-blue);color:#fff;border-color:var(--tm-blue);transform:translateY(-3px)}
+@media(max-width:650px){.section-wrap,.header-inner,.footer-inner{width:calc(100% - 32px)}.back-top{inset-inline-end:16px;right:auto;width:48px;height:48px}}

@@ -20,14 +20,14 @@ test("keeps fresh https items while parsing a feed", () => {
 test("creates stable public slugs", () => assert.equal(slugify("L’IA, aujourd’hui !"), "l-ia-aujourd-hui"));
 test("blocks thin or placeholder automated publications", () => {
   const publication={factSheet:{event:"A sufficiently described verified event",claims:[{claim:"claim one",sourceIds:["S1"]},{claim:"claim two",sourceIds:["S1"]}]},sources:[{url:"https://example.org/source"}],imagePrompt:"A detailed realistic editorial image of the specific verified technology in a laboratory environment",translations:{}};
-  for(const locale of ["fr","en","ar"])publication.translations[locale]={title:"A sufficiently precise editorial title",excerpt:"A sufficiently detailed excerpt that explains the central verified information.",body:"Lorem ipsum"};
+  for(const locale of ["fr","en","ar","es","pt"])publication.translations[locale]={title:"A sufficiently precise editorial title",excerpt:"A sufficiently detailed excerpt that explains the central verified information.",body:"Lorem ipsum"};
   assert.equal(isCompletePublication(publication,"article"),false);
   assert.ok(publicationQualityIssues(publication,"article").some(issue=>issue.startsWith("invalid_body")));
 });
 
 test("blocks SEO/GEO publication metadata that cannot support a trustworthy public article", () => {
   const publication={factSheet:{event:"A sufficiently described verified event",claims:[{claim:"claim one",sourceIds:["S1"]},{claim:"claim two",sourceIds:["S1"]}]},sources:[{id:"S1",label:"Official source",url:"https://example.org/source"}],imagePrompt:"A detailed realistic editorial image of the specific verified technology in a laboratory environment",translations:{}};
-  for(const locale of ["fr","en","ar"])publication.translations[locale]={title:"A sufficiently precise editorial title for a verified event",excerpt:"A sufficiently detailed excerpt that explains the central verified information.",body:"A ".repeat(700)};
+  for(const locale of ["fr","en","ar","es","pt"])publication.translations[locale]={title:"A sufficiently precise editorial title for a verified event",excerpt:"A sufficiently detailed excerpt that explains the central verified information.",body:"A ".repeat(700)};
   assert.deepEqual(seoGeoPublicationIssues(publication,"article"),[]);
   publication.sources[0].url="http://example.org/source";
   assert.ok(seoGeoPublicationIssues(publication,"article").includes("invalid_source_url"));

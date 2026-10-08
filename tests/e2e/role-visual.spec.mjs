@@ -27,9 +27,13 @@ for(const [role,account] of Object.entries(credentials)){
           await expect(page.locator('.site-header')).toBeVisible();
           await expect(page.locator(`#${role}-app h1`).first()).toBeVisible({timeout:15_000});
           await expect(page.locator('.site-footer')).toBeVisible();
+          await expect(page.locator('.site-header')).toHaveCount(1);
           await expect(page.locator('.tamusni-rail')).toHaveCount(0);
           const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>document.documentElement.clientWidth+1);
           expect(overflow).toBe(false);
+          await page.locator('#menu-toggle').click();
+          for(const details of await page.locator('.menu-role details').all()){await details.locator('summary').click();expect(await details.evaluate(node=>node.scrollWidth<=node.clientWidth+1)).toBe(true)}
+          expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+1)).toBe(true);
           await page.screenshot({path:`test-results/visual-role-frontends/${role}-${locale}-${name}.png`,fullPage:true});
         }
       });

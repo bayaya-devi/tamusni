@@ -1,4 +1,4 @@
-export const LOCALES = ["fr", "en", "ar"];
+export const LOCALES = ["fr", "en", "ar", "es", "pt"];
 export const START_DATE = "2026-10-01";
 export const ACTIVE_CATEGORIES = ["Intelligence", "Innovation", "Robotique", "Cybersécurité", "Espace"];
 export const EDITORIAL_SCORE_FIELDS = ["importance", "reliability", "potentialImpact", "publicInterest", "tamusniRelevance"];

@@ -31,7 +31,7 @@ export async function onRequestPost(context) {
   if(name.length<2||!validEmail(email)||password.length<6||!preferredTopic)return json({error:"Nom, e-mail, mot de passe et rubrique sont obligatoires."},400);
   const id=crypto.randomUUID(), now=new Date().toISOString();
   try {
-    await context.env.DB.prepare("INSERT INTO users(id,name,email,password_hash,role,created_at,preferred_topic,sponsored_in_app,sponsored_email) VALUES(?,?,?,?,?,?,?,?,?)").bind(id,name,email,await hashPassword(password),"USER",now,preferredTopic,body.sponsoredInApp?1:0,body.sponsoredEmail?1:0).run();
+    await context.env.DB.prepare("INSERT INTO users(id,name,email,password_hash,role,created_at,email_verified_at,preferred_topic,sponsored_in_app,sponsored_email) VALUES(?,?,?,?,?,?,?,?,?,?)").bind(id,name,email,await hashPassword(password),"USER",now,now,preferredTopic,body.sponsoredInApp?1:0,body.sponsoredEmail?1:0).run();
     if(role==="CONTRIBUTOR") await context.env.DB.prepare("INSERT INTO user_roles(user_id,role,assigned_by,assigned_at) VALUES(?,'CONTRIBUTOR',?,?)").bind(id,admin.sub,now).run();
     await audit(context,admin,"user.create",id,{email,role}); return json({ok:true,id,role},201);
   } catch { return json({error:"Cette adresse e-mail est déjà utilisée."},409); }

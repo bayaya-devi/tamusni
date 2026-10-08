@@ -8,7 +8,7 @@ function makeContext(role, { submission = null, ownerItem = null } = {}) {
   const writes=[];
   const db={
     prepare(sql){const statement={sql,params:[],bind(...params){this.params=params;return this},async first(){
-      if(sql.includes("CASE WHEN u.role='ADMIN'"))return {id:"user-1",name:"Test Contributor",email:"test@example.invalid",role,is_banned:0};
+      if(sql.includes("CASE WHEN u.role='ADMIN'"))return {id:"user-1",name:"Test Contributor",email:"test@example.invalid",role,is_banned:0,email_verified_at:"2026-01-01T00:00:00.000Z"};
       if(sql.includes("SELECT id,status FROM contributor_submissions"))return submission;
       if(sql.includes("WHERE id=? AND owner_user_id=?"))return ownerItem;
       if(sql.includes("SELECT COUNT(*)"))return {count:0};

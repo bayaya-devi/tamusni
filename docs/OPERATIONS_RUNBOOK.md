@@ -23,7 +23,7 @@ npm run build
 node 'node_modules/wrangler/bin/wrangler.js' pages dev 'Site web' --port 8788
 ```
 
-Le lint peut signaler les navigations `location` des scripts statiques : elles ne sont pas des erreurs de build Next, mais doivent rester surveillées. Les secrets se configurent dans Cloudflare ou `.env.local`, jamais dans Git.
+Le lint Next ignore uniquement sa règle de navigation interne dans `Site web/`, car ces scripts statiques sont servis directement par Cloudflare Pages et n’utilisent pas le routeur Next.js. Toutes les autres règles ESLint restent actives. Les secrets se configurent dans Cloudflare ou `.env.local`, jamais dans Git.
 
 ## Déploiement
 

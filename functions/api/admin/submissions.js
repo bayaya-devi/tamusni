@@ -47,3 +47,17 @@ export async function onRequestPost(context) {
   await context.env.DB.prepare("INSERT INTO admin_audit_log(id,admin_user_id,action,target_type,target_id,metadata,created_at) VALUES(?,?,?,?,?,?,?)").bind(crypto.randomUUID(),admin.sub,"submission.approve","content",contentId,JSON.stringify({submissionId:id,slug}),now).run();
   return json({ok:true,status:"approved",contentId,slug,url:`/articles/${slug}/`},201);
 }
+
+export async function onRequestDelete(context) {
+  if(!sameOrigin(context.request))return json({error:"Origine refusée."},403);
+  const admin=await requireAdmin(context);if(!admin)return json({error:"Accès réservé à l’administration."},403);
+  const body=await readBody(context.request),id=cleanText(body.id,160);
+  if(!id)return json({error:"Proposition invalide."},400);
+  const submission=await context.env.DB.prepare("SELECT id,status,published_content_id FROM contributor_submissions WHERE id=?").bind(id).first();
+  if(!submission)return json({error:"Proposition introuvable."},404);
+  if(submission.status==='submitted'||submission.status==='draft')return json({error:"Traitez ou supprimez le brouillon avant cette suppression."},409);
+  if(submission.published_content_id&&await context.env.DB.prepare("SELECT 1 AS found FROM content_items WHERE id=?").bind(submission.published_content_id).first())return json({error:"Supprimez d’abord le contenu public associé."},409);
+  await context.env.DB.prepare("DELETE FROM contributor_submissions WHERE id=?").bind(id).run();
+  await context.env.DB.prepare("INSERT INTO admin_audit_log(id,admin_user_id,action,target_type,target_id,metadata,created_at) VALUES(?,?,?,?,?,?,?)").bind(crypto.randomUUID(),admin.sub,"submission.delete","submission",id,JSON.stringify({status:submission.status}),new Date().toISOString()).run();
+  return json({ok:true});
+}

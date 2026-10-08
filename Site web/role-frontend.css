@@ -83,3 +83,17 @@ html[dir=rtl] .admin-row,html[dir=rtl] .contrib-entry,html[dir=rtl] .admin-intro
 @media(max-width:920px){.admin-stats{grid-template-columns:repeat(2,1fr)}.admin-stat:nth-child(2){border-inline-end:0}.admin-grid,.contrib-layout{grid-template-columns:1fr}.admin-panel-card,.contrib-panel.card{padding:20px}}
 @media(max-width:650px){.admin-app,.contributor-app{width:calc(100% - 36px);padding:46px 0 72px}.admin-intro,.contrib-top{align-items:flex-start;flex-direction:column;gap:20px}.admin-intro h1,.contrib-top h1{font-size:clamp(2.25rem,12vw,3.15rem)}.admin-stats{grid-template-columns:1fr}.admin-stat,.admin-stat:nth-child(2){padding:18px 4px;border-inline-end:0;border-bottom:1px solid var(--tm-line)}.admin-stat:last-child{border-bottom:0}.admin-toolbar{align-items:stretch;flex-direction:column;padding:12px}.admin-search,.admin-filter,.admin-toolbar .admin-button{width:100%;flex-basis:auto}.admin-row,.contrib-entry,.admin-notification{grid-template-columns:1fr;gap:12px}.admin-notification-unread{position:absolute}.admin-row-actions,.admin-notification-actions,.contrib-row-actions{justify-content:flex-start}.admin-fields,.admin-detail-grid{grid-template-columns:1fr}.admin-fields label.wide,.admin-wizard-note.wide{grid-column:auto}.admin-dialog-actions,.admin-wizard-nav{justify-content:stretch}.admin-dialog-actions>* ,.admin-wizard-nav>*{flex:1 1 auto}.admin-icon-button[title]::after{display:none}}
 @media(prefers-reduced-motion:reduce){.role-loading-mark{animation:none}.admin-button,.contrib-button,.admin-row,.contrib-entry,.admin-icon-button{transition:none}}
+
+/* One compact, hierarchical role navigation inside the shared site menu. */
+.menu-role details{border-radius:10px}
+.menu-role summary{min-height:45px;padding:10px 12px;display:flex;align-items:center;gap:12px;border-radius:10px;color:var(--tm-ink);font-weight:700;font-size:.91rem;cursor:pointer;list-style:none}
+.menu-role summary::-webkit-details-marker{display:none}
+.menu-role summary::after{content:'+';margin-inline-start:auto;color:var(--tm-muted);font-size:1rem;transition:transform var(--tm-normal) var(--tm-ease)}
+.menu-role details[open]>summary{background:rgba(37,99,235,.07);color:var(--tm-blue)}
+.menu-role details[open]>summary::after{transform:rotate(45deg)}
+.menu-role-group{display:grid;padding:4px 0 7px 24px}
+html[dir=rtl] .menu-role-group{padding-right:24px;padding-left:0}
+.menu-role-group button{font-size:.84rem!important;font-weight:600!important}
+.menu-role-direct{margin-block:2px}
+.admin-table{max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain}
+@media(max-width:650px){.admin-app,.contributor-app{width:calc(100% - 32px)}}

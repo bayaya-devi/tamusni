@@ -89,8 +89,8 @@ export async function getSession(request, secret) {
 export async function requireSession(context) {
   const session = await getSession(context.request, context.env.SESSION_SECRET);
   if (!session || !context.env.DB) return null;
-  const user = await context.env.DB.prepare("SELECT u.id,u.name,u.email,u.is_banned,CASE WHEN u.role='ADMIN' THEN 'ADMIN' WHEN r.role='CONTRIBUTOR' THEN 'CONTRIBUTOR' ELSE 'USER' END AS role FROM users u LEFT JOIN user_roles r ON r.user_id=u.id WHERE u.id = ?").bind(session.sub).first();
-  return user && !user.is_banned ? { sub: user.id, name: user.name, email: user.email, role: user.role, iat: session.iat || null, exp: session.exp } : null;
+  const user = await context.env.DB.prepare("SELECT u.id,u.name,u.email,u.is_banned,u.email_verified_at,CASE WHEN u.role='ADMIN' THEN 'ADMIN' WHEN r.role='CONTRIBUTOR' THEN 'CONTRIBUTOR' ELSE 'USER' END AS role FROM users u LEFT JOIN user_roles r ON r.user_id=u.id WHERE u.id = ?").bind(session.sub).first();
+  return user && !user.is_banned && user.email_verified_at ? { sub: user.id, name: user.name, email: user.email, role: user.role, iat: session.iat || null, exp: session.exp } : null;
 }
 
 export async function requireRecentSession(context,maximumAge=900_000) {

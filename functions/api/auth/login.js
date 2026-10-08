@@ -12,7 +12,7 @@ export async function onRequestPost(context) {
     const attemptKey = await hashToken(`${context.request.headers.get("CF-Connecting-IP") || "unknown"}|${email}`);
     const attempt = await context.env.DB.prepare("SELECT attempts, window_started_at, blocked_until FROM login_attempts WHERE key_hash = ?").bind(attemptKey).first();
     if (attempt?.blocked_until && Date.parse(attempt.blocked_until) > now) return json({ error: "Trop de tentatives. Réessayez dans quelques minutes." }, 429, { "Retry-After": "900" });
-    const user = await context.env.DB.prepare("SELECT u.id,u.name,u.email,u.password_hash,u.role,u.mfa_enabled,u.is_banned,r.role AS additional_role FROM users u LEFT JOIN user_roles r ON r.user_id=u.id WHERE u.email = ?").bind(email).first();
+    const user = await context.env.DB.prepare("SELECT u.id,u.name,u.email,u.password_hash,u.role,u.mfa_enabled,u.is_banned,u.email_verified_at,r.role AS additional_role FROM users u LEFT JOIN user_roles r ON r.user_id=u.id WHERE u.email = ?").bind(email).first();
     if (!user || !(await verifyPassword(password, user.password_hash))) {
       const withinWindow = attempt?.window_started_at && now - Date.parse(attempt.window_started_at) < 900_000;
       const attempts = withinWindow ? Number(attempt.attempts || 0) + 1 : 1;
@@ -22,6 +22,7 @@ export async function onRequestPost(context) {
       return json({ error: "Identifiants invalides." }, 401);
     }
     if (user.is_banned) return json({ error: "Ce compte est suspendu. Contactez TAMUSNI si vous pensez qu’il s’agit d’une erreur." }, 403);
+    if (!user.email_verified_at) return json({ error:"Confirmez votre adresse e-mail avant de vous connecter.", code:"EMAIL_NOT_VERIFIED", verificationRequired:true }, 403);
     await context.env.DB.prepare("DELETE FROM login_attempts WHERE key_hash = ?").bind(attemptKey).run();
     try { await mirrorUser(context.env, user); } catch (error) { console.error("supabase_user_mirror_failed", error); }
     if (!context.env.SESSION_SECRET) return json({ error: "Configuration de session indisponible." }, 503);

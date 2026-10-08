@@ -29,7 +29,7 @@ Les tests agressifs, destructifs ou de charge ne sont jamais lancés contre la p
 
 `scripts/maintenance/generate_report.py` crée un PDF réel avec ReportLab, nommé `TAMUSNI_Maintenance_YYYY-MM-DD.pdf`. Le PDF, le JSON et les logs sont conservés comme artefact GitHub pendant 90 jours.
 
-Le workflow transmet ensuite le PDF à `/api/maintenance/report`. Cette route Cloudflare exige `MAINTENANCE_RUN_TOKEN`, impose un vrai PDF, fixe le destinataire côté serveur et utilise la clé Brevo déjà protégée dans Cloudflare.
+Le workflow transmet ensuite le PDF à `/api/maintenance/report`. Cette route Cloudflare exige `MAINTENANCE_REPORT_TOKEN`, impose un vrai PDF, fixe le destinataire côté serveur et utilise la clé Brevo déjà protégée dans Cloudflare.
 
 ## Secrets GitHub
 

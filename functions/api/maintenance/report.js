@@ -8,7 +8,7 @@ async function authorized(request, expected) {
 }
 
 export async function onRequestPost(context) {
-  if (!await authorized(context.request, context.env.MAINTENANCE_RUN_TOKEN)) return json({ error: "Not found" }, 404);
+  if (!await authorized(context.request, context.env.MAINTENANCE_REPORT_TOKEN)) return json({ error: "Not found" }, 404);
   if (!emailProvider(context.env)) return json({ error: "Email unavailable" }, 503);
   try {
     const body = await readBody(context.request, 7_500_000);

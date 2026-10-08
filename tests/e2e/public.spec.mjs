@@ -102,7 +102,7 @@ test('scroll reveals editorial sections rather than leaving empty space', async 
   await expect(page.locator('.latest-section .story-card').first()).toBeVisible();
 });
 
-for (const width of [375, 430, 768, 1024, 1280, 1440]) {
+for (const width of [320, 360, 375, 390, 430, 768, 1024, 1280, 1440, 1600]) {
   test(`homepage has no horizontal overflow at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/fr/');
@@ -111,6 +111,22 @@ for (const width of [375, 430, 768, 1024, 1280, 1440]) {
     expect(overflow).toBeLessThanOrEqual(1);
   });
 }
+
+test('rubric and article stay inside a 320px viewport',async({page})=>{
+  await page.setViewportSize({width:320,height:780});
+  for(const path of ['/fr/intelligence-artificielle/','/fr/articles/esa-mistral-ia-spatial-europeenne/']){
+    await page.goto(path);await expect(page.locator('main h1').first()).toBeVisible();
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
+  }
+});
+
+test('back-to-top control is visible, focused and functional on light and dark backgrounds',async({page})=>{
+  for(const colorScheme of ['light','dark']){
+    await page.emulateMedia({colorScheme});await page.goto('/fr/');await page.evaluate(()=>scrollTo(0,document.documentElement.scrollHeight));
+    const button=page.locator('#back-top');await expect(button).toBeVisible();await button.focus();await expect(button).toBeFocused();await button.click();
+    await expect.poll(()=>page.evaluate(()=>scrollY),{timeout:3000}).toBeLessThan(5);
+  }
+});
 
 test('Arabic homepage has no horizontal overflow on mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 780 });
