@@ -1,9 +1,10 @@
-import { json, readBody, sameOrigin } from "../_lib/auth.js";
+import { json, readBody, requireSession, sameOrigin } from "../_lib/auth.js";
 
 const supported = new Set(["en", "ar", "es", "pt"]);
 
 export async function onRequestPost(context) {
   if (!sameOrigin(context.request)) return json({ error: "Origine refusée." }, 403);
+  if (!await requireSession(context)) return json({ error: "Connexion requise." }, 401);
   if (!context.env.AI) return json({ error: "Service de traduction indisponible." }, 503);
   try {
     const body = await readBody(context.request);

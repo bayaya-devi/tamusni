@@ -1,6 +1,6 @@
 import {
   START_DATE, addLocalDays, aiDisclosure, allowedExternalUrl, extractAiJson,
-  isPublicationDue, localClock, parseFeed, plainText, publicationQualityIssues,
+  isPublicationDue, localClock, parseFeed, plainText, publicationQualityIssues, seoGeoPublicationIssues,
   rankCandidates, slugify, sourceDigest, titleSimilarity
 } from "./core.js";
 
@@ -183,7 +183,7 @@ function scheduledAtSix(date, clock) {
   return new Date(date.getTime() + minutes * 60_000).toISOString();
 }
 
-async function savePreparedPublication(env, run, candidate, publication, qualityReport, media, scheduledAt) {
+async function savePreparedPublication(env, run, candidate, publication, qualityReport, seoGeoReport, media, scheduledAt) {
   const now = nowIso(), id = crypto.randomUUID(), fr = publication.translations.fr;
   const baseSlug = slugify(fr.title); let slug = baseSlug || `publication-${id.slice(0, 8)}`;
   if (await env.DB.prepare("SELECT 1 FROM content_items WHERE slug=?").bind(slug).first()) slug = `${slug}-${id.slice(0, 6)}`;
@@ -193,7 +193,7 @@ async function savePreparedPublication(env, run, candidate, publication, quality
     ...["fr", "en", "ar"].map(locale => { const text = publication.translations[locale]; return env.DB.prepare("INSERT INTO content_translations(content_id,locale,title,excerpt,body,summary,ai_disclosure,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)").bind(id, locale, text.title, text.excerpt, text.body, text.summary, aiDisclosure(locale), now, now); }),
     ...publication.sources.map(source => env.DB.prepare("INSERT INTO content_sources(id,content_id,label,url,publisher,published_at,created_at) VALUES(?,?,?,?,?,?,?)").bind(crypto.randomUUID(), id, source.label, source.url, source.publisher, source.publishedAt, now)),
     env.DB.prepare("UPDATE editorial_candidates SET selected=1 WHERE run_id=? AND url=?").bind(run.id, candidate.url),
-    env.DB.prepare("UPDATE editorial_runs SET status='ready',category=?,content_id=?,selected_topic=?,quality_report_json=?,updated_at=?,completed_at=? WHERE id=?").bind(candidate.category, id, fr.title, JSON.stringify(qualityReport), now, now, run.id),
+    env.DB.prepare("UPDATE editorial_runs SET status='ready',category=?,content_id=?,selected_topic=?,quality_report_json=?,updated_at=?,completed_at=? WHERE id=?").bind(candidate.category, id, fr.title, JSON.stringify({ quality: qualityReport, seoGeo: seoGeoReport }), now, now, run.id),
     env.DB.prepare("UPDATE editorial_cycle_state SET deployment_status='content_ready',updated_at=? WHERE id=1").bind(now)
   ];
   await env.DB.batch(statements);
@@ -201,6 +201,7 @@ async function savePreparedPublication(env, run, candidate, publication, quality
   await log(env, run.id, "LANGUAGES_GENERATED", "fr,en,ar");
   await log(env, run.id, "IMAGE_READY", media.key);
   await log(env, run.id, "QUALITY_GATE_PASSED", JSON.stringify(qualityReport));
+  await log(env, run.id, "SEO_GEO_GATE_PASSED", JSON.stringify(seoGeoReport));
   await log(env, run.id, "PUBLICATION_CREATED", slug);
   return { id, slug };
 }
@@ -232,9 +233,12 @@ async function prepare(env, date = new Date(), force = false) {
         const publication = await createPublication(env, candidate, bundle, state.cycle_type);
         const qualityReport = await qualityGate(env, publication, bundle, state.cycle_type);
         await log(env, run.id, "FACT_CHECK_PASSED", `${publication.factSheet.claims.length} claims; ${bundle.length} source(s)`);
+        const seoGeoIssues = seoGeoPublicationIssues(publication, state.cycle_type);
+        if (seoGeoIssues.length) throw new Error(`SEO_GEO_REJECTED:${seoGeoIssues.join(",")}`);
+        const seoGeoReport = { passed: true, checkedAt: nowIso(), locales: ["fr", "en", "ar"], sourceCount: publication.sources.length };
         const provisionalSlug = slugify(publication.translations.fr.title) || `publication-${crypto.randomUUID().slice(0, 8)}`;
         const media = await generateImage(env, publication, provisionalSlug);
-        const content = await savePreparedPublication(env, run, candidate, publication, qualityReport, media, scheduledAtSix(date, clock));
+        const content = await savePreparedPublication(env, run, candidate, publication, qualityReport, seoGeoReport, media, scheduledAtSix(date, clock));
         return { ok: true, runId: run.id, ...content, category: candidate.category, sources: bundle.length };
       } catch (error) {
         const reason = plainText(String(error.message || error), 500);
@@ -315,7 +319,7 @@ async function publishDue(env, date = new Date(), force = false) {
       const publicUrl = `${env.PUBLIC_ORIGIN}/fr/articles/${encodeURIComponent(item.slug)}/`;
       await env.DB.batch([
         env.DB.prepare("UPDATE editorial_cycle_categories SET completed_at=? WHERE cycle_number=? AND category=?").bind(now, state.cycle_number, item.category),
-        env.DB.prepare("UPDATE editorial_runs SET status='published',public_url=?,updated_at=?,completed_at=? WHERE id=?").bind(publicUrl, now, now, run.id),
+        env.DB.prepare("UPDATE editorial_runs SET status='published',public_url=?,error_code=NULL,error_detail=NULL,updated_at=?,completed_at=? WHERE id=?").bind(publicUrl, now, now, run.id),
         env.DB.prepare("UPDATE editorial_cycle_state SET next_publication_local_date=?,last_publication_at=?,last_public_url=?,deployment_status='public',updated_at=? WHERE id=1").bind(nextDate, now, publicUrl, now)
       ]);
       await log(env, run.id, "DEPLOYMENT_SUCCESS", publicUrl);

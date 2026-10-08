@@ -149,3 +149,20 @@ export function publicationQualityIssues(publication, type = "article") {
 export function isCompletePublication(publication, type = "article") {
   return publicationQualityIssues(publication, type).length === 0;
 }
+
+export function seoGeoPublicationIssues(publication, type = "article") {
+  const issues = [];
+  const qualityIssues = publicationQualityIssues(publication, type);
+  if (qualityIssues.length) issues.push(...qualityIssues);
+  const french = publication?.translations?.fr;
+  const slug = slugify(french?.title || "");
+  if (!slug || slug.length < 8) issues.push("invalid_public_slug");
+  for (const source of publication?.sources || []) {
+    if (!allowedExternalUrl(source?.url)) issues.push("invalid_source_url");
+    if (plainText(source?.label, 240).length < 3) issues.push("invalid_source_label");
+  }
+  const claims = publication?.factSheet?.claims || [];
+  const sourceIds = new Set((publication?.sources || []).map((source) => source.id));
+  if (claims.some((claim) => !claim?.sourceIds?.every((id) => sourceIds.has(id)))) issues.push("unknown_fact_sheet_source");
+  return [...new Set(issues)];
+}

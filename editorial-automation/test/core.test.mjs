@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { addLocalDays, allowedExternalUrl, extractAiJson, isCompletePublication, isPublicationDue, localClock, parseFeed, publicationQualityIssues, rankCandidates, safeJson, slugify, titleSimilarity } from "../src/core.js";
+import { addLocalDays, allowedExternalUrl, extractAiJson, isCompletePublication, isPublicationDue, localClock, parseFeed, publicationQualityIssues, rankCandidates, safeJson, seoGeoPublicationIssues, slugify, titleSimilarity } from "../src/core.js";
 
 test("rejects local and non-https source URLs", () => {
   assert.equal(allowedExternalUrl("http://example.com"), false);
@@ -23,6 +23,14 @@ test("blocks thin or placeholder automated publications", () => {
   for(const locale of ["fr","en","ar"])publication.translations[locale]={title:"A sufficiently precise editorial title",excerpt:"A sufficiently detailed excerpt that explains the central verified information.",body:"Lorem ipsum"};
   assert.equal(isCompletePublication(publication,"article"),false);
   assert.ok(publicationQualityIssues(publication,"article").some(issue=>issue.startsWith("invalid_body")));
+});
+
+test("blocks SEO/GEO publication metadata that cannot support a trustworthy public article", () => {
+  const publication={factSheet:{event:"A sufficiently described verified event",claims:[{claim:"claim one",sourceIds:["S1"]},{claim:"claim two",sourceIds:["S1"]}]},sources:[{id:"S1",label:"Official source",url:"https://example.org/source"}],imagePrompt:"A detailed realistic editorial image of the specific verified technology in a laboratory environment",translations:{}};
+  for(const locale of ["fr","en","ar"])publication.translations[locale]={title:"A sufficiently precise editorial title for a verified event",excerpt:"A sufficiently detailed excerpt that explains the central verified information.",body:"A ".repeat(700)};
+  assert.deepEqual(seoGeoPublicationIssues(publication,"article"),[]);
+  publication.sources[0].url="http://example.org/source";
+  assert.ok(seoGeoPublicationIssues(publication,"article").includes("invalid_source_url"));
 });
 
 test("keeps a durable 48-hour local-date cadence", () => {
