@@ -16,7 +16,9 @@ function normalizedEvent(payload) {
 
 export async function onRequestPost(context) {
   const url = new URL(context.request.url);
-  const provided = context.request.headers.get("x-tamusni-webhook-secret") || url.searchParams.get("token");
+  const authorization = context.request.headers.get("authorization") || "";
+  const bearer = authorization.match(/^Bearer\s+(.+)$/i)?.[1] || null;
+  const provided = context.request.headers.get("x-tamusni-webhook-secret") || bearer || url.searchParams.get("token");
   if (!context.env.BREVO_WEBHOOK_SECRET || provided !== context.env.BREVO_WEBHOOK_SECRET) {
     return json({ error: "Not found" }, 404);
   }
