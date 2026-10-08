@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { addLocalDays, allowedExternalUrl, isCompletePublication, isPublicationDue, localClock, parseFeed, publicationQualityIssues, rankCandidates, slugify, titleSimilarity } from "../src/core.js";
+import { addLocalDays, allowedExternalUrl, isCompletePublication, isPublicationDue, localClock, parseFeed, publicationQualityIssues, rankCandidates, safeJson, slugify, titleSimilarity } from "../src/core.js";
 
 test("rejects local and non-https source URLs", () => {
   assert.equal(allowedExternalUrl("http://example.com"), false);
@@ -44,4 +44,10 @@ test("prioritizes pending category order, trust tier and freshness", () => {
 test("detects related titles without treating separate stories as identical", () => {
   assert.ok(titleSimilarity("NASA confirms a new lunar mission schedule", "New lunar mission schedule confirmed by NASA") > .5);
   assert.ok(titleSimilarity("NASA confirms a new lunar mission schedule", "Cybersecurity agency publishes browser guidance") < .2);
+});
+
+test("accepts structured and fenced JSON returned by Workers AI", () => {
+  assert.deepEqual(safeJson({ approved: true }), { approved: true });
+  assert.deepEqual(safeJson('```json\n{"approved":true}\n```'), { approved: true });
+  assert.deepEqual(safeJson('Result: {"approved":true}'), { approved: true });
 });

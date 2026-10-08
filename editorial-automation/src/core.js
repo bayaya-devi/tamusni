@@ -81,8 +81,13 @@ export function slugify(value) {
 }
 
 export function safeJson(value) {
-  if (value && typeof value === "object") return value;
-  try { return JSON.parse(String(value || "")); } catch { return null; }
+  if (value && typeof value === "object" && !Array.isArray(value)) return value;
+  const raw = String(value || "").trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  try { return JSON.parse(raw); } catch {
+    const start = raw.indexOf("{"), end = raw.lastIndexOf("}");
+    if (start < 0 || end <= start) return null;
+    try { return JSON.parse(raw.slice(start, end + 1)); } catch { return null; }
+  }
 }
 
 function tokenSet(value) {
