@@ -344,7 +344,7 @@ async function scheduledRun(env, date = new Date()) {
 
 export { prepare, publishDue, scheduledRun };
 
-export default {
+const worker = {
   async scheduled(controller, env, ctx) {
     ctx.waitUntil(scheduledRun(env, new Date(controller.scheduledTime)).catch(error => console.error("editorial_scheduled_failed", error)));
   },
@@ -367,3 +367,5 @@ export default {
     }
   }
 };
+
+export default worker;
