@@ -42,7 +42,7 @@ export async function onRequestPost(context) {
       liked = true;
     }
   } else {
-    const uniqueView = await context.env.DB.prepare("INSERT OR IGNORE INTO content_view_sessions(actor_key,content_id,viewed_on,created_at) VALUES(?,?,?,?)").bind(actorKey, item.id, now.slice(0, 10), now).run();
+    const uniqueView = await context.env.DB.prepare("INSERT OR IGNORE INTO content_unique_views(actor_key,content_id,user_id,first_viewed_at) VALUES(?,?,?,?)").bind(actorKey, item.id, session?.sub || null, now).run();
     if (Number(uniqueView.meta?.changes || 0) > 0) {
       await context.env.DB.prepare("INSERT INTO content_views(id,content_id,user_id,viewed_at) VALUES(?,?,?,?)").bind(crypto.randomUUID(), item.id, session?.sub || null, now).run();
     }

@@ -113,3 +113,9 @@ test('the shared client exposes only the official social accounts',async()=>{
   assert.match(source,/https:\/\/web\.facebook\.com\/profile\.php\?id=61595345005345/);
   assert.match(source,/https:\/\/www\.youtube\.com\/@Tamusni-i7h/);
 });
+
+test('content interactions use lifetime-unique views and unique like keys',async()=>{
+  const source=await import('node:fs/promises').then(fs=>fs.readFile(new URL('../functions/api/content/[slug].js',import.meta.url),'utf8'));
+  assert.match(source,/INSERT OR IGNORE INTO content_unique_views/);
+  assert.match(source,/content_likes WHERE actor_key=\? AND content_id=\?/);
+});
