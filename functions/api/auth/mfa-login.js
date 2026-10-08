@@ -5,7 +5,7 @@ export async function onRequestPost(context) {
   if (!sameOrigin(context.request)) return json({ error: "Origine refusée." },403);
   try {
     const challenge=await getMfaChallenge(context.request,context.env.SESSION_SECRET); if(!challenge)return json({error:"La vérification a expiré. Reconnectez-vous."},401,{"Set-Cookie":clearMfaChallengeCookie()});
-    const user=await context.env.DB.prepare("SELECT id,name,email,role,mfa_enabled,mfa_secret FROM users WHERE id=?").bind(challenge.sub).first();
+    const user=await context.env.DB.prepare("SELECT u.id,u.name,u.email,u.role,u.mfa_enabled,u.mfa_secret,r.role AS additional_role FROM users u LEFT JOIN user_roles r ON r.user_id=u.id WHERE u.id=?").bind(challenge.sub).first();
     if(!user||!user.mfa_enabled||!user.mfa_secret)return json({error:"Double authentification indisponible."},401,{"Set-Cookie":clearMfaChallengeCookie()});
     const attemptKey=await hashToken(`mfa|${context.request.headers.get("CF-Connecting-IP")||"unknown"}|${user.id}`); const now=Date.now();
     const attempt=await context.env.DB.prepare("SELECT attempts,window_started_at,blocked_until FROM login_attempts WHERE key_hash=?").bind(attemptKey).first();
@@ -17,6 +17,7 @@ export async function onRequestPost(context) {
       try{await recordAuthEvent(context,{userId:user.id,email:user.email,event:"mfa_failure"})}catch{} return json({error:"Code incorrect."},401);
     }
     await context.env.DB.prepare("DELETE FROM login_attempts WHERE key_hash=?").bind(attemptKey).run(); try{await recordAuthEvent(context,{userId:user.id,email:user.email,event:"login_success"})}catch{}
-    return json({ok:true,redirect:user.role==="ADMIN"?"/admin/":"/mon-espace/"},200,{"Set-Cookie":await createSessionCookie(user,context.env.SESSION_SECRET)});
+    const role=user.role==="ADMIN"?"ADMIN":user.additional_role||"USER";
+    return json({ok:true,redirect:role==="ADMIN"?"/admin/":role==="CONTRIBUTOR"?"/contributeur/":"/mon-espace/"},200,{"Set-Cookie":await createSessionCookie({...user,role},context.env.SESSION_SECRET)});
   } catch(error){console.error("mfa_login_failed",error);return json({error:"Vérification impossible."},500)}
 }

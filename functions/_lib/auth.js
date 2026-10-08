@@ -4,11 +4,11 @@ export function json(data, status = 200, headers = {}) {
   return Response.json(data, { status, headers: { "Cache-Control": "no-store", ...headers } });
 }
 
-export async function readBody(request) {
-  if (Number(request.headers.get("content-length") || 0) > 20_000) throw new Error("PAYLOAD_TOO_LARGE");
+export async function readBody(request, maxBytes = 20_000) {
+  if (Number(request.headers.get("content-length") || 0) > maxBytes) throw new Error("PAYLOAD_TOO_LARGE");
   if (!request.body) return {};
   const reader=request.body.getReader(); const chunks=[]; let total=0;
-  while(true){const {done,value}=await reader.read();if(done)break;total+=value.byteLength;if(total>20_000){await reader.cancel();throw new Error("PAYLOAD_TOO_LARGE");}chunks.push(value);}
+  while(true){const {done,value}=await reader.read();if(done)break;total+=value.byteLength;if(total>maxBytes){await reader.cancel();throw new Error("PAYLOAD_TOO_LARGE");}chunks.push(value);}
   const bytes=new Uint8Array(total);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
   try{return JSON.parse(new TextDecoder().decode(bytes));}catch{throw new Error("INVALID_JSON");}
 }
@@ -89,7 +89,7 @@ export async function getSession(request, secret) {
 export async function requireSession(context) {
   const session = await getSession(context.request, context.env.SESSION_SECRET);
   if (!session || !context.env.DB) return null;
-  const user = await context.env.DB.prepare("SELECT id, name, email, role, is_banned FROM users WHERE id = ?").bind(session.sub).first();
+  const user = await context.env.DB.prepare("SELECT u.id,u.name,u.email,u.is_banned,CASE WHEN u.role='ADMIN' THEN 'ADMIN' WHEN r.role='CONTRIBUTOR' THEN 'CONTRIBUTOR' ELSE 'USER' END AS role FROM users u LEFT JOIN user_roles r ON r.user_id=u.id WHERE u.id = ?").bind(session.sub).first();
   return user && !user.is_banned ? { sub: user.id, name: user.name, email: user.email, role: user.role, iat: session.iat || null, exp: session.exp } : null;
 }
 
@@ -101,6 +101,11 @@ export async function requireRecentSession(context,maximumAge=900_000) {
 export async function requireAdmin(context) {
   const session = await requireSession(context);
   return session?.role === "ADMIN" ? session : null;
+}
+
+export async function requireContributor(context) {
+  const session = await requireSession(context);
+  return session && (session.role === "CONTRIBUTOR" || session.role === "ADMIN") ? session : null;
 }
 
 export function validEmail(value) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim().toLowerCase()); }

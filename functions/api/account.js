@@ -10,7 +10,7 @@ export async function onRequestGet(context) {
   const session = await requireSession(context);
   if (!session) return json({ error: "Connexion requise." }, 401);
   const [profile, history, topics, searches, notifications] = await Promise.all([
-    context.env.DB.prepare("SELECT id,name,email,role,avatar_url,bio,preferred_language,preferred_theme,text_size,display_density,notifications_enabled,preferred_topic,sponsored_in_app,sponsored_email,created_at FROM users WHERE id=?").bind(session.sub).first(),
+    context.env.DB.prepare("SELECT u.id,u.name,u.email,CASE WHEN u.role='ADMIN' THEN 'ADMIN' WHEN r.role='CONTRIBUTOR' THEN 'CONTRIBUTOR' ELSE 'USER' END AS role,u.avatar_url,u.bio,u.preferred_language,u.preferred_theme,u.text_size,u.display_density,u.notifications_enabled,u.preferred_topic,u.sponsored_in_app,u.sponsored_email,u.created_at FROM users u LEFT JOIN user_roles r ON r.user_id=u.id WHERE u.id=?").bind(session.sub).first(),
     context.env.DB.prepare("SELECT c.slug,c.type,c.title,c.category,h.progress,h.last_read_at FROM reading_history h JOIN content_items c ON c.id=h.content_id WHERE h.user_id=? ORDER BY h.last_read_at DESC LIMIT 50").bind(session.sub).all(),
     context.env.DB.prepare("SELECT topic,created_at FROM topic_subscriptions WHERE user_id=? ORDER BY topic").bind(session.sub).all(),
     context.env.DB.prepare("SELECT query,searched_at FROM search_history WHERE user_id=? ORDER BY searched_at DESC LIMIT 20").bind(session.sub).all(),

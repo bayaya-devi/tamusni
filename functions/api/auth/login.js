@@ -11,7 +11,7 @@ export async function onRequestPost(context) {
     const attemptKey = await hashToken(`${context.request.headers.get("CF-Connecting-IP") || "unknown"}|${email}`);
     const attempt = await context.env.DB.prepare("SELECT attempts, window_started_at, blocked_until FROM login_attempts WHERE key_hash = ?").bind(attemptKey).first();
     if (attempt?.blocked_until && Date.parse(attempt.blocked_until) > now) return json({ error: "Trop de tentatives. Réessayez dans quelques minutes." }, 429, { "Retry-After": "900" });
-    const user = await context.env.DB.prepare("SELECT id, name, email, password_hash, role, mfa_enabled, is_banned FROM users WHERE email = ?").bind(email).first();
+    const user = await context.env.DB.prepare("SELECT u.id,u.name,u.email,u.password_hash,u.role,u.mfa_enabled,u.is_banned,r.role AS additional_role FROM users u LEFT JOIN user_roles r ON r.user_id=u.id WHERE u.email = ?").bind(email).first();
     if (!user || !(await verifyPassword(password, user.password_hash))) {
       const withinWindow = attempt?.window_started_at && now - Date.parse(attempt.window_started_at) < 900_000;
       const attempts = withinWindow ? Number(attempt.attempts || 0) + 1 : 1;
@@ -26,6 +26,7 @@ export async function onRequestPost(context) {
     if (!context.env.SESSION_SECRET) return json({ error: "Configuration de session indisponible." }, 503);
     if (user.mfa_enabled) return json({ ok: true, mfaRequired: true, message: "Saisissez le code de votre application d’authentification." }, 202, { "Set-Cookie": await createMfaChallengeCookie(user, context.env.SESSION_SECRET) });
     try { await recordAuthEvent(context,{ userId:user.id, email:user.email, event:"login_success" }); } catch {}
-    return json({ ok: true, redirect: user.role === "ADMIN" ? "/admin" : "/mon-espace/" }, 200, { "Set-Cookie": await createSessionCookie(user, context.env.SESSION_SECRET) });
+    const role = user.role === "ADMIN" ? "ADMIN" : user.additional_role || "USER";
+    return json({ ok: true, redirect: role === "ADMIN" ? "/admin/" : role === "CONTRIBUTOR" ? "/contributeur/" : "/mon-espace/" }, 200, { "Set-Cookie": await createSessionCookie({ ...user, role }, context.env.SESSION_SECRET) });
   } catch(error) { console.error("login_failed",error); return json({ error: "Connexion impossible pour le moment." }, 500); }
 }
