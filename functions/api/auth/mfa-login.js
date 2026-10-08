@@ -1,5 +1,6 @@
 import { clearMfaChallengeCookie, createSessionCookie, getMfaChallenge, hashToken, json, readBody, sameOrigin } from "../../_lib/auth.js";
 import { decryptMfaSecret, recordAuthEvent, verifyTotp } from "../../_lib/mfa.js";
+import { finalizeNewsletterIntent } from "../../_lib/newsletter-service.js";
 
 export async function onRequestPost(context) {
   if (!sameOrigin(context.request)) return json({ error: "Origine refusée." },403);
@@ -18,6 +19,7 @@ export async function onRequestPost(context) {
     }
     await context.env.DB.prepare("DELETE FROM login_attempts WHERE key_hash=?").bind(attemptKey).run(); try{await recordAuthEvent(context,{userId:user.id,email:user.email,event:"login_success"})}catch{}
     const role=user.role==="ADMIN"?"ADMIN":user.additional_role||"USER";
-    return json({ok:true,redirect:role==="ADMIN"?"/admin/":role==="CONTRIBUTOR"?"/contributeur/":"/mon-espace/"},200,{"Set-Cookie":await createSessionCookie({...user,role},context.env.SESSION_SECRET)});
+    let newsletter=null;try{newsletter=await finalizeNewsletterIntent(context,user)}catch(error){console.error("newsletter_intent_finalize_failed",error)}
+    return json({ok:true,newsletter:newsletter&&!newsletter.mismatch?"subscribed":null,redirect:role==="ADMIN"?"/admin/":role==="CONTRIBUTOR"?"/contributeur/":`/mon-espace/${newsletter&&!newsletter.mismatch?'?newsletter=success':''}`},200,{"Set-Cookie":await createSessionCookie({...user,role},context.env.SESSION_SECRET)});
   } catch(error){console.error("mfa_login_failed",error);return json({error:"Vérification impossible."},500)}
 }

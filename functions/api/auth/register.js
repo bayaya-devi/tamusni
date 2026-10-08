@@ -2,6 +2,7 @@ import { createSessionCookie, hashPassword, hashToken, json, readBody, sameOrigi
 import { mirrorUser } from "../../_lib/supabase.js";
 import { emailLayout, emailProvider, escapeHtml, sendEmail } from "../../_lib/email.js";
 import { normalizeTopics, replaceTopicSubscriptions } from "../../_lib/topics.js";
+import { finalizeNewsletterIntent } from "../../_lib/newsletter-service.js";
 
 export async function onRequestPost(context) {
   if (!sameOrigin(context.request)) return json({ error: "Origine refusée." }, 403);
@@ -27,6 +28,7 @@ export async function onRequestPost(context) {
     try { await context.env.DB.prepare("INSERT INTO admin_notifications(id,type,title,body,target_url,target_type,target_id,created_at) VALUES(?,?,?,?,?,?,?,?)").bind(crypto.randomUUID(),"account","Nouveau compte","Un compte vient d’être créé.","/admin/#accounts","user",user.id,now).run(); } catch (error) { console.error("admin_notification_failed", error); }
     try { await mirrorUser(context.env, user); } catch (error) { console.error("supabase_user_mirror_failed", error); }
     try { await sendEmail(context.env,{to:context.env.ADMIN_NOTIFICATION_EMAIL||"aetbconseil@gmail.com",subject:"Nouveau compte TAMUSNI",html:emailLayout("Nouveau compte",`<p>${escapeHtml(name)} vient de créer un compte avec les rubriques : ${escapeHtml(preferredTopics.join(", "))}.</p>`),text:`Nouveau compte : ${name} (${preferredTopics.join(", ")}).`}); } catch (error) { console.error("admin_account_email_failed",error); }
-    return json({ ok: true, redirect: "/mon-espace/", message:"Compte créé. Un e-mail de confirmation vient d’être envoyé." }, 201, { "Set-Cookie": await createSessionCookie(user, context.env.SESSION_SECRET) });
+    let newsletter=null;try{newsletter=await finalizeNewsletterIntent(context,user)}catch(error){console.error("newsletter_intent_finalize_failed",error)}
+    return json({ ok: true, newsletter:newsletter&&!newsletter.mismatch?"subscribed":null,redirect: `/mon-espace/${newsletter&&!newsletter.mismatch?'?newsletter=success':''}`, message:"Compte créé. Un e-mail de confirmation vient d’être envoyé." }, 201, { "Set-Cookie": await createSessionCookie(user, context.env.SESSION_SECRET) });
   } catch (error) { console.error("registration_failed", error); const emailFailure=error?.message==="EMAIL_REJECTED"||error?.message==="EMAIL_NOT_CONFIGURED"; return json({ error: error?.message === "PAYLOAD_TOO_LARGE" ? "Requête trop volumineuse." : emailFailure ? "La confirmation e-mail n’a pas pu être envoyée. Aucun compte n’a été créé." : "Création du compte impossible." }, error?.message === "PAYLOAD_TOO_LARGE" ? 413 : emailFailure ? 502 : 500); }
 }

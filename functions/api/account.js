@@ -47,7 +47,7 @@ export async function onRequestPatch(context) {
     const sponsoredEmail = body.sponsoredEmail === true ? 1 : 0;
     if (name.length < 2 || !validEmail(email) || !preferredTopics.length || (avatar && !/^https:\/\//i.test(avatar))) return json({ error: "Profil invalide : choisissez au moins une rubrique." }, 400);
     try {
-      await context.env.DB.prepare("UPDATE users SET name=?,email=?,bio=?,avatar_url=?,preferred_language=?,preferred_theme=?,text_size=?,display_density=?,notifications_enabled=?,preferred_topic=?,sponsored_in_app=?,sponsored_email=? WHERE id=?").bind(name, email, bio, avatar || null, language, theme, textSize, density, notifications, preferredTopic, sponsoredInApp, sponsoredEmail, session.sub).run();
+      await context.env.DB.batch([context.env.DB.prepare("UPDATE users SET name=?,email=?,bio=?,avatar_url=?,preferred_language=?,preferred_theme=?,text_size=?,display_density=?,notifications_enabled=?,preferred_topic=?,sponsored_in_app=?,sponsored_email=? WHERE id=?").bind(name, email, bio, avatar || null, language, theme, textSize, density, notifications, preferredTopic, sponsoredInApp, sponsoredEmail, session.sub),context.env.DB.prepare("UPDATE newsletter_subscribers SET email=?,locale=?,brevo_previous_email=CASE WHEN lower(email)<>lower(?) THEN email ELSE brevo_previous_email END,brevo_sync_status=CASE WHEN lower(email)<>lower(?) OR locale<>? THEN 'pending' ELSE brevo_sync_status END,updated_at=? WHERE user_id=?").bind(email,language,email,email,language,new Date().toISOString(),session.sub)]);
       await replaceTopicSubscriptions(context.env.DB, session.sub, preferredTopics);
     } catch { return json({ error: "Cette adresse e-mail est déjà utilisée." }, 409); }
     return json({ ok: true });

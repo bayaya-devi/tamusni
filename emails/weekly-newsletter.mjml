@@ -1,0 +1,11 @@
+<mjml lang="{{locale}}" dir="{{direction}}">
+  <mj-head>
+    <mj-title>{{subject}}</mj-title><mj-preview>{{preheader}}</mj-preview><mj-breakpoint width="620px" />
+    <mj-attributes><mj-all font-family="Arial, sans-serif" /><mj-text color="#0B1020" font-size="16px" line-height="26px" /><mj-button background-color="#2563EB" color="#FFFFFF" border-radius="10px" inner-padding="13px 20px" /></mj-attributes>
+  </mj-head>
+  <mj-body background-color="#EEF2F7" width="600px">
+    <mj-section background-color="#111A2E" border-radius="18px 18px 0 0"><mj-column><mj-text color="#F8FAFC" font-size="28px" font-weight="700">TAMUSNI</mj-text><mj-text color="#BFC7D5">{{edition_label}} · {{date}}</mj-text></mj-column></mj-section>
+    <mj-section background-color="#FFFFFF"><mj-column><mj-text>{{intro}}</mj-text><!-- Runtime repeats 1–5 validated article blocks here. --></mj-column></mj-section>
+    <mj-section background-color="#111A2E" border-radius="0 0 18px 18px"><mj-column><mj-text color="#BFC7D5" font-size="12px">TAMUSNI · A&amp;B TECHNOLOGIES · <a href="{{ unsubscribe }}" style="color:#BFC7D5">{{unsubscribe_label}}</a></mj-text></mj-column></mj-section>
+  </mj-body>
+</mjml>

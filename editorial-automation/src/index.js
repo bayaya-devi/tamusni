@@ -344,15 +344,23 @@ async function scheduledRun(env, date = new Date()) {
 
 export { prepare, publishDue, scheduledRun };
 
+async function triggerNewsletter(env) {
+  if (!env.NEWSLETTER_RUN_TOKEN) return { skipped: "newsletter_token_missing" };
+  const response = await fetch(`${env.PUBLIC_ORIGIN}/api/newsletter/run`, { method: "POST", headers: { Authorization: `Bearer ${env.NEWSLETTER_RUN_TOKEN}` } });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(`NEWSLETTER_TRIGGER_${response.status}`);
+  return result;
+}
+
 const worker = {
   async scheduled(controller, env, ctx) {
-    ctx.waitUntil(scheduledRun(env, new Date(controller.scheduledTime)).catch(error => console.error("editorial_scheduled_failed", error)));
+    ctx.waitUntil(Promise.allSettled([scheduledRun(env, new Date(controller.scheduledTime)).catch(error => console.error("editorial_scheduled_failed", error)),triggerNewsletter(env).catch(error => console.error("newsletter_scheduled_failed", error))]));
   },
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === "/health") {
       const state = await currentState(env);
-      return jsonResponse({ service: "TAMUSNI WATCH", active: true, cycleType: state.cycle_type, cycleNumber: state.cycle_number, nextPublicationLocalDate: state.next_publication_local_date, timeZone: env.EDITORIAL_TIME_ZONE || "Africa/Casablanca", cadenceDays: Number(env.PUBLICATION_CADENCE_DAYS || 2), deploymentStatus: state.deployment_status });
+      return jsonResponse({ service: "TAMUSNI WATCH", active: true, cycleType: state.cycle_type, cycleNumber: state.cycle_number, nextPublicationLocalDate: state.next_publication_local_date, timeZone: env.EDITORIAL_TIME_ZONE || "Africa/Casablanca", cadenceDays: Number(env.PUBLICATION_CADENCE_DAYS || 2), deploymentStatus: state.deployment_status, newsletterTriggerConfigured:Boolean(env.NEWSLETTER_RUN_TOKEN) });
     }
     if (url.pathname !== "/run") return new Response("Not found", { status: 404 });
     const token = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
