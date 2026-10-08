@@ -3,6 +3,7 @@ import { hashToken, json } from "../../_lib/auth.js";
 const EVENT_ALIASES = new Map([
   ["unsubscribe", "unsubscribed"],
   ["unsubscribed", "unsubscribed"],
+  ["clicked", "click"],
   ["hardbounce", "hard_bounce"],
   ["hard_bounce", "hard_bounce"],
   ["softbounce", "soft_bounce"],
