@@ -1,13 +1,22 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { canAcquireNewsletterRun, newsletterDue, normalizeNewsletterLocale, scoreNewsletterContent, selectNewsletterItems, sundayCycle } from "../functions/_lib/newsletter-core.js";
+import { canAcquireNewsletterRun, newsletterClock, newsletterDue, normalizeNewsletterLocale, scoreNewsletterContent, selectNewsletterItems, sundayCycle } from "../functions/_lib/newsletter-core.js";
 import { renderNewsletter } from "../functions/_lib/newsletter-template.js";
 import { sendEmail } from "../functions/_lib/email.js";
 
 const item=(id,category="Innovation",score={})=>({id,slug:`story-${id}`,category,type:"article",title:`Story ${id}`,summary:"A complete and reliable summary with enough context for newsletter readers.",excerpt:"A complete excerpt for readers.",published_at:"2026-10-04T05:00:00.000Z",cover_url:"/images/editorial-battery.svg",source_count:2,views:score.views||0,likes:score.likes||0,saves:score.saves||0,fact_check_status:"verified",localized_title:`Localized ${id}`,localized_summary:"A localized and complete summary for this weekly edition."});
 
 test("normalizes the five newsletter locales",()=>{for(const locale of ["fr","ar","en","es","pt"])assert.equal(normalizeNewsletterLocale(`${locale}-MA`),locale);assert.equal(normalizeNewsletterLocale("de"),"fr")});
-test("detects Sunday 08:00 in Africa/Casablanca without a fixed offset",()=>{assert.equal(newsletterDue(new Date("2026-10-11T07:05:00Z")),true);assert.equal(newsletterDue(new Date("2026-10-11T09:05:00Z")),false)});
+test("detects Sunday 08:00 in Africa/Casablanca without a fixed offset",()=>{
+  const start=Date.parse("2026-10-10T18:00:00Z");
+  const candidates=Array.from({length:24*60},(_,minute)=>new Date(start+minute*60000));
+  const dueInstant=candidates.find(date=>{const clock=newsletterClock(date);return clock.date==="2026-10-11"&&clock.hour===8&&clock.minute===5});
+  const outsideWindow=candidates.find(date=>{const clock=newsletterClock(date);return clock.date==="2026-10-11"&&clock.hour===9&&clock.minute===5});
+  assert.ok(dueInstant,"the runtime timezone database must expose Sunday 08:05 in Casablanca");
+  assert.ok(outsideWindow,"the runtime timezone database must expose Sunday 09:05 in Casablanca");
+  assert.equal(newsletterDue(dueInstant),true);
+  assert.equal(newsletterDue(outsideWindow),false);
+});
 test("creates a stable weekly cycle key",()=>{const cycle=sundayCycle(new Date("2026-10-11T07:05:00Z"));assert.match(cycle.cycleKey,/^newsletter_2026-W\d{2}$/);assert.equal(cycle.localDate,"2026-10-11")});
 test("selection keeps four main items, diversity and at most one exceptional item",()=>{const source=[item("a","Innovation",{views:40}),item("b","Innovation",{views:30}),item("c","Espace",{views:20}),item("d","Robotique",{views:10}),item("e","Cybersécurité",{views:100}),item("f","Intelligence artificielle",{views:1})];const result=selectNewsletterItems(source,{periodEnd:Date.parse("2026-10-11T08:00:00Z"),exceptionalThreshold:0});assert.equal(result.items.length,4);assert.ok(result.exceptional);assert.ok(!result.items.some(x=>x.id===result.exceptional.id))});
 test("content score is deterministic and based on real fields",()=>assert.equal(scoreNewsletterContent(item("a"),Date.parse("2026-10-11T08:00:00Z")),scoreNewsletterContent(item("a"),Date.parse("2026-10-11T08:00:00Z"))));
