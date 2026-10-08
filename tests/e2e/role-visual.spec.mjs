@@ -25,6 +25,7 @@ for(const [role,account] of Object.entries(credentials)){
           await expect(page.locator('html')).toHaveAttribute('lang',locale);
           await expect(page.locator('html')).toHaveAttribute('dir',locale==='ar'?'rtl':'ltr');
           await expect(page.locator('.site-header')).toBeVisible();
+          await expect(page.locator(`#${role}-app h1`).first()).toBeVisible({timeout:15_000});
           await expect(page.locator('.site-footer')).toBeVisible();
           await expect(page.locator('.tamusni-rail')).toHaveCount(0);
           const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>document.documentElement.clientWidth+1);
