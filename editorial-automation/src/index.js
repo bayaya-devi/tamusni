@@ -270,9 +270,7 @@ async function ensureNextCycle(env, state) {
 async function publicCheck(env, item) {
   const sourceRows = await env.DB.prepare("SELECT url FROM content_sources WHERE content_id=? ORDER BY created_at").bind(item.id).all();
   for (const source of sourceRows.results || []) {
-    const { response } = await safeFetch(source.url);
-    if (!response.ok) throw new Error(`PUBLIC_SOURCE_HTTP_${response.status}`);
-    await response.body?.cancel();
+    await safeFetch(source.url);
   }
   for (const locale of ["fr", "en", "ar"]) {
     const target = `${env.PUBLIC_ORIGIN}/${locale}/articles/${encodeURIComponent(item.slug)}/`;
