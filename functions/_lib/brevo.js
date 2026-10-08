@@ -39,6 +39,7 @@ export async function createBrevoCampaign(env,payload){
 export const sendBrevoCampaign=(env,id)=>brevoRequest(env,`/emailCampaigns/${encodeURIComponent(id)}/sendNow`,{method:"POST"});
 export const getBrevoCampaign=(env,id)=>brevoRequest(env,`/emailCampaigns/${encodeURIComponent(id)}`);
 export const getBrevoAccount=env=>brevoRequest(env,"/account",{retries:0});
+export const getBrevoSenders=env=>brevoRequest(env,"/senders",{retries:0});
 export async function ensureBrevoMarketingWebhook(env,origin){
   if(!env.BREVO_WEBHOOK_SECRET)throw new Error("BREVO_WEBHOOK_SECRET_MISSING");const base=`${origin.replace(/\/$/,"")}/api/newsletter/webhook`,target=`${base}?token=${encodeURIComponent(env.BREVO_WEBHOOK_SECRET)}&v=2`;const current=await brevoRequest(env,"/webhooks?type=marketing&sort=desc");const found=(current.webhooks||[]).find(item=>String(item.url||"")===target);const body={url:target,description:"TAMUSNI newsletter analytics",type:"marketing",channel:"email",events:["delivered","opened","click","hardBounce","softBounce","spam","unsubscribed"],batched:false};if(found){try{await brevoRequest(env,`/webhooks/${found.id}`,{method:"PUT",body});return {id:found.id,created:false}}catch(error){if(error.status!==400&&error.status!==404)throw error}}const created=await brevoRequest(env,"/webhooks",{method:"POST",body});return {id:created.id,created:true}
 }

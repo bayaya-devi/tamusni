@@ -28,6 +28,15 @@ test('French homepage, menu, rubric and article navigation', async ({ page }) =>
   await expect(page).toHaveURL(/q=NASA/);
 });
 
+test('newsletter visitor intent survives the redirect and prefills login', async ({ page }) => {
+  const email=`newsletter-e2e-${Date.now()}@example.com`;
+  await page.goto('/fr/');
+  await page.getByRole('textbox', { name: 'Adresse e-mail' }).fill(email);
+  await page.getByRole('button', { name: 'S’inscrire' }).click();
+  await expect(page).toHaveURL(/\/fr\/connexion\/\?newsletter=1$/);
+  await expect(page.getByRole('textbox', { name: 'Adresse e-mail' })).toHaveValue(email);
+});
+
 for (const locale of ['ar', 'en', 'es', 'pt']) {
   test(`localized shell ${locale}`, async ({ page }) => {
     await page.goto(`/${locale}/`);
@@ -191,6 +200,7 @@ test('mobile menu, header and carousel preserve the settled scroll position', as
   await page.goto('/fr/');
   const target = await page.evaluate(() => (document.documentElement.scrollHeight - innerHeight) * 0.6);
   await page.evaluate(value => scrollTo({ top: value + 30, behavior: 'instant' }), target);
+  await page.waitForTimeout(120);
   await page.evaluate(value => scrollTo({ top: value, behavior: 'instant' }), target);
   await expect(page.locator('#site-header')).not.toHaveClass(/is-hidden/);
   const before = await page.evaluate(() => scrollY);
