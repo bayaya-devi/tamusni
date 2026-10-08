@@ -1,6 +1,7 @@
 export const LOCALES = ["fr", "en", "ar"];
 export const START_DATE = "2026-10-01";
 export const ACTIVE_CATEGORIES = ["Intelligence", "Innovation", "Robotique", "Cybersécurité", "Espace"];
+export const EDITORIAL_SCORE_FIELDS = ["importance", "reliability", "potentialImpact", "publicInterest", "tamusniRelevance"];
 
 const forbiddenHosts = new Set(["localhost", "0.0.0.0", "127.0.0.1", "::1", "metadata.google.internal"]);
 
@@ -123,6 +124,39 @@ export function titleSimilarity(left, right) {
 export function rankCandidates(candidates, categoryOrder = ACTIVE_CATEGORIES) {
   const order = new Map(categoryOrder.map((category, index) => [category, index]));
   return [...candidates].sort((left, right) => (order.get(left.category) ?? 999) - (order.get(right.category) ?? 999) || Number(left.sourceTier || 9) - Number(right.sourceTier || 9) || Number(left.ageHours || 999) - Number(right.ageHours || 999));
+}
+
+export function editorialScoreBand(total) {
+  if (!Number.isInteger(total) || total < 0 || total > 50) return null;
+  if (total <= 19) return "ignore";
+  if (total <= 29) return "monitor";
+  if (total <= 37) return "flash";
+  if (total <= 43) return "focus";
+  return "priority";
+}
+
+export function normalizeEditorialScore(score) {
+  if (!score || typeof score !== "object") return null;
+  const normalized = {};
+  for (const field of EDITORIAL_SCORE_FIELDS) {
+    const value = Number(score[field]);
+    if (!Number.isInteger(value) || value < 0 || value > 10) return null;
+    normalized[field] = value;
+  }
+  normalized.total = EDITORIAL_SCORE_FIELDS.reduce((sum, field) => sum + normalized[field], 0);
+  normalized.band = editorialScoreBand(normalized.total);
+  normalized.reason = plainText(score.reason, 800);
+  return normalized;
+}
+
+export function editorialScoreIssues(score, type = "article") {
+  const normalized = normalizeEditorialScore(score);
+  if (!normalized) return ["invalid_editorial_score"];
+  const issues = [];
+  if (normalized.reason.length < 30) issues.push("editorial_score_reason_too_short");
+  const minimum = type === "brief" ? 30 : 38;
+  if (normalized.total < minimum) issues.push(normalized.total < 20 ? "editorial_score_ignore" : normalized.total < 30 ? "editorial_score_monitor" : "editorial_score_below_article_threshold");
+  return issues;
 }
 
 export function publicationQualityIssues(publication, type = "article") {

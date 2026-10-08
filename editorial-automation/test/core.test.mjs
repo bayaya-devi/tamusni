@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { addLocalDays, allowedExternalUrl, extractAiJson, isCompletePublication, isPublicationDue, localClock, parseFeed, publicationQualityIssues, rankCandidates, safeJson, seoGeoPublicationIssues, slugify, titleSimilarity } from "../src/core.js";
+import { addLocalDays, allowedExternalUrl, editorialScoreBand, editorialScoreIssues, extractAiJson, isCompletePublication, isPublicationDue, localClock, normalizeEditorialScore, parseFeed, publicationQualityIssues, rankCandidates, safeJson, seoGeoPublicationIssues, slugify, titleSimilarity } from "../src/core.js";
 
 test("rejects local and non-https source URLs", () => {
   assert.equal(allowedExternalUrl("http://example.com"), false);
@@ -38,6 +38,37 @@ test("keeps a durable 48-hour local-date cadence", () => {
   assert.equal(addLocalDays("2026-12-31", 2), "2027-01-02");
   assert.equal(isPublicationDue({ date: "2026-10-08" }, "2026-10-09"), false);
   assert.equal(isPublicationDue({ date: "2026-10-09" }, "2026-10-09"), true);
+});
+
+test("applies the complete TAMUSNI 5x10 editorial scale at every boundary", () => {
+  assert.equal(editorialScoreBand(0), "ignore");
+  assert.equal(editorialScoreBand(19), "ignore");
+  assert.equal(editorialScoreBand(20), "monitor");
+  assert.equal(editorialScoreBand(29), "monitor");
+  assert.equal(editorialScoreBand(30), "flash");
+  assert.equal(editorialScoreBand(37), "flash");
+  assert.equal(editorialScoreBand(38), "focus");
+  assert.equal(editorialScoreBand(43), "focus");
+  assert.equal(editorialScoreBand(44), "priority");
+  assert.equal(editorialScoreBand(50), "priority");
+  assert.equal(editorialScoreBand(51), null);
+});
+
+test("rejects incomplete, inflated or format-ineligible editorial scores", () => {
+  const score = { importance: 8, reliability: 8, potentialImpact: 8, publicInterest: 7, tamusniRelevance: 7, total: 50, reason: "The evidence supports a relevant and reliable technology story." };
+  assert.deepEqual(normalizeEditorialScore(score), { importance: 8, reliability: 8, potentialImpact: 8, publicInterest: 7, tamusniRelevance: 7, total: 38, band: "focus", reason: score.reason });
+  assert.deepEqual(editorialScoreIssues(score, "article"), []);
+  assert.deepEqual(editorialScoreIssues({ ...score, potentialImpact: 0 }, "brief"), []);
+  assert.ok(editorialScoreIssues({ ...score, potentialImpact: 0 }, "article").includes("editorial_score_below_article_threshold"));
+  assert.deepEqual(editorialScoreIssues({ ...score, reliability: 11 }, "article"), ["invalid_editorial_score"]);
+});
+
+test("keeps Morocco calendar dates stable through legal-time changes", () => {
+  const before = localClock(new Date("2026-02-14T05:30:00.000Z"), "Africa/Casablanca");
+  const after = localClock(new Date("2026-03-22T05:30:00.000Z"), "Africa/Casablanca");
+  assert.match(before.date, /^2026-02-14$/);
+  assert.match(after.date, /^2026-03-22$/);
+  assert.equal(addLocalDays("2026-02-28", 2), "2026-03-02");
 });
 
 test("prioritizes pending category order, trust tier and freshness", () => {

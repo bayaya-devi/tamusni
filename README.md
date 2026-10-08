@@ -6,7 +6,7 @@ Revue technologique internationale : Technologies • Sciences • Futur.
 
 - Homepage éditoriale responsive et pages de rubriques, formats et articles.
 - Comptes gratuits facultatifs, session sécurisée et rôles `USER` / `ADMIN` avec une page de connexion commune.
-- E-mails d’accueil utilisateur et notification d’inscription à `aetbconseil@gmail.com` via Resend.
+- E-mails transactionnels et newsletter via Brevo, avec consentement et désinscription conservés dans D1.
 - Frontend public localisé en français, arabe, anglais, espagnol et portugais ; thème clair/sombre suivant l’appareil.
 - Architecture publicitaire conservée mais entièrement inactive par défaut : aucun emplacement ni script publicitaire n’est rendu tant que `ADS_ENABLED=true` n’est pas défini après approbation.
 - Backend hybride Cloudflare + Supabase, surveillé par `/api/backend-status`.
@@ -34,18 +34,19 @@ node 'node_modules/@playwright/test/cli.js' test --config=playwright.config.mjs
 
 La refonte publique est décrite dans [`docs/frontend-constitution.md`](docs/frontend-constitution.md), [`docs/frontend-i18n.md`](docs/frontend-i18n.md) et [`docs/frontend-components.md`](docs/frontend-components.md). Le premier rendu des traductions historiques ES/PT peut demander du temps ; les visites suivantes lisent les versions mises en cache dans D1.
 
-## Cloudflare + Supabase + Resend
+## Cloudflare + Supabase + Brevo
 
 1. Créer la base : `npx wrangler d1 create tamusni-production`.
 2. Remplacer `REPLACE_AFTER_WRANGLER_D1_CREATE` dans `wrangler.jsonc` par l’identifiant retourné.
 3. Appliquer la migration : `npx wrangler d1 migrations apply tamusni-production --remote`.
 4. Appliquer `supabase/migrations/20260924123000_tamusni_schema.sql` au projet Supabase.
-5. Ajouter dans les secrets Cloudflare : `SESSION_SECRET`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY` et `RESEND_FROM`.
+5. Ajouter dans les secrets Cloudflare : `SESSION_SECRET`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `BREVO_API_KEY`, `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME`, `BREVO_WEBHOOK_SECRET` et `NEWSLETTER_RUN_TOKEN`.
 6. Activer `OAUTH_GOOGLE_ENABLED=true` après configuration du fournisseur Google dans Supabase Auth.
-7. Vérifier le domaine expéditeur dans Resend. Le domaine est indispensable pour envoyer au-delà du destinataire de test Resend.
+7. Vérifier l’expéditeur et, idéalement, le domaine d’envoi dans Brevo avant tout envoi réel.
 
 La répartition détaillée et les règles de continuité sont décrites dans [`docs/BACKEND_ARCHITECTURE.md`](docs/BACKEND_ARCHITECTURE.md).
 La frontière stricte entre l'interface publique et l'API est documentée dans [`docs/FRONTEND_BACKEND_BOUNDARY.md`](docs/FRONTEND_BACKEND_BOUNDARY.md).
 Le mécanisme de désactivation et de réactivation future des annonces est documenté dans [`docs/ADSENSE_READINESS.md`](docs/ADSENSE_READINESS.md).
+Les procédures de production, sauvegarde, restauration, reprise et retour arrière sont centralisées dans [`docs/OPERATIONS_RUNBOOK.md`](docs/OPERATIONS_RUNBOOK.md).
 
 Ne jamais versionner les secrets.

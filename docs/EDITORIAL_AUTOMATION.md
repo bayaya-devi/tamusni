@@ -30,6 +30,8 @@ Les sources réellement récupérées sont les seules URL enregistrées et affic
 
 La première passe génère une fiche factuelle avec une source identifiée pour chaque affirmation, puis les versions française, anglaise et arabe depuis cette base unique. Une seconde passe indépendante contrôle : faits, sources, neutralité, qualité éditoriale, français, anglais, arabe et cohérence multilingue.
 
+Avant toute rédaction enregistrable, le sujet reçoit cinq notes entières sur 10 : importance, fiabilité, impact potentiel, intérêt grand public et pertinence TAMUSNI. Le total est recalculé par le code et non accepté tel quel depuis le modèle. Les bandes sont : `0–19 ignore`, `20–29 monitor`, `30–37 flash`, `38–43 focus`, `44–50 priority`. Une brève doit atteindre au moins 30 ; un article au moins 38. La seconde passe doit confirmer que la notation est défendable à partir des sources. Le score normalisé et sa justification sont conservés dans `quality_report_json` et dans le journal `EDITORIAL_SCORE_ACCEPTED`.
+
 Les contrôles déterministes imposent également les longueurs minimales, les trois langues, les citations de sources et l’absence de placeholders. Un échec critique empêche l’enregistrement de la publication.
 
 L’auteur public est `TAMUSNI IA`. Chaque traduction contient une mention explicite de l’assistance de l’IA.
@@ -48,7 +50,7 @@ Après absence totale de sujet valable, la prochaine tentative est déplacée de
 
 ## Journalisation
 
-Les principaux événements sont : `WATCH_STARTED`, `SOURCES_FETCHED`, `CANDIDATES_FOUND`, `DUPLICATES_REMOVED`, `TOPIC_SELECTED`, `FACT_CHECK_STARTED`, `FACT_CHECK_FAILED`, `FACT_CHECK_PASSED`, `CONTENT_GENERATED`, `LANGUAGES_GENERATED`, `IMAGE_READY`, `QUALITY_GATE_PASSED`, `PUBLICATION_CREATED`, `DEPLOYMENT_STARTED`, `DEPLOYMENT_SUCCESS`, `PUBLIC_CHECK_STARTED`, `PUBLIC_CHECK_FAILED` et `PUBLIC_CHECK_SUCCESS`.
+Les principaux événements sont : `WATCH_STARTED`, `SOURCES_FETCHED`, `CANDIDATES_FOUND`, `DUPLICATES_REMOVED`, `TOPIC_SELECTED`, `FACT_CHECK_STARTED`, `FACT_CHECK_FAILED`, `FACT_CHECK_PASSED`, `CONTENT_GENERATED`, `LANGUAGES_GENERATED`, `IMAGE_READY`, `QUALITY_GATE_PASSED`, `EDITORIAL_SCORE_ACCEPTED`, `SEO_GEO_GATE_PASSED`, `PUBLICATION_CREATED`, `DEPLOYMENT_STARTED`, `DEPLOYMENT_SUCCESS`, `PUBLIC_CHECK_STARTED`, `PUBLIC_CHECK_FAILED` et `PUBLIC_CHECK_SUCCESS`.
 
 Aucun secret n’est inscrit dans les logs.
 
