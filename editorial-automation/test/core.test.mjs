@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { addLocalDays, allowedExternalUrl, isCompletePublication, isPublicationDue, localClock, parseFeed, publicationQualityIssues, rankCandidates, safeJson, slugify, titleSimilarity } from "../src/core.js";
+import { addLocalDays, allowedExternalUrl, extractAiJson, isCompletePublication, isPublicationDue, localClock, parseFeed, publicationQualityIssues, rankCandidates, safeJson, slugify, titleSimilarity } from "../src/core.js";
 
 test("rejects local and non-https source URLs", () => {
   assert.equal(allowedExternalUrl("http://example.com"), false);
@@ -50,4 +50,6 @@ test("accepts structured and fenced JSON returned by Workers AI", () => {
   assert.deepEqual(safeJson({ approved: true }), { approved: true });
   assert.deepEqual(safeJson('```json\n{"approved":true}\n```'), { approved: true });
   assert.deepEqual(safeJson('Result: {"approved":true}'), { approved: true });
+  assert.deepEqual(extractAiJson({ response: { content: '```json\n{"approved":true}\n```' } }, ["approved"]), { approved: true });
+  assert.deepEqual(extractAiJson({ choices: [{ message: { content: '{"factSheet":{}}' } }] }, ["factSheet"]), { factSheet: {} });
 });

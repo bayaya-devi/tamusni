@@ -90,6 +90,26 @@ export function safeJson(value) {
   }
 }
 
+export function extractAiJson(result, expectedKeys = []) {
+  const queue = [result];
+  const seen = new Set();
+  while (queue.length) {
+    const candidate = queue.shift();
+    if (candidate == null || seen.has(candidate)) continue;
+    seen.add(candidate);
+    const parsed = typeof candidate === "string" ? safeJson(candidate) : candidate;
+    if (!parsed || typeof parsed !== "object") continue;
+    if (!expectedKeys.length || expectedKeys.some(key => Object.prototype.hasOwnProperty.call(parsed, key))) return parsed;
+    for (const key of ["response", "result", "content", "output_text", "text", "message"]) {
+      if (parsed[key] != null) queue.push(parsed[key]);
+    }
+    if (Array.isArray(parsed.choices)) {
+      for (const choice of parsed.choices) queue.push(choice?.message?.content, choice?.text);
+    }
+  }
+  return null;
+}
+
 function tokenSet(value) {
   return new Set(plainText(value, 400).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(/[^a-z0-9]+/).filter(token => token.length > 3));
 }
