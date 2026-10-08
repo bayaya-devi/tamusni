@@ -6,7 +6,7 @@ Ce document décrit les opérations courantes sans contenir de secret. La produc
 
 1. Ouvrir `https://tamusni.pages.dev/fr/` et un article récent en FR, EN et AR.
 2. Vérifier `https://tamusni.pages.dev/api/backend-status` : Cloudflare/D1 et Supabase doivent être disponibles.
-3. Vérifier `/health` sur le Worker éditorial : cycle, prochaine date locale, dernier statut public et configuration du déclencheur newsletter.
+3. Vérifier `/health` sur le Worker éditorial, puis l'état actif du workflow GitHub `TAMUSNI weekly newsletter`.
 4. Examiner les erreurs récentes dans les journaux Cloudflare Pages et Worker, sans copier de données personnelles dans un ticket.
 5. Contrôler dans D1 le dernier `editorial_runs` et ses `editorial_logs` avant toute relance.
 
@@ -76,7 +76,7 @@ Conserver le signet retourné dans le journal d’intervention. Pour restaurer, 
 
 ## Newsletter Brevo
 
-Le test sans envoi est `POST /api/newsletter/run?force=1&dryRun=1` avec le token d’exploitation. Ne jamais employer `force=1` sans `dryRun=1` sauf décision explicite d’envoi. Contrôler l’expéditeur actif, le webhook, les listes et les états D1 avant un lancement réel.
+Le workflow GitHub `weekly-newsletter.yml` possède une planification indépendante et un verrou de concurrence. Il s'exécute le dimanche à 08:00, heure de Casablanca. Le test manuel reste par défaut en mode `force=1&dryRun=1`, sans envoi. Ne jamais désactiver `dry_run` lors d'un test. Contrôler l'expéditeur actif, le webhook, les listes et les états D1 avant un lancement réel.
 
 ## Alertes et confidentialité
 

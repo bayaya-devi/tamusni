@@ -2,7 +2,9 @@
 
 ## Architecture
 
-D1 est la source de vérité pour le consentement, la langue, les éditions, la sélection et les métriques. Brevo gère les contacts, cinq listes (`FR`, `AR`, `EN`, `ES`, `PT`), les campagnes et la délivrabilité. Le Worker `tamusni-editorial-automation` appelle toutes les quinze minutes l’endpoint Pages protégé. L’endpoint n’agit que le dimanche entre 08:00 et 08:14 en `Africa/Casablanca`.
+D1 est la source de vérité pour le consentement, la langue, les éditions, la sélection et les métriques. Brevo gère les contacts, cinq listes (`FR`, `AR`, `EN`, `ES`, `PT`), les campagnes et la délivrabilité. Le workflow indépendant GitHub Actions `weekly-newsletter.yml` appelle l'endpoint Pages protégé le dimanche à 08:00 en `Africa/Casablanca`.
+
+La newsletter possède son propre scheduler, son propre secret, sa concurrence dédiée et ses propres journaux GitHub. Elle ne dépend ni du Cron éditorial ni de la maintenance. Le verrou `newsletter_runs` et la clé d'édition empêchent les doubles envois lors des relances.
 
 La clé d’édition `newsletter_YYYY-Www_locale`, le verrou D1 et la conservation de l’identifiant de campagne empêchent un double envoi. Un échec d’une langue ne renvoie pas les langues déjà marquées `SENT`.
 

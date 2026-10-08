@@ -1,0 +1,55 @@
+name: TAMUSNI weekly newsletter
+
+on:
+  schedule:
+    - cron: "0 7,8 * * 0"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Générer et contrôler sans envoyer
+        required: true
+        type: boolean
+        default: true
+
+concurrency:
+  group: tamusni-weekly-newsletter
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  newsletter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Gate Morocco local schedule
+        id: gate
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          node - <<'NODE'
+          const manual=process.env.EVENT_NAME==='workflow_dispatch';
+          const parts=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:'Africa/Casablanca',weekday:'long',hour:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).map(part=>[part.type,part.value]));
+          const run=manual||(parts.weekday==='Sunday'&&Number(parts.hour)===8);
+          require('fs').appendFileSync(process.env.GITHUB_OUTPUT,`run=${run}\n`);
+          console.log(JSON.stringify({manual,localWeekday:parts.weekday,localHour:parts.hour,run}));
+          NODE
+
+      - name: Generate or send the weekly edition
+        if: steps.gate.outputs.run == 'true'
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          MANUAL_DRY_RUN: ${{ inputs.dry_run }}
+          NEWSLETTER_RUN_TOKEN: ${{ secrets.NEWSLETTER_RUN_TOKEN }}
+        run: |
+          node - <<'NODE'
+          const manual=process.env.EVENT_NAME==='workflow_dispatch';
+          const dryRun=manual&&process.env.MANUAL_DRY_RUN!=='false';
+          const suffix=dryRun?'?force=1&dryRun=1':'';
+          const response=await fetch(`https://tamusni.pages.dev/api/newsletter/run${suffix}`,{method:'POST',headers:{Authorization:`Bearer ${process.env.NEWSLETTER_RUN_TOKEN}`},signal:AbortSignal.timeout(120000)});
+          const result=await response.json().catch(()=>({}));
+          console.log(JSON.stringify({status:response.status,dryRun,ok:result.ok,result:result.result||null}));
+          if(!response.ok||!result.ok)process.exit(1);
+          NODE

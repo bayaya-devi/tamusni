@@ -26,6 +26,7 @@ jobs:
     env:
       TAMUSNI_TEST_URL: https://tamusni.pages.dev
       EDITORIAL_HEALTH_URL: https://tamusni-editorial-automation.aetbconseil.workers.dev/health
+      GITHUB_TOKEN: ${{ github.token }}
       TAMUSNI_USER_EMAIL: ${{ secrets.TAMUSNI_USER_EMAIL }}
       TAMUSNI_USER_PASSWORD: ${{ secrets.TAMUSNI_USER_PASSWORD }}
       TAMUSNI_CONTRIBUTOR_EMAIL: ${{ secrets.TAMUSNI_CONTRIBUTOR_EMAIL }}

@@ -90,7 +90,11 @@ try:
     health = json.loads(data["worker"].get("body") or "{}")
 except Exception:
     health = {}
-for label, value in [["Worker", "Disponible" if data["worker"]["status"] == 200 else "Indisponible"], ["Cycle", health.get("cycleType", "-")], ["Numéro", health.get("cycleNumber", "-")], ["Prochaine publication", health.get("nextPublicationLocalDate", "-")], ["Fuseau", health.get("timeZone", "-")]]:
+try:
+    newsletter_scheduler = json.loads(data.get("newsletterScheduler", {}).get("body") or "{}")
+except Exception:
+    newsletter_scheduler = {}
+for label, value in [["Worker éditorial", "Disponible" if data["worker"]["status"] == 200 else "Indisponible"], ["Cycle", health.get("cycleType", "-")], ["Numéro", health.get("cycleNumber", "-")], ["Prochaine publication", f"{health.get('nextPublicationLocalDate', '-')} à {health.get('publicationTime', '-')}"] , ["Planificateur newsletter", "Actif" if newsletter_scheduler.get("state") == "active" else "Indisponible"], ["Fenêtre newsletter", "Dimanche 08:00-08:14"], ["Fuseau", health.get("timeZone", "Africa/Casablanca")]]:
     story.append(Paragraph(f"<b>{safe(label)} :</b> {safe(value)}", body))
 
 story.append(Paragraph("H. DÉPLOIEMENT", h1))
