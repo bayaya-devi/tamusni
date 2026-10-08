@@ -34,7 +34,7 @@ export async function syncBrevoContact(env,db,subscriber){
 export const deleteBrevoContact=(env,email)=>brevoRequest(env,`/contacts/${encodeURIComponent(email)}`,{method:"DELETE",retries:1});
 
 export async function createBrevoCampaign(env,payload){
-  return brevoRequest(env,"/emailCampaigns",{method:"POST",body:{name:payload.name,subject:payload.subject,sender:{name:env.BREVO_SENDER_NAME||"TAMUSNI",email:env.BREVO_SENDER_EMAIL||"aetbconseil@gmail.com"},replyTo:"aetbconseil@gmail.com",recipients:{listIds:[payload.listId]},htmlContent:payload.html,previewText:payload.preheader,tag:payload.tag,mirrorActive:false,inlineImageActivation:false}});
+  return brevoRequest(env,"/emailCampaigns",{method:"POST",body:{name:payload.name,subject:payload.subject,sender:{name:env.BREVO_SENDER_NAME||"TAMUSNI",email:env.BREVO_SENDER_EMAIL||"aetbconseil@gmail.com"},replyTo:"aetbconseil@gmail.com",recipients:{listIds:[payload.listId]},htmlContent:payload.html,previewText:payload.preheader,mirrorActive:false,inlineImageActivation:false}});
 }
 export const sendBrevoCampaign=(env,id)=>brevoRequest(env,`/emailCampaigns/${encodeURIComponent(id)}/sendNow`,{method:"POST"});
 export const getBrevoCampaign=(env,id)=>brevoRequest(env,`/emailCampaigns/${encodeURIComponent(id)}`);
