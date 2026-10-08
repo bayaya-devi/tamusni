@@ -2,8 +2,8 @@ import { test, expect } from '@playwright/test';
 
 const accounts = {
   user: { email: process.env.TAMUSNI_USER_EMAIL, password: process.env.TAMUSNI_USER_PASSWORD, destination: /\/fr\/mon-espace\/$/ },
-  contributor: { email: process.env.TAMUSNI_CONTRIBUTOR_EMAIL, password: process.env.TAMUSNI_CONTRIBUTOR_PASSWORD, destination: /\/contributeur\/$/ },
-  admin: { email: process.env.TAMUSNI_ADMIN_EMAIL, password: process.env.TAMUSNI_ADMIN_PASSWORD, destination: /\/admin\/$/ }
+  contributor: { email: process.env.TAMUSNI_CONTRIBUTOR_EMAIL, password: process.env.TAMUSNI_CONTRIBUTOR_PASSWORD, destination: /\/fr\/contributeur\/$/ },
+  admin: { email: process.env.TAMUSNI_ADMIN_EMAIL, password: process.env.TAMUSNI_ADMIN_PASSWORD, destination: /\/fr\/admin\/$/ }
 };
 
 async function login(page, account) {
@@ -21,9 +21,9 @@ test('private role suite has explicit credentials', () => {
 
 test('guest cannot enter administrator or contributor areas', async ({ page }) => {
   await page.goto('/admin/');
-  await expect(page).toHaveURL(/\/connexion\/$/);
+  await expect(page).toHaveURL(/\/(?:fr|ar|en|es|pt)\/connexion\//);
   await page.goto('/contributeur/');
-  await expect(page).toHaveURL(/\/connexion\/$/);
+  await expect(page).toHaveURL(/\/(?:fr|ar|en|es|pt)\/connexion\//);
 });
 
 for (const [role, account] of Object.entries(accounts)) {

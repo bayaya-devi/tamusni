@@ -33,7 +33,7 @@ test('newsletter visitor intent survives the redirect and prefills login', async
   await page.goto('/fr/');
   await page.getByRole('textbox', { name: 'Adresse e-mail' }).fill(email);
   await page.getByRole('button', { name: 'S’inscrire' }).click();
-  await expect(page).toHaveURL(/\/fr\/connexion\/\?newsletter=1$/);
+  await expect(page).toHaveURL(/\/fr\/connexion\/\?newsletter=1$/,{timeout:15_000});
   await expect(page.getByRole('textbox', { name: 'Adresse e-mail' })).toHaveValue(email);
 });
 

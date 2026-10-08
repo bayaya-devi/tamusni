@@ -1,20 +1,42 @@
 import { requireAdmin, requireContributor } from "./_lib/auth.js";
-import { locales, publicResponse } from "./_lib/public-frontend.js";
+import { locales, publicResponse, roleResponse } from "./_lib/public-frontend.js";
 
-const header='<header class="global-shell-header"><div class="global-shell-inner"><a class="global-shell-brand" href="/">TAMUSNI</a></div></header>';
-const rail='<aside class="tamusni-rail" aria-label="Navigation TAMUSNI"><a class="rail-brand" href="/" aria-label="TAMUSNI — Retour à l’accueil" title="Retour à l’accueil">TAMUSNI</a><nav class="tamusni-rail-nav"><a class="rail-item" href="/intelligence-artificielle/" aria-label="Intelligence artificielle" data-label="Intelligence artificielle" title="Intelligence artificielle"><span class="rail-symbol" aria-hidden="true">IA</span></a><a class="rail-item" href="/innovation/" aria-label="Innovation" data-label="Innovation" title="Innovation"><span class="rail-symbol" aria-hidden="true">✦</span></a><a class="rail-item" href="/robotique/" aria-label="Robotique" data-label="Robotique" title="Robotique"><span class="rail-symbol" aria-hidden="true">⚙</span></a><a class="rail-item" href="/cybersecurite/" aria-label="Cybersécurité" data-label="Cybersécurité" title="Cybersécurité"><span class="rail-symbol" aria-hidden="true">◈</span></a><a class="rail-item" href="/espace/" aria-label="Espace" data-label="Espace" title="Espace"><span class="rail-symbol" aria-hidden="true">☼</span></a></nav><div class="tamusni-rail-tools"><select class="rail-language" id="global-language" aria-label="Langue" title="Langue"><option value="fr">FR</option><option value="ar">AR</option><option value="en">EN</option></select><button class="rail-item" id="rail-theme" type="button" aria-label="Changer de thème" data-label="Thème" title="Thème">◐</button><a class="rail-item rail-account rail-symbol" href="/connexion/" aria-label="Inscription et connexion" data-label="Inscription / Connexion" title="Inscription / Connexion">◎</a></div></aside>';
-const adminRail='<aside class="tamusni-rail admin-rail" aria-label="Navigation administrateur"><a class="rail-brand admin-rail-brand" href="/" aria-label="TAMUSNI — Voir le site" title="Voir le site">TAMUSNI</a><nav class="tamusni-rail-nav"><button class="rail-item" type="button" data-admin-view="dashboard" data-label="Tableau de bord" aria-label="Tableau de bord" title="Tableau de bord"><span class="rail-symbol" aria-hidden="true">▦</span></button><button class="rail-item" type="button" data-admin-view="notifications" data-label="Notifications" aria-label="Notifications" title="Notifications"><span class="rail-symbol" aria-hidden="true">◉</span><span class="admin-notice-count" hidden></span></button><button class="rail-item" type="button" data-admin-view="accounts" data-label="Comptes" aria-label="Comptes" title="Comptes"><span class="rail-symbol" aria-hidden="true">◎</span></button><button class="rail-item" type="button" data-admin-view="content" data-label="Contenus" aria-label="Contenus" title="Contenus"><span class="rail-symbol" aria-hidden="true">✦</span></button><button class="rail-item" type="button" data-admin-view="validation" data-label="À valider" aria-label="À valider" title="À valider"><span class="rail-symbol" aria-hidden="true">✓</span></button><button class="rail-item" type="button" data-admin-view="analytics" data-label="Analytics" aria-label="Analytics" title="Analytics"><span class="rail-symbol" aria-hidden="true">↗</span></button><button class="rail-item" type="button" data-admin-view="newsletter" data-label="Newsletter" aria-label="Newsletter" title="Newsletter"><span class="rail-symbol" aria-hidden="true">✉</span></button><a class="rail-item" href="/mon-espace/#profile" data-label="Profil et réglages" aria-label="Profil et réglages" title="Profil et réglages"><span class="rail-symbol" aria-hidden="true">◉</span></a></nav><div class="tamusni-rail-tools"><select class="rail-language" id="global-language" aria-label="Langue" title="Langue"><option value="fr">FR</option><option value="ar">AR</option><option value="en">EN</option><option value="es">ES</option><option value="pt">PT</option></select><button class="rail-item" id="rail-theme" type="button" aria-label="Changer de thème" data-label="Thème" title="Thème">◐</button><button class="rail-item" id="admin-logout" type="button" aria-label="Se déconnecter" data-label="Se déconnecter" title="Se déconnecter">↪</button></div></aside>';
-const footer='<footer class="global-shell-footer"><div class="global-footer-inner"><div class="global-footer-follow">TAMUSNI</div><div class="global-footer-bottom"><span>© 2026 TAMUSNI · A&amp;B TECHNOLOGIES</span><span><a href="/mentions-legales/">Mentions légales</a><a href="/confidentialite/">Confidentialité</a><a href="/cookies/">Cookies</a></span></div></div></footer>';
+const preferredLocale=request=>{
+  const language=(request.headers.get('accept-language')||'fr').split(',')[0].split('-')[0].toLowerCase();
+  return locales.includes(language)?language:'fr';
+};
 
 export async function onRequest(context){
   const requestUrl=new URL(context.request.url);
-  if (context.request.method === 'GET' || context.request.method === 'HEAD') {
-    const pathname=requestUrl.pathname;
-    if(pathname.endsWith('/index.html'))return Response.redirect(new URL(pathname.slice(0,-10)||'/',requestUrl.origin),308);
-    if (pathname === '/' || pathname === '/index.html') {
-      const preferred=(context.request.headers.get('accept-language')||'fr').split(',')[0].split('-')[0].toLowerCase();
-      return Response.redirect(new URL(`/${locales.includes(preferred)?preferred:'fr'}/`,requestUrl.origin),302);
-    }
+  const pathname=requestUrl.pathname;
+  const readable=context.request.method==='GET'||context.request.method==='HEAD';
+
+  if(readable&&pathname.endsWith('/index.html'))return Response.redirect(new URL(pathname.slice(0,-10)||'/',requestUrl.origin),308);
+  if(readable&&(pathname==='/'||pathname==='/index.html'))return Response.redirect(new URL(`/${preferredLocale(context.request)}/`,requestUrl.origin),302);
+
+  const localizedRole=pathname.match(/^\/(fr|ar|en|es|pt)\/(admin|contributeur)\/?$/);
+  if(readable&&localizedRole){
+    const [,locale,area]=localizedRole;
+    if(!pathname.endsWith('/'))return Response.redirect(new URL(`${pathname}/${requestUrl.search}`,requestUrl.origin),308);
+    const session=area==='admin'?await requireAdmin(context):await requireContributor(context);
+    if(!session)return Response.redirect(new URL(`/${locale}/connexion/?next=${encodeURIComponent(pathname)}`,requestUrl.origin),302);
+    return roleResponse(locale,area==='admin'?'ADMIN':'CONTRIBUTOR',session,requestUrl.origin);
+  }
+
+  if(readable&&(pathname==='/admin/'||pathname==='/admin')){
+    const session=await requireAdmin(context);
+    const locale=preferredLocale(context.request);
+    if(!session)return Response.redirect(new URL(`/${locale}/connexion/?next=${encodeURIComponent(`/${locale}/admin/`)}`,requestUrl.origin),302);
+    return Response.redirect(new URL(`/${locale}/admin/${requestUrl.search}`,requestUrl.origin),308);
+  }
+  if(readable&&(pathname==='/contributeur/'||pathname==='/contributeur')){
+    const session=await requireContributor(context);
+    const locale=preferredLocale(context.request);
+    if(!session)return Response.redirect(new URL(`/${locale}/connexion/?next=${encodeURIComponent(`/${locale}/contributeur/`)}`,requestUrl.origin),302);
+    return Response.redirect(new URL(`/${locale}/contributeur/${requestUrl.search}`,requestUrl.origin),308);
+  }
+
+  if(readable){
     const match=pathname.match(/^\/(fr|ar|en|es|pt)(?:\/(.*))?$/);
     if(match){
       const locale=match[1];const rest=match[2]||'';
@@ -30,27 +52,10 @@ export async function onRequest(context){
     if(pathname==='/mot-de-passe-oublie/'||pathname==='/reinitialiser-mot-de-passe/')return Response.redirect(new URL('/fr/connexion/',requestUrl.origin),308);
     if(pathname==='/forums/'||pathname==='/recherche/'||pathname==='/404.html'||pathname==='/500.html')return publicResponse(context,'fr',pathname.slice(1));
   }
-  if(requestUrl.pathname.startsWith('/admin')){
-    const admin=await requireAdmin(context);
-    if(!admin)return Response.redirect(new URL('/connexion/',requestUrl.origin),302);
-  }
-  if(requestUrl.pathname.startsWith('/contributeur')){
-    const contributor=await requireContributor(context);
-    if(!contributor)return Response.redirect(new URL('/connexion/',requestUrl.origin),302);
-  }
+
   const response=await context.next();
-  const contentType=response.headers.get('content-type')||'';
-  if(!contentType.includes('text/html'))return response;
-  let html=await response.text(); const isAdmin=new URL(context.request.url).pathname.startsWith('/admin');
-  if(!html.includes('/site-shell.css'))html=html.replace('</head>','<link rel="stylesheet" href="/site-shell.css?v=design-2"></head>');
-  if(!html.includes('/api-client.js'))html=html.replace('</head>','<script src="/api-client.js" defer></script></head>');
-  if(!html.includes('global-shell-header'))html=html.replace(/<body([^>]*)>/i,function(match,attributes){return '<body'+attributes+'>'+header});
-  if(!html.includes('tamusni-rail'))html=html.replace(/<body([^>]*)>/i,function(match,attributes){return '<body'+attributes+'>'+(isAdmin?adminRail:rail)});
-  if(!html.includes('global-shell-footer'))html=html.replace('</body>',footer+'</body>');
-  if(!isAdmin&&!html.includes('/site-shell.js'))html=html.replace('</body>','<script src="/site-shell.js?v=roles-2" defer></script></body>');
-  if(isAdmin&&!html.includes('/admin.css'))html=html.replace('</head>','<link rel="stylesheet" href="/admin.css"></head>');
-  if(isAdmin&&!html.includes('/admin-app.js'))html=html.replace('</body>','<script src="/admin-app.js?v=roles-2" defer></script></body>');
-  if(!isAdmin&&new URL(context.request.url).pathname.startsWith('/contributeur')&&!html.includes('/contributor-app.js'))html=html.replace('</head>','<link rel="stylesheet" href="/contributor.css"></head>').replace('</body>','<script src="/contributor-app.js?v=1" defer></script></body>');
-  const headers=new Headers(response.headers);headers.delete('content-length');headers.set('Strict-Transport-Security','max-age=31536000');
-  return new Response(html,{status:response.status,statusText:response.statusText,headers});
+  if(!response.headers.get('content-type')?.includes('text/html'))return response;
+  const headers=new Headers(response.headers);
+  headers.set('Strict-Transport-Security','max-age=31536000');
+  return new Response(response.body,{status:response.status,statusText:response.statusText,headers});
 }

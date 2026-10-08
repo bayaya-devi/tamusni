@@ -8,4 +8,12 @@ Les effets sont courts et discrets : transitions CSS 120–450 ms, reveal décle
 
 Les composants doivent disposer d’un nom accessible, d’un focus visible et de cibles d’au moins 44 px lorsque l’action est tactile. Les données publicitaires ne chargent pas AdSense avant consentement. Les liens sociaux sans destination réelle ne sont pas rendus.
 
-L’admin et les API existantes restent séparés de ce frontend et conservent leur comportement.
+## Frontends fondés sur les rôles
+
+Le frontend public, l’espace utilisateur, l’espace contributeur et l’administration utilisent le même moteur de rendu `layout()` de `functions/_lib/public-frontend.js`. Le header, le logo localisé, le menu compact, le sélecteur de langue, le footer, le thème système, les tokens et le système de mouvement sont donc communs.
+
+- **User** : consultation et espace personnel.
+- **Contributor** : base User enrichie de la création, des brouillons, des envois et de l’historique.
+- **Admin** : base User enrichie des KPI, comptes, contenus, validations, analyses et newsletter.
+
+`Site web/role-frontend.css` contient seulement les composants professionnels partagés par Contributor et Admin. `admin.css` et `contributor.css` sont limités aux particularités de chaque rôle. Les anciennes coques `site-shell.css/site-shell.js` et la barre latérale ne doivent pas être chargées par les routes protégées modernes.

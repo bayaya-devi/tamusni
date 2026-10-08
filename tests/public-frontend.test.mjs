@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { publicResponse } from '../functions/_lib/public-frontend.js';
+import { publicResponse, roleResponse } from '../functions/_lib/public-frontend.js';
 import { emailLayout } from '../functions/_lib/email.js';
 
 test('transactional emails use the new brand palette', () => {
@@ -40,7 +40,27 @@ for(const locale of ['fr','ar','en','es','pt']){
     assert.match(html,new RegExp(`\/brand\/tamusni-${locale==='ar'?'ar':'latin'}\.png`));
     assert.match(html,/hreflang="es"/);
     assert.doesNotMatch(html,/data-ad-slot|ads-client\.js|consent\.js/);
+    assert.equal((html.match(/type="email"/g)||[]).length,1);
+    assert.match(html,/<input type="hidden" name="company" value="">/);
+    assert.doesNotMatch(html,/newsletter-honeypot/);
   });
+}
+
+for(const locale of ['fr','ar','en','es','pt']){
+  for(const role of ['ADMIN','CONTRIBUTOR']){
+    test(`${role.toLowerCase()} shell is shared and localized in ${locale}`,async()=>{
+      const response=roleResponse(locale,role,{sub:'test',email:'test@example.com',role},'https://tamusni.pages.dev');
+      assert.equal(response.status,200);
+      assert.equal(response.headers.get('x-robots-tag'),'noindex, nofollow');
+      const html=await response.text();
+      assert.match(html,new RegExp(`<html lang="${locale}" dir="${locale==='ar'?'rtl':'ltr'}"`));
+      assert.match(html,/class="site-header"/);
+      assert.match(html,/class="site-footer"/);
+      assert.match(html,/role-frontend\.css/);
+      assert.match(html,new RegExp(`/${locale}/${role==='ADMIN'?'admin':'contributeur'}/`));
+      assert.doesNotMatch(html,/tamusni-rail|site-shell\.css/);
+    });
+  }
 }
 
 test('article cites its actual source and escapes user-facing text',async()=>{
