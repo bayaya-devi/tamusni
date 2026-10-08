@@ -59,6 +59,9 @@ test('registered user interactions feed real analytics',async({page})=>{
   test.skip(!user.email||!user.password,'User credentials are required');
   await login(page,user);
   await page.goto('/fr/');
+  const newsletter=await page.request.post('/api/newsletter',{data:{email:user.email,locale:'fr',company:''}});
+  expect([200,201]).toContain(newsletter.status());
+  expect((await newsletter.json()).ok).toBe(true);
   const article=page.locator('a[href*="/fr/articles/"]').first();await expect(article).toBeVisible();await article.click();
   await expect(page.locator('.article-page')).toBeVisible();
   await page.locator('.like-action').click();await expect(page.locator('.like-action')).toHaveAttribute('aria-pressed',/true|false/);
