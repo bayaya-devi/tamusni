@@ -51,6 +51,6 @@ export async function onRequest(context){
   if(isAdmin&&!html.includes('/admin.css'))html=html.replace('</head>','<link rel="stylesheet" href="/admin.css"></head>');
   if(isAdmin&&!html.includes('/admin-app.js'))html=html.replace('</body>','<script src="/admin-app.js?v=roles-2" defer></script></body>');
   if(!isAdmin&&new URL(context.request.url).pathname.startsWith('/contributeur')&&!html.includes('/contributor-app.js'))html=html.replace('</head>','<link rel="stylesheet" href="/contributor.css"></head>').replace('</body>','<script src="/contributor-app.js?v=1" defer></script></body>');
-  const headers=new Headers(response.headers);headers.delete('content-length');
+  const headers=new Headers(response.headers);headers.delete('content-length');headers.set('Strict-Transport-Security','max-age=31536000');
   return new Response(html,{status:response.status,statusText:response.statusText,headers});
 }
