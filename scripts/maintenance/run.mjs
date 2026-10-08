@@ -11,7 +11,10 @@ const node = process.execPath;
 const checks = [];
 
 function execute(name, command, args, timeout = 20 * 60_000) {
-  const result = spawnSync(command, args, { cwd: resolve("."), env: process.env, encoding: "utf8", timeout, maxBuffer: 25 * 1024 * 1024, shell: process.platform === "win32" && command === npm });
+  const windowsNpm = process.platform === "win32" && command === npm;
+  const executable = windowsNpm ? process.env.ComSpec : command;
+  const commandArgs = windowsNpm ? ["/d", "/s", "/c", "npm", ...args] : args;
+  const result = spawnSync(executable, commandArgs, { cwd: resolve("."), env: process.env, encoding: "utf8", timeout, maxBuffer: 25 * 1024 * 1024 });
   const stdout = result.stdout || "";
   const stderr = result.stderr || "";
   writeFileSync(resolve(outputDir, `${name}.log`), `${stdout}\n${stderr}`);
