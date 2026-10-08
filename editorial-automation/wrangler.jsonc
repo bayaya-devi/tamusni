@@ -8,7 +8,8 @@
   "vars": {
     "PUBLIC_ORIGIN": "https://tamusni.pages.dev",
     "EDITORIAL_START_DATE": "2026-10-01",
-    "EDITORIAL_TIME_ZONE": "Africa/Casablanca"
+    "EDITORIAL_TIME_ZONE": "Africa/Casablanca",
+    "PUBLICATION_CADENCE_DAYS": "2"
   },
   "ai": { "binding": "AI" },
   "d1_databases": [{

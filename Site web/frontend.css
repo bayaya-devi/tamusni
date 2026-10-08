@@ -17,6 +17,7 @@
 .topic-choices{margin:0;padding:15px 16px 16px;border:1px solid var(--tm-line);border-radius:12px;background:color-mix(in srgb,var(--tm-surface) 84%,transparent)}.topic-choices legend{padding:0 5px;font-size:.85rem;font-weight:700;color:var(--tm-ink)}.topic-choices p{margin:0 0 11px;color:var(--tm-muted);font-size:.78rem;line-height:1.45}.topic-choices>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}.topic-choices .check{margin:0;font-size:.83rem}
 @media(max-width:420px){.topic-choices>div{grid-template-columns:1fr}}
 .newsletter-section{background:#152544;border-bottom:1px solid rgba(191,199,213,.42)}
+.ai-disclosure{margin:16px 0 0;padding-inline-start:12px;border-inline-start:2px solid var(--tm-blue);color:var(--tm-muted);font-size:.82rem;line-height:1.55}.article-cover{margin-block:0}.article-cover figcaption{margin-top:9px;color:var(--tm-muted);font-size:.76rem;line-height:1.5}.article-sources li{display:grid;gap:3px}.article-sources li span{color:var(--tm-muted);font-size:.78rem}
 .popular-card:not(.is-active){opacity:1}
 
 /* Institutional and advertising-readiness components. */
