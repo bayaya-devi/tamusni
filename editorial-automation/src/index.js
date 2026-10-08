@@ -172,7 +172,7 @@ async function qualityGate(env, publication, bundle, type) {
 
 async function generateImage(env, publication, slug) {
   const prompt = `${plainText(publication.imagePrompt, 1500)}. Premium technology news editorial image, realistic lighting, restrained navy blue and silver palette, landscape composition, no words, no letters, no logos, no watermark.`;
-  const result = await env.AI.run(IMAGE_MODEL, { prompt, steps: 6, seed: Math.abs([...slug].reduce((sum, character) => ((sum * 31) + character.charCodeAt(0)) | 0, 17)) });
+  const result = await env.AI.run(IMAGE_MODEL, { prompt, steps: 6 });
   const base64 = String(result?.image || "").replace(/^data:image\/[^;]+;base64,/, "");
   if (base64.length < 10_000 || base64.length > 1_500_000 || !/^[A-Za-z0-9+/=]+$/.test(base64)) throw new Error("IMAGE_GENERATION_FAILED");
   return { key: `${slug}-${crypto.randomUUID().slice(0, 8)}.jpg`, base64, contentType: "image/jpeg", alt: plainText(publication.translations.fr.title, 180), disclosure: "Illustration éditoriale générée par intelligence artificielle ; elle ne constitue pas une photographie documentaire." };
