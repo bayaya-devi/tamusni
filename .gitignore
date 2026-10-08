@@ -10,6 +10,9 @@ supabase/.temp/
 *.tsbuildinfo
 test-results/
 playwright-report/
+artifacts/maintenance/
+tmp/pdfs/
+output/pdf/
 _worker.bundle
 AGENTS.md
 CLAUDE.md

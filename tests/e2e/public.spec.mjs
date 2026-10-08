@@ -112,6 +112,14 @@ for (const width of [375, 430, 768, 1024, 1280, 1440]) {
   });
 }
 
+test('Arabic homepage has no horizontal overflow on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 });
+  await page.goto('/ar/');
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+  expect(overflow).toBeLessThanOrEqual(1);
+});
+
 test('French homepage has no serious axe errors', async ({ page }) => {
   await page.goto('/fr/');
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();

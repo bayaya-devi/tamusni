@@ -48,5 +48,6 @@ La répartition détaillée et les règles de continuité sont décrites dans [`
 La frontière stricte entre l'interface publique et l'API est documentée dans [`docs/FRONTEND_BACKEND_BOUNDARY.md`](docs/FRONTEND_BACKEND_BOUNDARY.md).
 Le mécanisme de désactivation et de réactivation future des annonces est documenté dans [`docs/ADSENSE_READINESS.md`](docs/ADSENSE_READINESS.md).
 Les procédures de production, sauvegarde, restauration, reprise et retour arrière sont centralisées dans [`docs/OPERATIONS_RUNBOOK.md`](docs/OPERATIONS_RUNBOOK.md).
+La maintenance hebdomadaire GitHub Actions, ses tests, son rapport PDF et son envoi Brevo sont décrits dans [`docs/WEEKLY_MAINTENANCE.md`](docs/WEEKLY_MAINTENANCE.md).
 
 Ne jamais versionner les secrets.

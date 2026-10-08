@@ -1,0 +1,117 @@
+name: TAMUSNI weekly maintenance
+
+on:
+  schedule:
+    - cron: "0 2,3 * * 0"
+  workflow_dispatch:
+    inputs:
+      send_email:
+        description: Envoyer le rapport PDF par e-mail
+        required: true
+        type: boolean
+        default: true
+
+concurrency:
+  group: tamusni-weekly-maintenance
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  maintenance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      TAMUSNI_TEST_URL: https://tamusni.pages.dev
+      EDITORIAL_HEALTH_URL: https://tamusni-editorial-automation.aetbconseil.workers.dev/health
+      TAMUSNI_USER_EMAIL: ${{ secrets.TAMUSNI_USER_EMAIL }}
+      TAMUSNI_USER_PASSWORD: ${{ secrets.TAMUSNI_USER_PASSWORD }}
+      TAMUSNI_CONTRIBUTOR_EMAIL: ${{ secrets.TAMUSNI_CONTRIBUTOR_EMAIL }}
+      TAMUSNI_CONTRIBUTOR_PASSWORD: ${{ secrets.TAMUSNI_CONTRIBUTOR_PASSWORD }}
+      TAMUSNI_ADMIN_EMAIL: ${{ secrets.TAMUSNI_ADMIN_EMAIL }}
+      TAMUSNI_ADMIN_PASSWORD: ${{ secrets.TAMUSNI_ADMIN_PASSWORD }}
+      MAINTENANCE_REPORT_TOKEN: ${{ secrets.MAINTENANCE_REPORT_TOKEN }}
+      MAINTENANCE_OUTPUT_DIR: artifacts/maintenance
+    steps:
+      - name: Gate Morocco local schedule
+        id: gate
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          node - <<'NODE'
+          const manual=process.env.EVENT_NAME==='workflow_dispatch';
+          const parts=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:'Africa/Casablanca',weekday:'long',hour:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).map(part=>[part.type,part.value]));
+          const run=manual||(parts.weekday==='Sunday'&&Number(parts.hour)===3);
+          require('fs').appendFileSync(process.env.GITHUB_OUTPUT,`run=${run}\n`);
+          console.log(JSON.stringify({manual,localWeekday:parts.weekday,localHour:parts.hour,run}));
+          NODE
+
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.run == 'true'
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-node@v4
+        if: steps.gate.outputs.run == 'true'
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.gate.outputs.run == 'true'
+        run: npm ci
+
+      - name: Install Chromium
+        if: steps.gate.outputs.run == 'true'
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+      - name: Execute maintenance audit
+        if: steps.gate.outputs.run == 'true'
+        run: node scripts/maintenance/run.mjs
+
+      - name: Install PDF renderer
+        if: steps.gate.outputs.run == 'true'
+        run: python -m pip install --disable-pip-version-check reportlab pypdf
+
+      - name: Generate PDF report
+        if: steps.gate.outputs.run == 'true'
+        id: pdf
+        shell: bash
+        run: |
+          DATE=$(node -e "const d=new Intl.DateTimeFormat('en-CA',{timeZone:'Africa/Casablanca',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());process.stdout.write(d)")
+          FILE="artifacts/maintenance/TAMUSNI_Maintenance_${DATE}.pdf"
+          python scripts/maintenance/generate_report.py artifacts/maintenance/maintenance.json "$FILE"
+          echo "file=$FILE" >> "$GITHUB_OUTPUT"
+
+      - name: Archive report and logs
+        if: steps.gate.outputs.run == 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tamusni-maintenance-${{ github.run_number }}
+          path: artifacts/maintenance/
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Send PDF through TAMUSNI Brevo gateway
+        if: steps.gate.outputs.run == 'true' && (github.event_name == 'schedule' || inputs.send_email)
+        run: node scripts/maintenance/send-report.mjs "${{ steps.pdf.outputs.file }}" artifacts/maintenance/maintenance.json
+
+      - name: Enforce maintenance result
+        if: steps.gate.outputs.run == 'true'
+        run: node -e "const r=require('./artifacts/maintenance/maintenance.json');if(r.anomalies.some(x=>x.severity==='P0'||x.severity==='P1'))process.exit(1)"
+
+      - name: Open incident on failure
+        if: steps.gate.outputs.run == 'true' && failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const date = new Date().toISOString().slice(0, 10);
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Maintenance TAMUSNI en échec — ${date}`,
+              body: `La maintenance hebdomadaire a échoué. Consultez l’exécution GitHub Actions et l’artefact PDF : ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            });

@@ -8,14 +8,19 @@ export function emailProvider(env) {
   return null;
 }
 
-export async function sendEmail(env, { to, subject, html, text }) {
+function safeAttachments(attachments) {
+  return (Array.isArray(attachments) ? attachments : []).filter((item) => /^[A-Za-z0-9._-]{1,120}$/.test(String(item?.name || "")) && /^[A-Za-z0-9+/=]+$/.test(String(item?.content || "")) && String(item.content).length <= 7_000_000).slice(0, 3);
+}
+
+export async function sendEmail(env, { to, subject, html, text, attachments = [] }) {
   const provider = emailProvider(env);
   if (!provider) throw new Error("EMAIL_NOT_CONFIGURED");
+  const files = safeAttachments(attachments);
   if (provider === "brevo") {
     const response = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: { "api-key": env.BREVO_API_KEY, "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({ sender: { name: env.BREVO_SENDER_NAME || "TAMUSNI", email: env.BREVO_SENDER_EMAIL || "aetbconseil@gmail.com" }, replyTo: { name: "TAMUSNI", email: "aetbconseil@gmail.com" }, to: [{ email: to }], subject, htmlContent: html, textContent: text || "" })
+      body: JSON.stringify({ sender: { name: env.BREVO_SENDER_NAME || "TAMUSNI", email: env.BREVO_SENDER_EMAIL || "aetbconseil@gmail.com" }, replyTo: { name: "TAMUSNI", email: "aetbconseil@gmail.com" }, to: [{ email: to }], subject, htmlContent: html, textContent: text || "", ...(files.length ? { attachment: files } : {}) })
     });
     if (!response.ok) throw new Error("EMAIL_REJECTED");
     return "brevo";
@@ -23,7 +28,7 @@ export async function sendEmail(env, { to, subject, html, text }) {
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: env.RESEND_FROM || "TAMUSNI <aetbconseil@gmail.com>", to: [to], subject, html, text })
+    body: JSON.stringify({ from: env.RESEND_FROM || "TAMUSNI <aetbconseil@gmail.com>", to: [to], subject, html, text, ...(files.length ? { attachments: files.map((item) => ({ filename: item.name, content: item.content })) } : {}) })
   });
   if (!response.ok) throw new Error("EMAIL_REJECTED");
   return "resend";
