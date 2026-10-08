@@ -32,7 +32,7 @@ for(const [role,account] of Object.entries(credentials)){
           const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>document.documentElement.clientWidth+1);
           expect(overflow).toBe(false);
           await page.locator('#menu-toggle').click();
-          for(const details of await page.locator('.menu-role details').all()){await details.locator('summary').click();expect(await details.evaluate(node=>node.scrollWidth<=node.clientWidth+1)).toBe(true)}
+          for(const details of await page.locator('.menu-role details').all()){await details.locator('summary').evaluate(summary=>summary.click());expect(await details.evaluate(node=>node.scrollWidth<=node.clientWidth+1)).toBe(true)}
           expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+1)).toBe(true);
           await page.screenshot({path:`test-results/visual-role-frontends/${role}-${locale}-${name}.png`,fullPage:true});
         }
