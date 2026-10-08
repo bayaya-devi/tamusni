@@ -149,7 +149,8 @@ test('unknown localized URLs return a useful 404', async ({ page }) => {
 test('articles expose truthful structured metadata', async ({ page }) => {
   await page.goto('/fr/articles/esa-mistral-ia-spatial-europeenne/');
   const data=await page.locator('script[type="application/ld+json"]').allTextContents();
-  expect(data.some(value => value.includes('"@type":"Article"') && value.includes('"author":{"@type":"Organization","name":"TAMUSNI"}'))).toBeTruthy();
+  const author=(await page.locator('.article-meta span').first().innerText()).replace(/^Auteur\s*·\s*/, '');
+  expect(data.some(value => value.includes('"@type":"Article"') && value.includes(`"author":{"@type":"Organization","name":"${author}"}`))).toBeTruthy();
   await expect(page.locator('script[data-tamusni-adsense]')).toHaveCount(0);
 });
 
