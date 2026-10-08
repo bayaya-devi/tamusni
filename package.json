@@ -11,7 +11,7 @@
     "start": "node node_modules/next/dist/bin/next start",
     "lint": "node node_modules/eslint/bin/eslint.js .",
     "typecheck": "node node_modules/typescript/bin/tsc --noEmit",
-    "test": "node --test tests/public-frontend.test.mjs tests/contributor-workflow.test.mjs tests/auth-verification.test.mjs tests/newsletter.test.mjs editorial-automation/test/core.test.mjs",
+    "test": "node --test tests/public-frontend.test.mjs tests/contributor-workflow.test.mjs tests/auth-verification.test.mjs tests/newsletter.test.mjs tests/social-distribution.test.mjs editorial-automation/test/core.test.mjs",
     "test:e2e": "node node_modules/@playwright/test/cli.js test",
     "seed": "tsx src/lib/seed.ts"
   },

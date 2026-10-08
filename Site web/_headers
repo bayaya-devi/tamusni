@@ -14,5 +14,17 @@
 /*.js
   Cache-Control: public, max-age=3600, stale-while-revalidate=86400
 
+/frontend.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+/admin-app.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+/frontend.css
+  Cache-Control: public, max-age=0, must-revalidate
+
+/admin.css
+  Cache-Control: public, max-age=0, must-revalidate
+
 /robots.txt
   Cache-Control: public, max-age=86400

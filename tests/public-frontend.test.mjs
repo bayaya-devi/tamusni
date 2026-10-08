@@ -105,3 +105,11 @@ test('signup supports multiple preferred topics',async()=>{
   assert.doesNotMatch(html,/name="preferredTopic"/);
   assert.match(html,/Choisissez au moins une rubrique/);
 });
+
+test('the shared client exposes only the official social accounts',async()=>{
+  const source=await import('node:fs/promises').then(fs=>fs.readFile(new URL('../Site web/frontend.js',import.meta.url),'utf8'));
+  assert.match(source,/https:\/\/x\.com\/getbnhdh89514/);
+  assert.match(source,/https:\/\/www\.instagram\.com\/tam\.usni\//);
+  assert.match(source,/https:\/\/web\.facebook\.com\/profile\.php\?id=61595345005345/);
+  assert.match(source,/https:\/\/www\.youtube\.com\/@Tamusni-i7h/);
+});
