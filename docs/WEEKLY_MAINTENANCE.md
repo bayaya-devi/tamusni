@@ -17,6 +17,7 @@ Le script `scripts/maintenance/run.mjs` exécute :
 - routes FR, EN et AR ;
 - backend Cloudflare/Supabase ;
 - Worker éditorial ;
+- état actif du planificateur newsletter indépendant ;
 - 404 ;
 - toutes les URL du sitemap ;
 - mesures TTFB, LCP, CLS, poids et débordement ;
@@ -41,6 +42,14 @@ Le workflow transmet ensuite le PDF à `/api/maintenance/report`. Cette route Cl
 - `TAMUSNI_ADMIN_PASSWORD`
 
 Le même `MAINTENANCE_REPORT_TOKEN` doit exister dans les secrets du projet Cloudflare Pages. Les clés Brevo et Cloudflare ne sont pas stockées dans GitHub.
+
+## Coordination des planificateurs
+
+- Maintenance : dimanche à 03:00, heure `Africa/Casablanca`, via GitHub Actions.
+- Éditorial : Cron Cloudflare toutes les quinze minutes ; préparation à partir de 04:00 et publication à 06:00 uniquement le jour dû.
+- Newsletter : dimanche à 08:00, heure `Africa/Casablanca`, via un workflow GitHub distinct.
+
+Chaque système possède un groupe de concurrence ou un verrou D1 propre. La maintenance termine avant la préparation éditoriale ; la newsletter démarre après la fenêtre de publication. Les relances newsletter réutilisent la même clé d’édition et les publications éditoriales réutilisent leur ligne de run afin d’éviter les doublons.
 
 ## Gestion des anomalies
 
