@@ -1,4 +1,4 @@
-import { createMfaChallengeCookie, createSessionCookie, hashPassword, json, readBody, sameOrigin } from "../../_lib/auth.js";
+import { createMfaChallengeCookie, createSessionCookie, json, readBody, sameOrigin } from "../../_lib/auth.js";
 import { mirrorUser } from "../../_lib/supabase.js";
 import { recordAuthEvent } from "../../_lib/mfa.js";
 import { normalizeTopics, replaceTopicSubscriptions } from "../../_lib/topics.js";
@@ -18,7 +18,12 @@ export async function onRequestPost(context) {
       const firstName = String(body.firstName || "").trim(); const lastName = String(body.lastName || "").trim(); const preferredTopics = normalizeTopics(body.preferredTopics, body.preferredTopic); const termsAccepted = body.termsAccepted === "on" || body.termsAccepted === true; const sponsoredInApp = body.sponsoredInApp === "on" || body.sponsoredInApp === true ? 1 : 0; const sponsoredEmail = body.sponsoredEmail === "on" || body.sponsoredEmail === true ? 1 : 0;
       if (firstName.length < 2 || lastName.length < 2 || !preferredTopics.length || !termsAccepted) return json({ error: "Complétez votre profil, choisissez au moins une rubrique et acceptez les conditions pour terminer l’inscription Google.", code:"OAUTH_PROFILE_REQUIRED" }, 400);
       const createdAt = new Date().toISOString(); const preferredTopic = preferredTopics[0]; user = { id: crypto.randomUUID(), name: `${firstName} ${lastName}`.trim(), email, role: "USER", mfa_enabled:0, session_version:1, preferred_language:String(body.locale||"fr"), preferredTopic, termsAcceptedAt: createdAt, sponsoredInApp, sponsoredEmail, created_at: createdAt };
-      await context.env.DB.prepare("INSERT INTO users (id,name,email,password_hash,role,created_at,email_verified_at,preferred_language,preferred_topic,terms_accepted_at,sponsored_in_app,sponsored_email,session_version) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(user.id,user.name,email,await hashPassword(crypto.randomUUID()+crypto.randomUUID()),"USER",createdAt,createdAt,user.preferred_language,preferredTopic,createdAt,sponsoredInApp,sponsoredEmail,1).run();
+      // A social-only account has no password to validate.  Persisting a
+      // non-verifiable marker avoids an unnecessary expensive password hash
+      // in the OAuth callback; a password reset can still create a password
+      // later if the account owner chooses to use password sign-in.
+      const oauthPasswordMarker = `oauth$${crypto.randomUUID()}`;
+      await context.env.DB.prepare("INSERT INTO users (id,name,email,password_hash,role,created_at,email_verified_at,preferred_language,preferred_topic,terms_accepted_at,sponsored_in_app,sponsored_email,session_version) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(user.id,user.name,email,oauthPasswordMarker,"USER",createdAt,createdAt,user.preferred_language,preferredTopic,createdAt,sponsoredInApp,sponsoredEmail,1).run();
       await replaceTopicSubscriptions(context.env.DB, user.id, preferredTopics, createdAt);
     }
     else if(user.is_banned)return json({error:"Ce compte est suspendu. Contactez TAMUSNI si vous pensez qu’il s’agit d’une erreur."},403);
