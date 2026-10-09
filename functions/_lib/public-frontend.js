@@ -102,7 +102,7 @@ async function rows(context, locale, where, bindings, sort, limit) {
   const result=await context.env.DB.prepare(sql).bind(locale,locale,new Date().toISOString(),...bindings,limit).all(); return result.results||[];
 }
 async function home(context,locale,showAds=false,session=null) {
-  const t=copy[locale]; const [more,popular]=await Promise.all([rows(context,locale,'',[],'c.published_at DESC',12),rows(context,locale,'',[],'views DESC,c.published_at DESC',6)]);
+  const t=copy[locale]; const [more,popular]=await Promise.all([rows(context,locale,'',[],'c.published_at DESC',9),rows(context,locale,'',[],'views DESC,c.published_at DESC',6)]);
   await localizeRows(context,locale,[...more,...popular]);
   const latest=more.slice(0,3);
   const slides=latest.map((item,i)=>`<article class="hero-slide ${i===0?'is-current':''}" data-slide="${i}" ${i?'inert aria-hidden="true"':''}><div class="hero-image">${image(item,'',i===0)}</div><div class="hero-copy"><span class="eyebrow">${esc(localizedCategory(locale,item.category))} · ${date(item.published_at,locale)}</span><h1><a href="${articleHref(locale,item)}">${esc(storyTitle(locale,item))}</a></h1><p>${esc(storyExcerpt(locale,item))}</p><a class="text-link" href="${articleHref(locale,item)}">${t.read} ${icon('chevron')}</a></div></article>`).join('');
