@@ -40,7 +40,7 @@ La refonte publique est décrite dans [`docs/frontend-constitution.md`](docs/fro
 2. Remplacer `REPLACE_AFTER_WRANGLER_D1_CREATE` dans `wrangler.jsonc` par l’identifiant retourné.
 3. Appliquer la migration : `npx wrangler d1 migrations apply tamusni-production --remote`.
 4. Appliquer `supabase/migrations/20260924123000_tamusni_schema.sql` au projet Supabase.
-5. Ajouter dans les secrets Cloudflare : `SESSION_SECRET`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `BREVO_API_KEY`, `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME`, `BREVO_WEBHOOK_SECRET` et `NEWSLETTER_RUN_TOKEN`.
+5. Ajouter dans les secrets Cloudflare : `SESSION_SECRET`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `BREVO_API_KEY`, `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME`, `BREVO_WEBHOOK_SECRET`, `NEWSLETTER_RUN_TOKEN` et `TURNSTILE_SECRET_KEY`. Ajouter `TURNSTILE_SITE_KEY` comme variable publique Pages.
 6. Activer `OAUTH_GOOGLE_ENABLED=true` après configuration du fournisseur Google dans Supabase Auth.
 7. Vérifier l’expéditeur et, idéalement, le domaine d’envoi dans Brevo avant tout envoi réel.
 
@@ -48,6 +48,7 @@ La répartition détaillée et les règles de continuité sont décrites dans [`
 La frontière stricte entre l'interface publique et l'API est documentée dans [`docs/FRONTEND_BACKEND_BOUNDARY.md`](docs/FRONTEND_BACKEND_BOUNDARY.md).
 Le mécanisme de désactivation et de réactivation future des annonces est documenté dans [`docs/ADSENSE_READINESS.md`](docs/ADSENSE_READINESS.md).
 Les procédures de production, sauvegarde, restauration, reprise et retour arrière sont centralisées dans [`docs/OPERATIONS_RUNBOOK.md`](docs/OPERATIONS_RUNBOOK.md).
+La vérification e-mail, la révocation des sessions, la suppression sécurisée et Turnstile sont décrits dans [`docs/ACCOUNT_SECURITY.md`](docs/ACCOUNT_SECURITY.md).
 La maintenance hebdomadaire GitHub Actions, ses tests, son rapport PDF et son envoi Brevo sont décrits dans [`docs/WEEKLY_MAINTENANCE.md`](docs/WEEKLY_MAINTENANCE.md).
 
 Ne jamais versionner les secrets.

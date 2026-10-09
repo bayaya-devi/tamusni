@@ -49,7 +49,8 @@ export async function onRequest(context){
     if(legacy)return Response.redirect(new URL(`/fr/${legacy[1]}/`,requestUrl.origin),308);
     if(pathname==='/connexion/'||pathname==='/inscription/')return publicResponse(context,'fr',pathname.slice(1));
     if(pathname==='/compte/')return Response.redirect(new URL('/fr/mon-espace/',requestUrl.origin),308);
-    if(pathname==='/mot-de-passe-oublie/'||pathname==='/reinitialiser-mot-de-passe/')return Response.redirect(new URL('/fr/connexion/',requestUrl.origin),308);
+    if(pathname==='/mot-de-passe-oublie/')return Response.redirect(new URL('/fr/connexion/',requestUrl.origin),308);
+    if(pathname==='/reinitialiser-mot-de-passe/'||pathname==='/verifier-email/')return Response.redirect(new URL(`/fr${pathname}${requestUrl.search}`,requestUrl.origin),308);
     if(pathname==='/forums/'||pathname==='/recherche/'||pathname==='/404.html'||pathname==='/500.html')return publicResponse(context,'fr',pathname.slice(1));
   }
 

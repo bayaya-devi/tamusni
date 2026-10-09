@@ -185,6 +185,17 @@ test('legal contact links have the right address and subject', async ({ page }) 
   await expect(page.getByRole('main').getByRole('link', { name: 'aetbconseil@gmail.com' })).toHaveAttribute('href', /mailto:aetbconseil@gmail\.com\?subject=TAMUSNI/);
 });
 
+for (const locale of ['fr','ar','en','es','pt']) test(`account security pages are localized and mobile-safe in ${locale}`, async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 });
+  await page.goto(`/${locale}/verifier-email/?email=test%40example.invalid`);
+  await expect(page.locator('#verification-form input[name="code"]')).toHaveAttribute('maxlength','6');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+  if(locale==='ar')await expect(page.locator('html')).toHaveAttribute('dir','rtl');
+  await page.goto(`/${locale}/reinitialiser-mot-de-passe/?token=test-token`);
+  await expect(page.locator('#reset-password-form input[name="password"]')).toHaveAttribute('minlength','12');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+});
+
 test('theme follows device preference and has no toggle', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/fr/');

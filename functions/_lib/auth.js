@@ -24,8 +24,9 @@ function fromBase64Url(value) {
 
 export async function hashPassword(password, saltBytes = crypto.getRandomValues(new Uint8Array(16))) {
   const key = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveBits"]);
-  const hash = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: saltBytes, iterations: 100_000 }, key, 256);
-  return `pbkdf2$100000$${toBase64Url(saltBytes)}$${toBase64Url(hash)}`;
+  const iterations = 600_000;
+  const hash = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: saltBytes, iterations }, key, 256);
+  return `pbkdf2$${iterations}$${toBase64Url(saltBytes)}$${toBase64Url(hash)}`;
 }
 
 export async function verifyPassword(password, stored) {
@@ -41,7 +42,7 @@ export async function verifyPassword(password, stored) {
 
 export async function createSessionCookie(user, secret) {
   const issuedAt=Date.now(); const maxAge=user.role==="ADMIN"?28_800:604_800;
-  const payload = toBase64Url(encoder.encode(JSON.stringify({ sub: user.id, name: user.name, email: user.email, role: user.role, iat:issuedAt, exp:issuedAt + maxAge * 1000 })));
+  const payload = toBase64Url(encoder.encode(JSON.stringify({ sub: user.id, name: user.name, email: user.email, role: user.role, sv:Number(user.session_version||1), iat:issuedAt, exp:issuedAt + maxAge * 1000 })));
   const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const signature = toBase64Url(await crypto.subtle.sign("HMAC", key, encoder.encode(payload)));
   return `tamusni_session=${payload}.${signature}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`;
@@ -89,8 +90,14 @@ export async function getSession(request, secret) {
 export async function requireSession(context) {
   const session = await getSession(context.request, context.env.SESSION_SECRET);
   if (!session || !context.env.DB) return null;
-  const user = await context.env.DB.prepare("SELECT u.id,u.name,u.email,u.is_banned,u.email_verified_at,CASE WHEN u.role='ADMIN' THEN 'ADMIN' WHEN r.role='CONTRIBUTOR' THEN 'CONTRIBUTOR' ELSE 'USER' END AS role FROM users u LEFT JOIN user_roles r ON r.user_id=u.id WHERE u.id = ?").bind(session.sub).first();
-  return user && !user.is_banned && user.email_verified_at ? { sub: user.id, name: user.name, email: user.email, role: user.role, iat: session.iat || null, exp: session.exp } : null;
+  const user = await context.env.DB.prepare("SELECT u.id,u.name,u.email,u.is_banned,u.email_verified_at,u.session_version,CASE WHEN u.role='ADMIN' THEN 'ADMIN' WHEN r.role='CONTRIBUTOR' THEN 'CONTRIBUTOR' ELSE 'USER' END AS role FROM users u LEFT JOIN user_roles r ON r.user_id=u.id WHERE u.id = ?").bind(session.sub).first();
+  const sessionVersion = Number(user?.session_version || 1);
+  return user && !user.is_banned && user.email_verified_at && Number(session.sv) === sessionVersion ? { sub: user.id, name: user.name, email: user.email, role: user.role, session_version:sessionVersion, iat: session.iat || null, exp: session.exp } : null;
+}
+
+export function passwordHashNeedsUpgrade(stored) {
+  const [scheme, iterations] = String(stored || "").split("$");
+  return scheme !== "pbkdf2" || Number(iterations) < 600_000;
 }
 
 export async function requireRecentSession(context,maximumAge=900_000) {
@@ -109,6 +116,12 @@ export async function requireContributor(context) {
 }
 
 export function validEmail(value) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim().toLowerCase()); }
-export function sameOrigin(request) { const origin = request.headers.get("origin"); return !origin || origin === new URL(request.url).origin; }
+export function sameOrigin(request) {
+  const origin = request.headers.get("origin");
+  if (origin) return origin === new URL(request.url).origin;
+  const fetchSite = request.headers.get("sec-fetch-site");
+  return !fetchSite || fetchSite === "same-origin";
+}
 export async function hashToken(value) { return toBase64Url(await crypto.subtle.digest("SHA-256", encoder.encode(value))); }
 export function cleanText(value, maximum = 500) { return String(value || "").replace(/[\u0000-\u001F\u007F]/g, " ").replace(/\s+/g, " ").trim().slice(0, maximum); }
+export function clearSessionCookie() { return "tamusni_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0"; }

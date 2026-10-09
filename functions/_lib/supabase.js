@@ -24,4 +24,10 @@ export async function mirrorUser(env, user) {
 export async function mirrorNewsletter(env, email, locale) { return request(env, "tamusni_newsletter_subscribers", { method: "POST", query: "?on_conflict=email", prefer: "resolution=merge-duplicates,return=minimal", body: { email, locale } }); }
 export async function mirrorFavorite(env, item) { return request(env, "tamusni_saved_items", { method: "POST", query: "?on_conflict=user_id,item_id", prefer: "resolution=merge-duplicates,return=minimal", body: item }); }
 export async function removeMirroredFavorite(env, userId, itemId) { return request(env, "tamusni_saved_items", { method: "DELETE", query: `?user_id=eq.${encodeURIComponent(userId)}&item_id=eq.${encodeURIComponent(itemId)}` }); }
+export async function removeMirroredUser(env, userId, email) {
+  if (!configured(env)) throw new Error("SUPABASE_NOT_CONFIGURED");
+  await request(env, "tamusni_saved_items", { method: "DELETE", query: `?user_id=eq.${encodeURIComponent(userId)}` });
+  await request(env, "tamusni_newsletter_subscribers", { method: "DELETE", query: `?email=eq.${encodeURIComponent(email)}` });
+  return request(env, "tamusni_users", { method: "DELETE", query: `?id=eq.${encodeURIComponent(userId)}` });
+}
 export async function supabaseHealth(env) { if (!configured(env)) return false; try { await request(env, "tamusni_users", { method: "GET", query: "?select=id&limit=1" }); return true; } catch { return false; } }

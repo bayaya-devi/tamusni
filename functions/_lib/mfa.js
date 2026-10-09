@@ -1,4 +1,6 @@
 import { hashToken } from "./auth.js";
+import { browserLabel } from "./account-security.js";
+import { sendSecurityEmail } from "./security-email.js";
 const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 
 function base64Url(bytes) { return btoa(String.fromCharCode(...bytes)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/g,""); }
@@ -48,12 +50,15 @@ export async function verifyTotp(secret,code,now=Date.now()) {
   return match===1;
 }
 
-export async function recordAuthEvent(context,{userId=null,email="",event,suspicious=false}) {
+export async function recordAuthEvent(context,{userId=null,email="",name="",locale="fr",event,suspicious=false}) {
   const request=context.request; const ipHash=await hashToken(request.headers.get("CF-Connecting-IP")||"unknown"); const emailHash=await hashToken(String(email).toLowerCase()); const agentHash=await hashToken(request.headers.get("User-Agent")||"unknown");
   let flagged=suspicious;
-  if(event==="login_success"&&userId){const previous=await context.env.DB.prepare("SELECT ip_hash FROM auth_events WHERE user_id=? AND event IN ('login_success','oauth_success') ORDER BY created_at DESC LIMIT 1").bind(userId).first();flagged=Boolean(previous&&previous.ip_hash!==ipHash);}
+  const country=String(request.cf?.country||"").slice(0,2)||null;
+  if((event==="login_success"||event==="oauth_success")&&userId){const previous=await context.env.DB.prepare("SELECT ip_hash,user_agent_hash,country FROM auth_events WHERE user_id=? AND event IN ('login_success','oauth_success') ORDER BY created_at DESC LIMIT 1").bind(userId).first();flagged=Boolean(previous&&((previous.ip_hash!==ipHash&&previous.user_agent_hash!==agentHash)||(country&&previous.country&&country!==previous.country)));}
   const now=new Date().toISOString();
-  await context.env.DB.prepare("INSERT INTO auth_events(id,user_id,email_hash,ip_hash,user_agent_hash,country,event,suspicious,created_at) VALUES(?,?,?,?,?,?,?,?,?)").bind(crypto.randomUUID(),userId,emailHash,ipHash,agentHash,String(request.cf?.country||"").slice(0,2)||null,event,flagged?1:0,now).run();
+  await context.env.DB.prepare("INSERT INTO auth_events(id,user_id,email_hash,ip_hash,user_agent_hash,country,event,suspicious,created_at) VALUES(?,?,?,?,?,?,?,?,?)").bind(crypto.randomUUID(),userId,emailHash,ipHash,agentHash,country,event,flagged?1:0,now).run();
   if(flagged&&userId)await context.env.DB.prepare("INSERT INTO notifications(id,user_id,title,url,created_at) VALUES(?,?,?,?,?)").bind(crypto.randomUUID(),userId,"Nouvelle connexion détectée","/compte/",now).run();
   if(flagged)try{await context.env.DB.prepare("INSERT INTO admin_notifications(id,type,title,body,target_url,target_type,target_id,created_at) VALUES(?,?,?,?,?,?,?,?)").bind(crypto.randomUUID(),"security","Connexion inhabituelle détectée","Une connexion a nécessité une attention supplémentaire.","/admin/#notifications","user",userId,now).run()}catch(error){console.error("admin_security_notification_failed",error)}
+  if(flagged&&email)try{await sendSecurityEmail(context.env,{type:"unusual",to:email,name,locale,country,browser:browserLabel(request.headers.get("User-Agent")||"")})}catch(error){console.error("unusual_login_email_failed",error)}
+  return {suspicious:flagged};
 }

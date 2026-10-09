@@ -34,8 +34,10 @@ export async function sendEmail(env, { to, subject, html, text, attachments = []
   return "resend";
 }
 
-export function emailLayout(title, content) {
-  return `<!doctype html><html lang="fr"><body style="margin:0;background:#f8fafc;color:#111a2e;font-family:Arial,sans-serif"><main style="max-width:560px;margin:32px auto;background:#fff;padding:36px;border:1px solid #dce1e8;border-radius:16px"><p style="font-size:24px;font-weight:700;letter-spacing:-.03em;margin:0 0 24px;color:#111a2e">TAMUSNI</p><h1 style="font-size:22px;color:#111a2e">${escapeHtml(title)}</h1>${content}<p style="font-size:12px;color:#5c6678;margin-top:28px;border-top:1px solid #dce1e8;padding-top:18px">TAMUSNI · A&amp;B TECHNOLOGIES</p></main></body></html>`;
+export function emailLayout(title, content, options = {}) {
+  const locale = ["fr", "ar", "en", "es", "pt"].includes(options.locale) ? options.locale : "fr";
+  const direction = options.direction === "rtl" ? "rtl" : "ltr";
+  return `<!doctype html><html lang="${locale}" dir="${direction}"><body style="margin:0;background:#f8fafc;color:#111a2e;font-family:Arial,sans-serif"><main style="max-width:560px;margin:32px auto;background:#fff;padding:36px;border:1px solid #dce1e8;border-radius:16px"><p style="font-size:24px;font-weight:700;letter-spacing:-.03em;margin:0 0 24px;color:#111a2e">TAMUSNI</p><h1 style="font-size:22px;color:#111a2e">${escapeHtml(title)}</h1>${content}<p style="font-size:12px;color:#5c6678;margin-top:28px;border-top:1px solid #dce1e8;padding-top:18px">TAMUSNI · A&amp;B TECHNOLOGIES</p></main></body></html>`;
 }
 
 export { escapeHtml };

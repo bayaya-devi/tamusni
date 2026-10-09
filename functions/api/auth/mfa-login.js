@@ -6,7 +6,7 @@ export async function onRequestPost(context) {
   if (!sameOrigin(context.request)) return json({ error: "Origine refusée." },403);
   try {
     const challenge=await getMfaChallenge(context.request,context.env.SESSION_SECRET); if(!challenge)return json({error:"La vérification a expiré. Reconnectez-vous."},401,{"Set-Cookie":clearMfaChallengeCookie()});
-    const user=await context.env.DB.prepare("SELECT u.id,u.name,u.email,u.role,u.mfa_enabled,u.mfa_secret,r.role AS additional_role FROM users u LEFT JOIN user_roles r ON r.user_id=u.id WHERE u.id=?").bind(challenge.sub).first();
+    const user=await context.env.DB.prepare("SELECT u.id,u.name,u.email,u.role,u.mfa_enabled,u.mfa_secret,u.session_version,u.preferred_language,r.role AS additional_role FROM users u LEFT JOIN user_roles r ON r.user_id=u.id WHERE u.id=?").bind(challenge.sub).first();
     if(!user||!user.mfa_enabled||!user.mfa_secret)return json({error:"Double authentification indisponible."},401,{"Set-Cookie":clearMfaChallengeCookie()});
     const attemptKey=await hashToken(`mfa|${context.request.headers.get("CF-Connecting-IP")||"unknown"}|${user.id}`); const now=Date.now();
     const attempt=await context.env.DB.prepare("SELECT attempts,window_started_at,blocked_until FROM login_attempts WHERE key_hash=?").bind(attemptKey).first();
@@ -15,9 +15,9 @@ export async function onRequestPost(context) {
     if(!await verifyTotp(secret,code)){
       const within=attempt?.window_started_at&&now-Date.parse(attempt.window_started_at)<900_000;const attempts=within?Number(attempt.attempts||0)+1:1;const blocked=attempts>=5?new Date(now+900_000).toISOString():null;
       await context.env.DB.prepare("INSERT INTO login_attempts(key_hash,attempts,window_started_at,blocked_until) VALUES(?,?,?,?) ON CONFLICT(key_hash) DO UPDATE SET attempts=excluded.attempts,window_started_at=excluded.window_started_at,blocked_until=excluded.blocked_until").bind(attemptKey,attempts,within?attempt.window_started_at:new Date(now).toISOString(),blocked).run();
-      try{await recordAuthEvent(context,{userId:user.id,email:user.email,event:"mfa_failure"})}catch{} return json({error:"Code incorrect."},401);
+      try{await recordAuthEvent(context,{userId:user.id,email:user.email,event:"mfa_failure"})}catch(error){console.error("auth_event_write_failed",error)} return json({error:"Code incorrect."},401);
     }
-    await context.env.DB.prepare("DELETE FROM login_attempts WHERE key_hash=?").bind(attemptKey).run(); try{await recordAuthEvent(context,{userId:user.id,email:user.email,event:"login_success"})}catch{}
+    await context.env.DB.prepare("DELETE FROM login_attempts WHERE key_hash=?").bind(attemptKey).run(); try{await recordAuthEvent(context,{userId:user.id,email:user.email,name:user.name,locale:user.preferred_language,event:"login_success"})}catch(error){console.error("auth_event_write_failed",error)}
     const role=user.role==="ADMIN"?"ADMIN":user.additional_role||"USER";
     let newsletter=null;try{newsletter=await finalizeNewsletterIntent(context,user)}catch(error){console.error("newsletter_intent_finalize_failed",error)}
     return json({ok:true,newsletter:newsletter&&!newsletter.mismatch?"subscribed":null,redirect:role==="ADMIN"?"/admin/":role==="CONTRIBUTOR"?"/contributeur/":`/mon-espace/${newsletter&&!newsletter.mismatch?'?newsletter=success':''}`},200,{"Set-Cookie":await createSessionCookie({...user,role},context.env.SESSION_SECRET)});
