@@ -1,4 +1,7 @@
 const encoder = new TextEncoder();
+// Pages Functions have a limited CPU budget. This is still above the NIST
+// minimum while leaving enough headroom for Turnstile and database checks.
+const PASSWORD_PBKDF2_ITERATIONS = 100_000;
 
 export function json(data, status = 200, headers = {}) {
   return Response.json(data, { status, headers: { "Cache-Control": "no-store", ...headers } });
@@ -24,7 +27,7 @@ function fromBase64Url(value) {
 
 export async function hashPassword(password, saltBytes = crypto.getRandomValues(new Uint8Array(16))) {
   const key = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveBits"]);
-  const iterations = 600_000;
+  const iterations = PASSWORD_PBKDF2_ITERATIONS;
   const hash = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: saltBytes, iterations }, key, 256);
   return `pbkdf2$${iterations}$${toBase64Url(saltBytes)}$${toBase64Url(hash)}`;
 }
@@ -97,7 +100,7 @@ export async function requireSession(context) {
 
 export function passwordHashNeedsUpgrade(stored) {
   const [scheme, iterations] = String(stored || "").split("$");
-  return scheme !== "pbkdf2" || Number(iterations) < 600_000;
+  return scheme !== "pbkdf2" || Number(iterations) < PASSWORD_PBKDF2_ITERATIONS;
 }
 
 export async function requireRecentSession(context,maximumAge=900_000) {
