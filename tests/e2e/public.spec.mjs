@@ -137,7 +137,7 @@ test('rubric and article stay inside a 320px viewport',async({page})=>{
 
 test('back-to-top control is visible, focused and functional on light and dark backgrounds',async({page})=>{
   for(const colorScheme of ['light','dark']){
-    await page.emulateMedia({colorScheme});await page.goto('/fr/');await page.evaluate(()=>scrollTo(0,document.documentElement.scrollHeight));
+    await page.emulateMedia({colorScheme});await page.goto('/fr/');await page.evaluate(()=>scrollTo({top:document.documentElement.scrollHeight,behavior:'instant'}));
     const button=page.locator('#back-top');await expect(button).toBeVisible();await button.focus();await expect(button).toBeFocused();await button.click();
     await expect.poll(()=>page.evaluate(()=>scrollY),{timeout:3000}).toBeLessThan(5);
   }
