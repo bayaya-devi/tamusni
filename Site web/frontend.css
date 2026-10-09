@@ -50,7 +50,7 @@ html,body{max-width:100%;overflow-x:clip}
 main,header,footer,section,article,nav,form{max-width:100%}
 img,svg,video,canvas,iframe,embed,object{max-width:100%}
 video,canvas,iframe,embed,object{height:auto}
-.site-header{background:color-mix(in srgb,var(--tm-surface) 91%,transparent);isolation:isolate}
+.site-header{background:color-mix(in srgb,var(--tm-surface) 86%,transparent);isolation:isolate}
 .site-menu{max-height:calc(100vh - 96px);overflow-y:auto;overscroll-behavior:contain}
 .header-actions{padding:4px;border:1px solid var(--tm-line);border-radius:15px;background:color-mix(in srgb,var(--tm-surface) 90%,transparent);box-shadow:0 8px 26px rgba(17,26,46,.08)}
 .menu-toggle{background:var(--tm-surface);border-color:var(--tm-silver);color:var(--tm-ink)}
