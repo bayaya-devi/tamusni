@@ -24,7 +24,30 @@
   setupTurnstile();
   function closeMenu(){if(!menu||menu.hidden)return;menu.hidden=true;toggle.setAttribute('aria-expanded','false');}
   if(toggle&&menu){toggle.addEventListener('click',()=>{const open=menu.hidden;menu.hidden=!open;toggle.setAttribute('aria-expanded',String(open));});document.addEventListener('pointerdown',event=>{if(!menu.contains(event.target)&&!toggle.contains(event.target))closeMenu();});document.addEventListener('keydown',event=>{if(event.key==='Escape'){closeMenu();toggle.focus({preventScroll:true});}});menu.addEventListener('click',event=>{if(event.target.closest('a,[data-admin-view],[data-contributor-view]'))closeMenu();});menu.querySelectorAll('.menu-role details').forEach(details=>details.addEventListener('toggle',()=>{if(!details.open)return;menu.querySelectorAll('.menu-role details[open]').forEach(other=>{if(other!==details)other.open=false;});}));}
-  const language=document.querySelector('#language');language?.addEventListener('change',()=>{const segments=location.pathname.split('/').filter(Boolean);if(['fr','ar','en','es','pt'].includes(segments[0]))segments.shift();location.assign(`/${language.value}/${segments.length?segments.join('/')+'/':''}${location.search}`);});
+  const navigationKey='tamusni:pending-navigation';
+  let navigationTimer=0;
+  function navigateInternal(target,{preserveScroll=false}={}){
+    const next=new URL(target,location.href);
+    if(next.origin!==location.origin)return location.assign(next.href);
+    if(preserveScroll){try{sessionStorage.setItem(navigationKey,JSON.stringify({path:next.pathname+next.search,scrollY:scrollY}));}catch{}}
+    if(reduced.matches)return location.assign(next.href);
+    if(navigationTimer)return;
+    root.classList.add('is-page-leaving');
+    navigationTimer=window.setTimeout(()=>location.assign(next.href),150);
+  }
+  function restoreLanguageScroll(){
+    try{const pending=JSON.parse(sessionStorage.getItem(navigationKey)||'null');if(!pending||pending.path!==location.pathname+location.search)return;sessionStorage.removeItem(navigationKey);requestAnimationFrame(()=>scrollTo({top:Math.max(0,Number(pending.scrollY)||0),behavior:'instant'}));}catch{}
+  }
+  restoreLanguageScroll();
+  addEventListener('pageshow',event=>{if(event.persisted)root.classList.remove('is-page-leaving');});
+  document.addEventListener('click',event=>{
+    if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+    const link=event.target.closest('a[href]');if(!link||link.target||link.hasAttribute('download'))return;
+    const next=new URL(link.href,location.href);
+    if(next.origin!==location.origin||next.pathname.startsWith('/api/')||next.hash&&next.pathname===location.pathname&&next.search===location.search)return;
+    event.preventDefault();navigateInternal(next.href);
+  });
+  const language=document.querySelector('#language');language?.addEventListener('change',()=>{const segments=location.pathname.split('/').filter(Boolean);if(['fr','ar','en','es','pt'].includes(segments[0]))segments.shift();navigateInternal(`/${language.value}/${segments.length?segments.join('/')+'/':''}${location.search}`,{preserveScroll:true});});
   const footerContact=document.querySelector('.site-footer .footer-trust:last-child');
   if(footerContact&&!footerContact.querySelector('.footer-social')){const social=document.createElement('nav');social.className='footer-social';social.setAttribute('aria-label','Réseaux sociaux');social.innerHTML='<a href="https://x.com/getbnhdh89514" rel="me noopener" target="_blank">X</a><a href="https://www.instagram.com/tam.usni/" rel="me noopener" target="_blank">Instagram</a><a href="https://web.facebook.com/profile.php?id=61595345005345" rel="me noopener" target="_blank">Facebook</a><a href="https://www.youtube.com/@Tamusni-i7h" rel="me noopener" target="_blank">YouTube</a>';footerContact.append(social);}
   document.querySelectorAll('form[data-auto-submit] select').forEach(select=>select.addEventListener('change',()=>select.form?.requestSubmit()));

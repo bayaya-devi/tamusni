@@ -124,6 +124,18 @@ test('the shared client exposes only the official social accounts',async()=>{
   assert.match(source,/https:\/\/www\.youtube\.com\/@Tamusni-i7h/);
 });
 
+test('shared navigation keeps native links safe while transitioning internal routes',async()=>{
+  const source=await import('node:fs/promises').then(fs=>fs.readFile(new URL('../Site web/frontend.js',import.meta.url),'utf8'));
+  const css=await import('node:fs/promises').then(fs=>fs.readFile(new URL('../Site web/frontend.css',import.meta.url),'utf8'));
+  assert.match(source,/next\.pathname\.startsWith\('\/api\/'\)/);
+  assert.match(source,/event\.metaKey\|\|event\.ctrlKey\|\|event\.shiftKey\|\|event\.altKey/);
+  assert.match(source,/preserveScroll:true/);
+  assert.match(source,/reduced\.matches/);
+  assert.match(css,/--motion-base:220ms/);
+  assert.match(css,/html\.is-page-leaving #main/);
+  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+});
+
 test('content interactions use lifetime-unique views and unique like keys',async()=>{
   const source=await import('node:fs/promises').then(fs=>fs.readFile(new URL('../functions/api/content/[slug].js',import.meta.url),'utf8'));
   assert.match(source,/INSERT OR IGNORE INTO content_unique_views/);
