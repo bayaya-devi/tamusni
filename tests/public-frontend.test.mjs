@@ -88,6 +88,17 @@ test('rubric search is scoped to its category',async()=>{
   assert.match(await response.text(),/Intelligence artificielle/);
 });
 
+test('global search is localized, searchable and uses the shared shell',async()=>{
+  const response=await publicResponse(context('/fr/recherche/?q=actualite'),'fr','recherche/');
+  assert.equal(response.status,200);
+  const html=await response.text();
+  assert.match(html,/id="global-query"/);
+  assert.match(html,/action="\/fr\/recherche\/"/);
+  assert.match(html,/class="site-header"/);
+  assert.match(html,/class="site-footer"/);
+  assert.match(html,/noindex,follow/);
+});
+
 test('signup and login preserve their forms and OAuth links',async()=>{
   for(const page of ['connexion/','inscription/']){
     const response=await publicResponse(context(`/fr/${page}`),'fr',page);

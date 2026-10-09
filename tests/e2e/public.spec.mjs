@@ -101,6 +101,15 @@ test('rubric search tolerates a typing error', async ({ page }) => {
   await expect(page.getByRole('link', { name: /Mistral/i }).first()).toBeVisible();
 });
 
+test('global search is available through the localized shared shell', async ({ page }) => {
+  await page.goto('/fr/recherche/?q=Mistaral');
+  await expect(page.getByRole('heading', { name: 'Recherche' })).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Rechercher' })).toHaveValue('Mistaral');
+  await expect(page.getByRole('link', { name: /Mistral/i }).first()).toBeVisible();
+  await expect(page.locator('header')).toBeVisible();
+  await expect(page.locator('footer')).toBeVisible();
+});
+
 test('scroll reveals editorial sections rather than leaving empty space', async ({ page }) => {
   await page.goto('/fr/');
   await page.locator('.latest-section').scrollIntoViewIfNeeded();
