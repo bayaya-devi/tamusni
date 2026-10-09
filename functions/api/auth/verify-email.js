@@ -1,4 +1,4 @@
-import { hashToken, json, readBody, sameOrigin, validEmail } from "../../_lib/auth.js";
+import { createSessionCookie, hashToken, json, readBody, sameOrigin, validEmail } from "../../_lib/auth.js";
 import { consumeOtpChallenge, consumeRateLimit, rateLimitResponse } from "../../_lib/account-security.js";
 import { finalizeNewsletterIntent } from "../../_lib/newsletter-service.js";
 
@@ -10,7 +10,7 @@ export async function onRequestPost(context) {
     if (!validEmail(email)) return json({ error: "Code invalide ou expiré." }, 400);
     const limit = await consumeRateLimit(context, "verify_email", email);
     if (!limit.allowed) return rateLimitResponse(limit);
-    const user = await context.env.DB.prepare("SELECT id,name,email,email_verified_at,preferred_language FROM users WHERE email=?").bind(email).first();
+    const user = await context.env.DB.prepare("SELECT id,name,email,role,session_version,email_verified_at,preferred_language FROM users WHERE email=?").bind(email).first();
     if (!user) return json({ error: "Code invalide ou expiré." }, 400);
     if (user.email_verified_at) return json({ ok: true, redirect: `/${user.preferred_language || "fr"}/connexion/?verification=success` });
     const result = await consumeOtpChallenge(context, user.id, "EMAIL_VERIFICATION", body.code);
@@ -20,7 +20,8 @@ export async function onRequestPost(context) {
     let newsletter = null;
     try { newsletter = await finalizeNewsletterIntent(context, { ...user, sub: user.id }); } catch (error) { console.error("newsletter_intent_finalize_failed", error); }
     const locale = ["fr", "ar", "en", "es", "pt"].includes(body.locale) ? body.locale : user.preferred_language || "fr";
-    return json({ ok: true, newsletter: newsletter && !newsletter.mismatch ? "subscribed" : null, redirect: `/${locale}/connexion/?verification=success` });
+    const redirect=`/${locale}/mon-espace/${newsletter && !newsletter.mismatch ? "?newsletter=success" : ""}`;
+    return json({ ok: true, newsletter: newsletter && !newsletter.mismatch ? "subscribed" : null, redirect },200,{ "Set-Cookie":await createSessionCookie({ ...user, role:user.role || "USER" },context.env.SESSION_SECRET) });
   } catch (error) {
     console.error("verify_email_failed", error);
     return json({ error: "Vérification impossible pour le moment." }, 500);
