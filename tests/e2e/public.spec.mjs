@@ -28,12 +28,18 @@ test('French homepage, menu, rubric and article navigation', async ({ page }) =>
   await expect(page).toHaveURL(/q=NASA/);
 });
 
-test('newsletter visitor intent survives the redirect and prefills login', async ({ page }) => {
+test('newsletter visitor intent survives the redirect and prefills signup', async ({ page }) => {
   const email=`newsletter-e2e-${Date.now()}@example.com`;
+  await page.route('**/api/newsletter', async route => {
+    await route.fulfill({status:202,contentType:'application/json',body:JSON.stringify({ok:true,requiresAuth:true,redirect:'/fr/inscription/?newsletter=1'})});
+  });
+  await page.route('**/api/newsletter/intent', async route => {
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({intent:{email}})});
+  });
   await page.goto('/fr/');
   await page.getByRole('textbox', { name: 'Adresse e-mail' }).fill(email);
   await page.getByRole('button', { name: 'S’inscrire' }).click();
-  await expect(page).toHaveURL(/\/fr\/connexion\/\?newsletter=1$/,{timeout:15_000});
+  await expect(page).toHaveURL(/\/fr\/inscription\/\?newsletter=1$/,{timeout:15_000});
   await expect(page.getByRole('textbox', { name: 'Adresse e-mail' })).toHaveValue(email);
 });
 
