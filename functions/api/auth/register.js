@@ -3,7 +3,7 @@ import { consumeRateLimit, createOtpChallenge, rateLimitResponse, turnstileError
 import { emailProvider } from "../../_lib/email.js";
 import { sendSecurityEmail } from "../../_lib/security-email.js";
 import { mirrorUser } from "../../_lib/supabase.js";
-import { normalizeTopics } from "../../_lib/topics.js";
+import { normalizeTopics, replaceTopicSubscriptions } from "../../_lib/topics.js";
 
 export async function onRequestPost(context) {
   if (!sameOrigin(context.request)) return json({ error: "Origine refusée." }, 403);
@@ -32,10 +32,10 @@ export async function onRequestPost(context) {
     const now = new Date().toISOString();
     const preferredTopic = preferredTopics[0];
     const user = { id: crypto.randomUUID(), name, email, role: "USER", preferredTopic, termsAcceptedAt: now, sponsoredInApp, sponsoredEmail, created_at: now, session_version: 1 };
-    await context.env.DB.batch([
-      context.env.DB.prepare("INSERT INTO users (id,name,email,password_hash,role,created_at,preferred_language,preferred_topic,terms_accepted_at,sponsored_in_app,sponsored_email,session_version) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)").bind(user.id, name, email, await hashPassword(password), "USER", now, locale, preferredTopic, now, sponsoredInApp, sponsoredEmail, 1),
-      ...preferredTopics.map(topic => context.env.DB.prepare("INSERT INTO topic_subscriptions(user_id,topic,created_at) VALUES(?,?,?)").bind(user.id, topic, now))
-    ]);
+    // D1 enforces the foreign key on topic_subscriptions. Persist the parent
+    // account first, then its preferences, instead of relying on batch order.
+    await context.env.DB.prepare("INSERT INTO users (id,name,email,password_hash,role,created_at,preferred_language,preferred_topic,terms_accepted_at,sponsored_in_app,sponsored_email,session_version) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)").bind(user.id, name, email, await hashPassword(password), "USER", now, locale, preferredTopic, now, sponsoredInApp, sponsoredEmail, 1).run();
+    await replaceTopicSubscriptions(context.env.DB, user.id, preferredTopics, now);
 
     const challenge = await createOtpChallenge(context, user.id, "EMAIL_VERIFICATION");
     let emailSent = true;
