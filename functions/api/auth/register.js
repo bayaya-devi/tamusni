@@ -19,7 +19,7 @@ export async function onRequestPost(context) {
     const termsAccepted = body.termsAccepted === "on" || body.termsAccepted === true;
     const sponsoredInApp = body.sponsoredInApp === "on" || body.sponsoredInApp === true ? 1 : 0;
     const sponsoredEmail = body.sponsoredEmail === "on" || body.sponsoredEmail === true ? 1 : 0;
-    if (name.length < 2 || !validEmail(email) || password.length < 12 || password.length > 128 || !preferredTopics.length || !termsAccepted) return json({ error: "Renseignez vos informations, utilisez un mot de passe d’au moins 12 caractères, choisissez une rubrique et acceptez les conditions." }, 400);
+    if (name.length < 2 || !validEmail(email) || password.length < 6 || password.length > 128 || !preferredTopics.length || !termsAccepted) return json({ error: "Renseignez vos informations, utilisez un mot de passe d’au moins 6 caractères, choisissez une rubrique et acceptez les conditions." }, 400);
     if (!emailProvider(context.env)) return json({ error: "La création de compte est momentanément indisponible : le service d’e-mail n’est pas activé." }, 503);
     if (!context.env.SESSION_SECRET) return json({ error: "Configuration de sécurité indisponible." }, 503);
     const limit = await consumeRateLimit(context, "register", email);

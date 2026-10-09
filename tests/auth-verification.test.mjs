@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createSessionCookie, hashPassword, requireSession } from "../functions/_lib/auth.js";
 import { onRequestPost as login } from "../functions/api/auth/login.js";
+import { onRequestPost as register } from "../functions/api/auth/register.js";
+import { onRequestGet as oauth } from "../functions/api/auth/oauth.js";
 
 const secret="test-only-session-secret-not-for-production";
 
@@ -35,4 +37,23 @@ test("a verified account remains authorized",async()=>{
   const cookie=await createSessionCookie(user,secret);
   const request=new Request("https://tamusni.test/api/account",{headers:{cookie:cookie.split(";")[0]}});
   assert.equal((await requireSession({request,env:{DB:dbFor(user),SESSION_SECRET:secret}}))?.sub,"verified");
+});
+
+test("registration accepts the official six-character password minimum",async()=>{
+  const base={firstName:"Ada",lastName:"Test",email:"ada@example.invalid",preferredTopics:["Intelligence artificielle"],termsAccepted:true,locale:"fr"};
+  const requestFor=password=>new Request("https://tamusni.test/api/auth/register",{method:"POST",headers:{origin:"https://tamusni.test","content-type":"application/json"},body:JSON.stringify({...base,password})});
+  const env={DB:dbFor(null)};
+  const short=await register({request:requestFor("abcde"),env});
+  const accepted=await register({request:requestFor("abcdef"),env});
+  assert.equal(short.status,400);
+  assert.match((await short.json()).error,/6 caractères/);
+  assert.equal(accepted.status,503);
+});
+
+test("Google OAuth callback stays on the localized public route",async()=>{
+  const request=new Request("https://tamusni.pages.dev/api/auth/oauth?provider=google&intent=signup&locale=ar&newsletter=1");
+  const response=await oauth({request,env:{OAUTH_GOOGLE_ENABLED:"true",PUBLIC_SITE_URL:"https://tamusni.pages.dev",SUPABASE_URL:"https://project.supabase.co"}});
+  assert.equal(response.status,302);
+  const callback=new URL(new URL(response.headers.get("location")).searchParams.get("redirect_to"));
+  assert.equal(callback.href,"https://tamusni.pages.dev/ar/inscription/?oauth=google&newsletter=1");
 });

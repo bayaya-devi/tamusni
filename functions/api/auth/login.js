@@ -1,7 +1,7 @@
 import { createMfaChallengeCookie, createSessionCookie, hashPassword, hashToken, json, passwordHashNeedsUpgrade, readBody, sameOrigin, validEmail, verifyPassword } from "../../_lib/auth.js";
 import { mirrorUser } from "../../_lib/supabase.js";
 import { recordAuthEvent } from "../../_lib/mfa.js";
-import { finalizeNewsletterIntent } from "../../_lib/newsletter-service.js";
+import { cancelNewsletterIntent, finalizeNewsletterIntent } from "../../_lib/newsletter-service.js";
 import { consumeRateLimit, rateLimitResponse } from "../../_lib/account-security.js";
 
 export async function onRequestPost(context) {
@@ -32,7 +32,9 @@ export async function onRequestPost(context) {
     if (!context.env.SESSION_SECRET) return json({ error: "Configuration de session indisponible." }, 503);
     if (user.mfa_enabled) return json({ ok: true, mfaRequired: true, message: "Saisissez le code de votre application d’authentification." }, 202, { "Set-Cookie": await createMfaChallengeCookie(user, context.env.SESSION_SECRET) });
     try { await recordAuthEvent(context,{ userId:user.id, email:user.email, locale:user.preferred_language, name:user.name, event:"login_success" }); } catch (error) { console.error("auth_event_write_failed", error); }
-    const role = user.role === "ADMIN" ? "ADMIN" : user.additional_role || "USER";let newsletter=null;try{newsletter=await finalizeNewsletterIntent(context,user)}catch(error){console.error("newsletter_intent_finalize_failed",error)}
+    const role = user.role === "ADMIN" ? "ADMIN" : user.additional_role || "USER";
+    const newsletterConsent=Object.prototype.hasOwnProperty.call(body,"newsletterConsent");let newsletter=null;
+    try{if(body.newsletterConsent===true||body.newsletterConsent==="on")newsletter=await finalizeNewsletterIntent(context,user);else if(newsletterConsent)await cancelNewsletterIntent(context)}catch(error){console.error("newsletter_intent_finalize_failed",error)}
     return json({ ok: true, newsletter:newsletter&&!newsletter.mismatch?"subscribed":newsletter?.mismatch?"email_mismatch":null,redirect: role === "ADMIN" ? "/admin/" : role === "CONTRIBUTOR" ? "/contributeur/" : `/mon-espace/${newsletter&&!newsletter.mismatch?'?newsletter=success':''}` }, 200, { "Set-Cookie": await createSessionCookie({ ...user, role }, context.env.SESSION_SECRET) });
   } catch(error) { console.error("login_failed",error); return json({ error: "Connexion impossible pour le moment." }, 500); }
 }

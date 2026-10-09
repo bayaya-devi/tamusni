@@ -192,7 +192,7 @@ for (const locale of ['fr','ar','en','es','pt']) test(`account security pages ar
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
   if(locale==='ar')await expect(page.locator('html')).toHaveAttribute('dir','rtl');
   await page.goto(`/${locale}/reinitialiser-mot-de-passe/?token=test-token`);
-  await expect(page.locator('#reset-password-form input[name="password"]')).toHaveAttribute('minlength','12');
+  await expect(page.locator('#reset-password-form input[name="password"]')).toHaveAttribute('minlength','6');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 });
 

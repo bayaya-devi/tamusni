@@ -93,9 +93,19 @@ test('signup and login preserve their forms and OAuth links',async()=>{
     const response=await publicResponse(context(`/fr/${page}`),'fr',page);
     const html=await response.text();
     assert.match(html,/\/api\/auth\/oauth\?provider=google/);
+    assert.match(html,/locale=fr/);
     assert.match(html,/\/brand\/google\.png/);
     assert.match(html,/type="password"/);
   }
+});
+
+test('newsletter intent leads to signup and requires explicit consent only at login',async()=>{
+  const signup=await publicResponse(context('/fr/inscription/?newsletter=1'),'fr','inscription/');
+  const login=await publicResponse(context('/fr/connexion/?newsletter=1'),'fr','connexion/');
+  const standard=await publicResponse(context('/fr/connexion/'),'fr','connexion/');
+  assert.match(await signup.text(),/connexion\/\?newsletter=1/);
+  assert.match(await login.text(),/name="newsletterConsent" checked/);
+  assert.doesNotMatch(await standard.text(),/name="newsletterConsent"/);
 });
 
 test('signup supports multiple preferred topics',async()=>{

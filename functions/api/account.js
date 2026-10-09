@@ -64,7 +64,7 @@ async function changePassword(context, session, body) {
   const newPassword = String(body.newPassword || "");
   const confirmation = String(body.passwordConfirmation || "");
   if (!user || !(await verifyPassword(currentPassword, user.password_hash))) return json({ error: "Mot de passe actuel incorrect." }, 403);
-  if (newPassword.length < 12 || newPassword.length > 128 || newPassword !== confirmation) return json({ error: "Le nouveau mot de passe doit contenir au moins 12 caractères et les deux saisies doivent correspondre." }, 400);
+  if (newPassword.length < 6 || newPassword.length > 128 || newPassword !== confirmation) return json({ error: "Le nouveau mot de passe doit contenir au moins 6 caractères et les deux saisies doivent correspondre." }, 400);
   const newVersion = Number(user.session_version || 1) + 1;
   await context.env.DB.prepare("UPDATE users SET password_hash=?,session_version=? WHERE id=?").bind(await hashPassword(newPassword), newVersion, session.sub).run();
   try { await sendSecurityEmail(context.env, { type: "changed", to: user.email, name: user.name, locale: user.preferred_language }); } catch (error) { console.error("password_changed_email_failed", error); }

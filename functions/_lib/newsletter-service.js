@@ -13,7 +13,7 @@ export async function createNewsletterIntent(context,{email,locale}){
   if(Number(recent?.count||0)>=8)throw new Error("NEWSLETTER_RATE_LIMIT");
   await context.env.DB.prepare("DELETE FROM newsletter_intents WHERE expires_at<? OR consumed_at IS NOT NULL").bind(now).run();
   await context.env.DB.prepare("INSERT INTO newsletter_intents(token_hash,email,locale,ip_hash,expires_at,created_at) VALUES(?,?,?,?,?,?)").bind(await hashToken(raw),email,normalizeNewsletterLocale(locale),ipHash,new Date(Date.now()+30*60000).toISOString(),now).run();
-  return {cookie:`tamusni_newsletter_intent=${raw}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=1800`,redirect:`/${normalizeNewsletterLocale(locale)}/connexion/?newsletter=1`};
+  return {cookie:`tamusni_newsletter_intent=${raw}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=1800`,redirect:`/${normalizeNewsletterLocale(locale)}/inscription/?newsletter=1`};
 }
 
 export async function readNewsletterIntent(context){
@@ -35,6 +35,12 @@ export async function finalizeNewsletterIntent(context,user){
   if(String(intent.email).toLowerCase()!==String(user.email).toLowerCase())return {mismatch:true};
   const subscriber=await subscribeUser(context,user,intent.locale,"auth_intent");const raw=cookieValue(context.request,"tamusni_newsletter_intent");
   await context.env.DB.prepare("UPDATE newsletter_intents SET consumed_at=? WHERE token_hash=?").bind(nowIso(),await hashToken(raw)).run();return subscriber;
+}
+
+export async function cancelNewsletterIntent(context){
+  const raw=cookieValue(context.request,"tamusni_newsletter_intent");
+  if(!raw)return;
+  await context.env.DB.prepare("UPDATE newsletter_intents SET consumed_at=? WHERE token_hash=? AND consumed_at IS NULL").bind(nowIso(),await hashToken(raw)).run();
 }
 
 async function candidates(db,start,end){

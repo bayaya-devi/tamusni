@@ -12,7 +12,7 @@ export async function onRequestPost(context) {
     const locale = ["fr", "ar", "en", "es", "pt"].includes(body.locale) ? body.locale : "fr";
     const limit = await consumeRateLimit(context, "reset_password", token.slice(0, 24) || "missing");
     if (!limit.allowed) return rateLimitResponse(limit);
-    if (token.length < 20 || password.length < 12 || password.length > 128 || password !== confirmation) return json({ error: "Lien invalide ou mot de passe non conforme (12 caractères minimum)." }, 400);
+    if (token.length < 20 || password.length < 6 || password.length > 128 || password !== confirmation) return json({ error: "Lien invalide ou mot de passe non conforme (6 caractères minimum)." }, 400);
     const tokenHash = await hashToken(token);
     const found = await context.env.DB.prepare("SELECT p.user_id,u.name,u.email,u.preferred_language FROM password_reset_tokens p JOIN users u ON u.id=p.user_id WHERE p.token_hash=? AND p.expires_at>? LIMIT 1").bind(tokenHash, new Date().toISOString()).first();
     if (!found) return json({ error: "Ce lien est invalide ou expiré." }, 400);
