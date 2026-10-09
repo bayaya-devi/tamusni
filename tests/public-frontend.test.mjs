@@ -147,9 +147,9 @@ test('shared navigation keeps native links safe while transitioning internal rou
   assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
 });
 
-test('back-to-top temporarily bypasses global smooth scrolling',async()=>{
+test('back-to-top resets the document scrolling element directly',async()=>{
   const source=await import('node:fs/promises').then(fs=>fs.readFile(new URL('../Site web/frontend.js',import.meta.url),'utf8'));
-  assert.match(source,/function returnToTop\(\)\{const previous=root\.style\.scrollBehavior;root\.style\.scrollBehavior='auto';scrollTo\(0,0\)/);
+  assert.match(source,/function returnToTop\(\)\{root\.scrollTop=0;document\.body\.scrollTop=0;document\.scrollingElement\?\.scrollTo\(\{top:0,behavior:'instant'\}\)/);
   assert.match(source,/topButton\?\.addEventListener\('click',returnToTop\)/);
 });
 
