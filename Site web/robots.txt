@@ -7,3 +7,4 @@ Disallow: /*/connexion/
 Disallow: /*/inscription/
 Disallow: /api/
 Sitemap: https://tamusni.pages.dev/sitemap.xml
+Sitemap: https://tamusni.pages.dev/news-sitemap.xml
