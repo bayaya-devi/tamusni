@@ -2,7 +2,7 @@
 
 ## Architecture
 
-D1 est la source de vérité pour le consentement, la langue, les éditions, la sélection et les métriques. Brevo gère les contacts, cinq listes (`FR`, `AR`, `EN`, `ES`, `PT`), les campagnes et la délivrabilité. Le workflow indépendant GitHub Actions `weekly-newsletter.yml` appelle l'endpoint Pages protégé le dimanche à 08:00 en `Africa/Casablanca`.
+D1 est la source de vérité pour le consentement, la langue, les éditions, la sélection et les métriques. Brevo gère les contacts, cinq listes (`FR`, `AR`, `EN`, `ES`, `PT`), les campagnes et la délivrabilité. Le workflow indépendant GitHub Actions `weekly-newsletter.yml` appelle l'endpoint Pages protégé chaque dimanche à 06:00 en `Etc/UTC` (GMT+00).
 
 La newsletter possède son propre scheduler, son propre secret, sa concurrence dédiée et ses propres journaux GitHub. Elle ne dépend ni du Cron éditorial ni de la maintenance. Le verrou `newsletter_runs` et la clé d'édition empêchent les doubles envois lors des relances.
 

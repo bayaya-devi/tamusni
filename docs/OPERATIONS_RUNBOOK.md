@@ -76,7 +76,7 @@ Conserver le signet retourné dans le journal d’intervention. Pour restaurer, 
 
 ## Newsletter Brevo
 
-Le workflow GitHub `weekly-newsletter.yml` possède une planification indépendante et un verrou de concurrence. Il s'exécute le dimanche à 08:00, heure de Casablanca. Le test manuel reste par défaut en mode `force=1&dryRun=1`, sans envoi. Ne jamais désactiver `dry_run` lors d'un test. Contrôler l'expéditeur actif, le webhook, les listes et les états D1 avant un lancement réel.
+Le workflow GitHub `weekly-newsletter.yml` possède une planification indépendante et un verrou de concurrence. Il s'exécute chaque dimanche à 06:00 en `Etc/UTC` (GMT+00). Le test manuel reste par défaut en mode `force=1&dryRun=1`, sans envoi. Ne jamais désactiver `dry_run` lors d'un test. Contrôler l'expéditeur actif, le webhook, les listes et les états D1 avant un lancement réel.
 
 ## Alertes et confidentialité
 

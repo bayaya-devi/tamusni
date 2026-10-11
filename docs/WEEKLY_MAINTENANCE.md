@@ -47,7 +47,7 @@ Le même `MAINTENANCE_REPORT_TOKEN` doit exister dans les secrets du projet Clou
 
 - Maintenance : dimanche à 03:00, heure `Africa/Casablanca`, via GitHub Actions.
 - Éditorial : Cron Cloudflare toutes les quinze minutes ; préparation à partir de 04:00 et publication à 06:00 uniquement le jour dû.
-- Newsletter : dimanche à 08:00, heure `Africa/Casablanca`, via un workflow GitHub distinct.
+- Newsletter : dimanche à 06:00 en `Etc/UTC` (GMT+00), via un workflow GitHub distinct.
 
 Chaque système possède un groupe de concurrence ou un verrou D1 propre. La maintenance termine avant la préparation éditoriale ; la newsletter démarre après la fenêtre de publication. Les relances newsletter réutilisent la même clé d’édition et les publications éditoriales réutilisent leur ligne de run afin d’éviter les doublons.
 
