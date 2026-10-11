@@ -1,17 +1,25 @@
+import 'dart:io';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 import '../core/app_config.dart';
 
-bool get firebaseMessagingConfigured => [
-  AppConfig.firebaseApiKey,
-  AppConfig.firebaseAppId,
-  AppConfig.firebaseSenderId,
-  AppConfig.firebaseProjectId,
-].every((value) => value.isNotEmpty);
+bool get firebaseMessagingConfigured =>
+    Platform.isAndroid ||
+    [
+      AppConfig.firebaseApiKey,
+      AppConfig.firebaseAppId,
+      AppConfig.firebaseSenderId,
+      AppConfig.firebaseProjectId,
+    ].every((value) => value.isNotEmpty);
 
 Future<void> initializeFirebaseMessaging() async {
   if (!firebaseMessagingConfigured || Firebase.apps.isNotEmpty) return;
+  if (Platform.isAndroid) {
+    await Firebase.initializeApp();
+    return;
+  }
   await Firebase.initializeApp(
     options: FirebaseOptions(
       apiKey: AppConfig.firebaseApiKey,

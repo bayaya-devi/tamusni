@@ -62,6 +62,7 @@ class AppController extends ChangeNotifier {
   List<Map<String, dynamic>> adminUsers = [];
   bool pushEnabled = false;
   String? pendingPushSlug;
+  Map<String, dynamic>? pendingPushTarget;
   Map<String, dynamic>? foregroundPush;
 
   String get role => '${user?['role'] ?? 'USER'}'.toUpperCase();
@@ -598,6 +599,8 @@ class AppController extends ChangeNotifier {
             message.notification?.title ?? message.data['title'] ?? 'TAMUSNI',
         'body': message.notification?.body ?? message.data['body'] ?? '',
         'slug': contentSlugFromPushData(message.data),
+        'type': message.data['type'],
+        'status': message.data['status'],
       };
       notifyListeners();
     });
@@ -622,13 +625,20 @@ class AppController extends ChangeNotifier {
 
   void _handleOpenedPush(RemoteMessage message) {
     pendingPushSlug = contentSlugFromPushData(message.data);
-    if (pendingPushSlug != null) notifyListeners();
+    pendingPushTarget = Map<String, dynamic>.from(message.data);
+    notifyListeners();
   }
 
   String? takePendingPushSlug() {
     final slug = pendingPushSlug;
     pendingPushSlug = null;
     return slug;
+  }
+
+  Map<String, dynamic>? takePendingPushTarget() {
+    final target = pendingPushTarget;
+    pendingPushTarget = null;
+    return target;
   }
 
   Map<String, dynamic>? takeForegroundPush() {
@@ -693,22 +703,62 @@ class AppController extends ChangeNotifier {
   }
 
   Future<Map<String, dynamic>> loadContributorSubmissions() async {
+    final localDrafts = await local.contributorDrafts();
+    if (!isOnline) {
+      submissions = localDrafts;
+      notifyListeners();
+      return {'items': submissions, 'offline': true};
+    }
     final response = await api.get('/api/contributor/submissions');
-    submissions = (response['items'] as List? ?? const [])
+    final remoteItems = (response['items'] as List? ?? const [])
         .whereType<Map>()
-        .map((e) => Map<String, dynamic>.from(e))
-        .toList();
+        .map((e) => Map<String, dynamic>.from(e));
+    submissions = [...localDrafts, ...remoteItems];
     notifyListeners();
     return response;
+  }
+
+  Future<Map<String, dynamic>> loadContributorSubmission(String id) async {
+    if (id.startsWith('local-')) {
+      final drafts = await local.contributorDrafts();
+      return drafts.firstWhere((draft) => draft['id'] == id);
+    }
+    final response = await api.get(
+      '/api/contributor/submissions',
+      query: {'id': id},
+    );
+    final item = Map<String, dynamic>.from(response['item'] as Map);
+    item['sources'] = response['sources'] ?? const [];
+    return item;
   }
 
   Future<Map<String, dynamic>> saveSubmission(
     Map<String, dynamic> value,
   ) async {
+    final existingId = '${value['id'] ?? ''}';
+    final localId = existingId.startsWith('local-')
+        ? existingId
+        : 'local-${DateTime.now().microsecondsSinceEpoch}';
+    if (!isOnline) {
+      await local.saveContributorDraft(localId, {...value, 'id': localId});
+      await loadContributorSubmissions();
+      if (value['action'] == 'submit') {
+        throw const ApiException(
+          'Brouillon conservé sur cet appareil. Reconnectez-vous pour le soumettre à la rédaction.',
+          null,
+        );
+      }
+      return {'ok': true, 'id': localId, 'status': 'draft', 'offline': true};
+    }
+    final request = Map<String, dynamic>.from(value);
+    if (existingId.startsWith('local-')) request.remove('id');
     final response = await api.post(
       '/api/contributor/submissions',
-      data: value,
+      data: request,
     );
+    if (existingId.startsWith('local-')) {
+      await local.deleteContributorDraft(existingId);
+    }
     await loadContributorSubmissions();
     return response;
   }

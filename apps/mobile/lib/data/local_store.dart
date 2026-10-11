@@ -13,7 +13,7 @@ class LocalStore {
     final root = await getDatabasesPath();
     _db = await openDatabase(
       p.join(root, 'tamusni_local_v1.db'),
-      version: 1,
+      version: 2,
       onCreate: (db, _) async {
         await db.execute(
           'CREATE TABLE content(slug TEXT PRIMARY KEY, payload TEXT NOT NULL, cached_at TEXT NOT NULL, downloaded INTEGER NOT NULL DEFAULT 0)',
@@ -30,6 +30,16 @@ class LocalStore {
         await db.execute(
           'CREATE TABLE app_state(key TEXT PRIMARY KEY, value TEXT NOT NULL)',
         );
+        await db.execute(
+          'CREATE TABLE contributor_drafts(id TEXT PRIMARY KEY, payload TEXT NOT NULL, updated_at TEXT NOT NULL)',
+        );
+      },
+      onUpgrade: (db, oldVersion, _) async {
+        if (oldVersion < 2) {
+          await db.execute(
+            'CREATE TABLE contributor_drafts(id TEXT PRIMARY KEY, payload TEXT NOT NULL, updated_at TEXT NOT NULL)',
+          );
+        }
       },
     );
     return _db!;
@@ -212,10 +222,42 @@ class LocalStore {
     return rows.isEmpty ? null : rows.first['value'] as String?;
   }
 
+  Future<void> saveContributorDraft(
+    String id,
+    Map<String, dynamic> payload,
+  ) async => (await database).insert('contributor_drafts', {
+    'id': id,
+    'payload': jsonEncode(payload),
+    'updated_at': DateTime.now().toUtc().toIso8601String(),
+  }, conflictAlgorithm: ConflictAlgorithm.replace);
+
+  Future<List<Map<String, dynamic>>> contributorDrafts() async {
+    final rows = await (await database).query(
+      'contributor_drafts',
+      orderBy: 'updated_at DESC',
+    );
+    return rows.map((row) {
+      final payload = Map<String, dynamic>.from(
+        jsonDecode(row['payload'] as String) as Map,
+      );
+      return {
+        ...payload,
+        'id': row['id'],
+        'status': 'draft',
+        'localOnly': true,
+        'updated_at': row['updated_at'],
+      };
+    }).toList();
+  }
+
+  Future<void> deleteContributorDraft(String id) async => (await database)
+      .delete('contributor_drafts', where: 'id=?', whereArgs: [id]);
+
   Future<void> clearPrivateData() async {
     final db = await database;
     await db.delete('favorites');
     await db.delete('history');
     await db.delete('pending_likes');
+    await db.delete('contributor_drafts');
   }
 }

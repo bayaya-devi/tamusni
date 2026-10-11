@@ -17,3 +17,6 @@ _worker.bundle
 AGENTS.md
 CLAUDE.md
 acces.txt
+*.jks
+*.keystore
+**/key.properties

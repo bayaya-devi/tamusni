@@ -1,5 +1,5 @@
 import { cleanText, json, readBody, requireAdmin, sameOrigin } from "../../_lib/auth.js";
-import { notifyContentSubscribers } from "../../_lib/push.js";
+import { notifyContentSubscribers, sendPushToUser } from "../../_lib/push.js";
 
 const slugify=value=>cleanText(value,220).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,120);
 
@@ -32,6 +32,8 @@ export async function onRequestPost(context) {
     const result=await context.env.DB.prepare("UPDATE contributor_submissions SET status='rejected',review_reason=?,reviewed_at=?,reviewed_by=?,updated_at=? WHERE id=? AND status='submitted'").bind(reason,now,admin.sub,now,id).run();
     if(Number(result.meta?.changes||0)===0)return json({error:"Cette proposition a déjà été traitée."},409);
     await context.env.DB.prepare("INSERT INTO admin_audit_log(id,admin_user_id,action,target_type,target_id,metadata,created_at) VALUES(?,?,?,?,?,?,?)").bind(crypto.randomUUID(),admin.sub,"submission.reject","submission",id,JSON.stringify({reason}),now).run();
+    await context.env.DB.prepare("INSERT INTO notifications(id,user_id,title,url,created_at) VALUES(?,?,?,?,?)").bind(crypto.randomUUID(),submission.owner_user_id,"Votre proposition nécessite des modifications","/contributeur/",now).run();
+    if (typeof context.waitUntil === "function") context.waitUntil(sendPushToUser(context.env,submission.owner_user_id,{title:"Proposition à revoir",body:reason,data:{type:"contribution",submissionId:id,status:"rejected",url:"/contributeur/"}}).catch(error=>console.error("submission_rejection_push_failed",String(error?.message||error))));
     return json({ok:true,status:"rejected"});
   }
   const sources=await context.env.DB.prepare("SELECT id,label,url,publisher FROM contributor_submission_sources WHERE submission_id=? ORDER BY created_at").bind(id).all();
@@ -47,6 +49,8 @@ export async function onRequestPost(context) {
   try { const results=await context.env.DB.batch(statements);if(Number(results[0]?.meta?.changes||0)===0)return json({error:"Cette proposition a déjà été traitée."},409); } catch(error) { console.error("submission_publication_failed",error); return json({error:"Publication impossible. Vérifiez que l’URL de l’article est disponible."},409); }
   await context.env.DB.prepare("INSERT INTO notifications(id,user_id,title,url,created_at) SELECT lower(hex(randomblob(16))),user_id,?,?,? FROM topic_subscriptions WHERE LOWER(topic)=LOWER(?)").bind(`Nouveau contenu : ${title}`,`/articles/${slug}/`,now,submission.category).run();
   notifyContentSubscribers(context, submission.category, slug, title);
+  await context.env.DB.prepare("INSERT INTO notifications(id,user_id,title,url,created_at) VALUES(?,?,?,?,?)").bind(crypto.randomUUID(),submission.owner_user_id,"Votre proposition a été publiée",`/article/${slug}/`,now).run();
+  if (typeof context.waitUntil === "function") context.waitUntil(sendPushToUser(context.env,submission.owner_user_id,{title:"Proposition publiée",body:title,data:{type:"contribution",submissionId:id,status:"approved",slug,url:`/article/${slug}/`}}).catch(error=>console.error("submission_approval_push_failed",String(error?.message||error))));
   await context.env.DB.prepare("INSERT INTO admin_audit_log(id,admin_user_id,action,target_type,target_id,metadata,created_at) VALUES(?,?,?,?,?,?,?)").bind(crypto.randomUUID(),admin.sub,"submission.approve","content",contentId,JSON.stringify({submissionId:id,slug}),now).run();
   return json({ok:true,status:"approved",contentId,slug,url:`/articles/${slug}/`},201);
 }

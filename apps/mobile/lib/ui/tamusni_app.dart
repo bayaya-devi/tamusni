@@ -35,6 +35,7 @@ class _TamusniAppState extends State<TamusniApp> {
 
   void _handlePushEvents() {
     final slug = controller.takePendingPushSlug();
+    final target = controller.takePendingPushTarget();
     if (slug != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _navigatorKey.currentState?.push(
@@ -43,27 +44,50 @@ class _TamusniAppState extends State<TamusniApp> {
           ),
         );
       });
+    } else if (target != null) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _openPushTarget(target),
+      );
     }
     final message = controller.takeForegroundPush();
     if (message != null) {
       final title = '${message['title'] ?? 'TAMUSNI'}';
       final body = '${message['body'] ?? ''}';
       final targetSlug = message['slug']?.toString();
+      final targetType = message['type']?.toString();
       _messengerKey.currentState?.showSnackBar(
         SnackBar(
           content: Text(body.isEmpty ? title : '$title\n$body'),
-          action: targetSlug == null
+          action: targetSlug == null && targetType == null
               ? null
               : SnackBarAction(
-                  label: 'Lire',
-                  onPressed: () => _navigatorKey.currentState?.push(
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          ArticlePage(controller: controller, slug: targetSlug),
-                    ),
-                  ),
+                  label: targetSlug == null ? 'Ouvrir' : 'Lire',
+                  onPressed: () => _openPushTarget(message),
                 ),
         ),
+      );
+    }
+  }
+
+  void _openPushTarget(Map<String, dynamic> target) {
+    final slug = target['slug']?.toString();
+    if (slug != null && slug.isNotEmpty) {
+      _navigatorKey.currentState?.push(
+        MaterialPageRoute(
+          builder: (_) => ArticlePage(controller: controller, slug: slug),
+        ),
+      );
+      return;
+    }
+    if (target['type'] == 'contribution' && controller.role == 'CONTRIBUTOR') {
+      _navigatorKey.currentState?.push(
+        MaterialPageRoute(
+          builder: (_) => ContributorListPage(controller: controller),
+        ),
+      );
+    } else if (target['type'] == 'admin' && controller.role == 'ADMIN') {
+      _navigatorKey.currentState?.push(
+        MaterialPageRoute(builder: (_) => AdminPage(controller: controller)),
       );
     }
   }

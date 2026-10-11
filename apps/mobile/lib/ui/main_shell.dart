@@ -1325,6 +1325,26 @@ class _ProfilePageState extends State<ProfilePage> {
           onChanged: (value) async {
             try {
               if (value) {
+                final accepted = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Activer les notifications ?'),
+                    content: const Text(
+                      'TAMUSNI vous préviendra des nouveaux contenus de vos rubriques et du suivi de vos propositions. Vous pourrez les désactiver ici à tout moment.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Plus tard'),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('Continuer'),
+                      ),
+                    ],
+                  ),
+                );
+                if (accepted != true) return;
                 await c.enablePush();
               } else {
                 await c.disablePush();
@@ -1542,16 +1562,24 @@ class _ContributorListPageState extends State<ContributorListPage> {
                       '${item['type'] ?? ''} · ${item['category'] ?? ''} · ${item['status'] ?? ''}',
                     ),
                     trailing: const Icon(Icons.chevron_right),
-                    onTap: () => Navigator.of(context)
-                        .push(
+                    onTap: () async {
+                      try {
+                        final complete = await widget.controller
+                            .loadContributorSubmission('${item['id']}');
+                        if (!context.mounted) return;
+                        await Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (_) => ContributorEditorPage(
                               controller: widget.controller,
-                              existing: item,
+                              existing: complete,
                             ),
                           ),
-                        )
-                        .then((_) => _load()),
+                        );
+                        await _load();
+                      } catch (e) {
+                        _toast('$e');
+                      }
+                    },
                   ),
                 );
               },
@@ -1597,6 +1625,11 @@ class _ContributorEditorPageState extends State<ContributorEditorPage> {
     type = '${item['type'] ?? 'article'}';
     category = '${item['category'] ?? AppConfig.topics.first}';
     coverUrl = item['cover_url'] as String?;
+    final sources = (item['sources'] as List? ?? const []).whereType<Map>();
+    if (sources.isNotEmpty) {
+      sourceLabel.text = '${sources.first['label'] ?? ''}';
+      sourceUrl.text = '${sources.first['url'] ?? ''}';
+    }
   }
 
   @override
@@ -1730,6 +1763,7 @@ class _ContributorEditorPageState extends State<ContributorEditorPage> {
     setState(() => busy = true);
     try {
       await widget.controller.saveSubmission({
+        if (widget.existing?['id'] != null) 'id': widget.existing!['id'],
         'action': action,
         'type': type,
         'category': category,

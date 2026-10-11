@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "121920083069",
+    "project_id": "tamusni-dfae4",
+    "storage_bucket": "tamusni-dfae4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:121920083069:android:5da79f4ccd67eae7434d14",
+        "android_client_info": {
+          "package_name": "Tamusni.info"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCzoTqbpwMcR5BRWTuWLrDfZjV12edZMWA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:121920083069:android:b6d8cf76bcce8c23434d14",
+        "android_client_info": {
+          "package_name": "com.abtechnologies.tamusni"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCzoTqbpwMcR5BRWTuWLrDfZjV12edZMWA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
