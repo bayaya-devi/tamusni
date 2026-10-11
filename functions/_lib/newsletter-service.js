@@ -1,6 +1,6 @@
 import { hashToken } from "./auth.js";
 import { createBrevoCampaign, deleteBrevoContact, ensureBrevoLists, getBrevoCampaign, sendBrevoCampaign, syncBrevoContact } from "./brevo.js";
-import { NEWSLETTER_LOCALES, newsletterCopy, newsletterDue, normalizeNewsletterLocale, selectNewsletterItems, sundayCycle } from "./newsletter-core.js";
+import { NEWSLETTER_LOCALES, NEWSLETTER_TIME_ZONE, newsletterCopy, newsletterDue, normalizeNewsletterLocale, selectNewsletterItems, sundayCycle } from "./newsletter-core.js";
 import { digest, renderNewsletter } from "./newsletter-template.js";
 
 const nowIso=()=>new Date().toISOString();
@@ -66,7 +66,7 @@ export async function refreshEditionAnalytics(env,edition){
 }
 
 export async function runWeeklyNewsletter(env,{date=new Date(),force=false,dryRun=false}={}){
-  const timeZone=env.NEWSLETTER_TIMEZONE||"Africa/Casablanca";if(!force&&!newsletterDue(date,timeZone))return {skipped:"not_due"};
+  const timeZone=env.NEWSLETTER_TIMEZONE||NEWSLETTER_TIME_ZONE;if(!force&&!newsletterDue(date,timeZone))return {skipped:"not_due"};
   const cycle=sundayCycle(date,timeZone);const lockToken=crypto.randomUUID(),now=nowIso(),lockExpiry=new Date(Date.now()+10*60000).toISOString();
   await env.DB.prepare("INSERT OR IGNORE INTO newsletter_runs(cycle_key,period_start,period_end,status,started_at,updated_at) VALUES(?,?,?,'PREPARING',?,?)").bind(cycle.cycleKey,cycle.periodStart,cycle.periodEnd,now,now).run();
   const lock=await env.DB.prepare("UPDATE newsletter_runs SET lock_token=?,lock_expires_at=?,updated_at=? WHERE cycle_key=? AND status NOT IN ('SENT','NO_CONTENT') AND (lock_token IS NULL OR lock_expires_at<?)").bind(lockToken,lockExpiry,now,cycle.cycleKey,now).run();

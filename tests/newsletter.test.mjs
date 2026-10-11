@@ -10,13 +10,13 @@ import { createBrevoCampaign, ensureBrevoMarketingWebhook } from "../functions/_
 const item=(id,category="Innovation",score={})=>({id,slug:`story-${id}`,category,type:"article",title:`Story ${id}`,summary:"A complete and reliable summary with enough context for newsletter readers.",excerpt:"A complete excerpt for readers.",published_at:"2026-10-04T05:00:00.000Z",cover_url:"/images/editorial-battery.svg",source_count:2,views:score.views||0,likes:score.likes||0,saves:score.saves||0,fact_check_status:"verified",localized_title:`Localized ${id}`,localized_summary:"A localized and complete summary for this weekly edition."});
 
 test("normalizes the five newsletter locales",()=>{for(const locale of ["fr","ar","en","es","pt"])assert.equal(normalizeNewsletterLocale(`${locale}-MA`),locale);assert.equal(normalizeNewsletterLocale("de"),"fr")});
-test("detects Sunday 08:00 in Africa/Casablanca without a fixed offset",()=>{
+test("detects Sunday 06:00 in the UTC/GMT+00 newsletter schedule",()=>{
   const start=Date.parse("2026-10-10T18:00:00Z");
   const candidates=Array.from({length:24*60},(_,minute)=>new Date(start+minute*60000));
-  const dueInstant=candidates.find(date=>{const clock=newsletterClock(date);return clock.date==="2026-10-11"&&clock.hour===8&&clock.minute===5});
-  const outsideWindow=candidates.find(date=>{const clock=newsletterClock(date);return clock.date==="2026-10-11"&&clock.hour===9&&clock.minute===5});
-  assert.ok(dueInstant,"the runtime timezone database must expose Sunday 08:05 in Casablanca");
-  assert.ok(outsideWindow,"the runtime timezone database must expose Sunday 09:05 in Casablanca");
+  const dueInstant=candidates.find(date=>{const clock=newsletterClock(date);return clock.date==="2026-10-11"&&clock.hour===6&&clock.minute===5});
+  const outsideWindow=candidates.find(date=>{const clock=newsletterClock(date);return clock.date==="2026-10-11"&&clock.hour===7&&clock.minute===5});
+  assert.ok(dueInstant,"the runtime timezone database must expose Sunday 06:05 in UTC");
+  assert.ok(outsideWindow,"the runtime timezone database must expose Sunday 07:05 in UTC");
   assert.equal(newsletterDue(dueInstant),true);
   assert.equal(newsletterDue(outsideWindow),false);
 });
