@@ -3,6 +3,7 @@ import {
   editorialScoreIssues, isPublicationDue, localClock, normalizeEditorialScore, parseFeed, plainText, publicationQualityIssues, seoGeoPublicationIssues,
   rankCandidates, slugify, sourceDigest, titleSimilarity
 } from "./core.js";
+import { notifyContentSubscribers } from "../../functions/_lib/push.js";
 
 const TEXT_MODEL = "@cf/openai/gpt-oss-20b";
 const IMAGE_MODEL = "@cf/black-forest-labs/flux-1-schnell";
@@ -296,7 +297,7 @@ async function publicCheck(env, item) {
   await image.body?.cancel();
 }
 
-async function publishDue(env, date = new Date(), force = false) {
+async function publishDue(env, date = new Date(), force = false, ctx = null) {
   const now = nowIso();
   const dueStatement = env.DB.prepare(`SELECT * FROM content_items WHERE automated=1 AND status='scheduled' ${force ? "" : "AND scheduled_at<=?"} ORDER BY scheduled_at LIMIT 1`);
   const due = force ? await dueStatement.all() : await dueStatement.bind(now).all();
@@ -333,6 +334,8 @@ async function publishDue(env, date = new Date(), force = false) {
       ]);
       await log(env, run.id, "DEPLOYMENT_SUCCESS", publicUrl);
       await log(env, run.id, "PUBLIC_CHECK_SUCCESS", item.slug);
+      await env.DB.prepare("INSERT INTO notifications(id,user_id,title,url,created_at) SELECT lower(hex(randomblob(16))),user_id,?,?,? FROM topic_subscriptions WHERE LOWER(topic)=LOWER(?)").bind(`Nouveau contenu : ${item.title}`,`/articles/${item.slug}`,now,item.category).run();
+      if (ctx) notifyContentSubscribers(ctx, item.category, item.slug, item.title);
       await ensureNextCycle(env, await currentState(env));
       results.push({ slug: item.slug, published: true, url: publicUrl, next: nextDate });
     } catch (error) {
@@ -347,11 +350,11 @@ async function publishDue(env, date = new Date(), force = false) {
   return results;
 }
 
-async function scheduledRun(env, date = new Date()) {
+async function scheduledRun(env, date = new Date(), ctx = null) {
   const clock = localClock(date, env.EDITORIAL_TIME_ZONE || "Africa/Casablanca"), state = await currentState(env);
   if (!isPublicationDue(clock, state.next_publication_local_date)) return { clock, skipped: "not_due", next: state.next_publication_local_date };
   const prepared = clock.hour >= 4 ? await prepare(env, date) : null;
-  const published = clock.hour >= 6 ? await publishDue(env, date) : [];
+  const published = clock.hour >= 6 ? await publishDue(env, date, false, ctx) : [];
   return { clock, prepared, published };
 }
 
@@ -359,12 +362,12 @@ export { prepare, publishDue, scheduledRun };
 
 const worker = {
   async scheduled(controller, env, ctx) {
-    ctx.waitUntil(scheduledRun(env, new Date(controller.scheduledTime)).catch(error => {
+    ctx.waitUntil(scheduledRun(env, new Date(controller.scheduledTime), ctx).catch(error => {
       console.error("editorial_scheduled_failed", error);
       throw error;
     }));
   },
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (url.pathname === "/health") {
       const state = await currentState(env);
@@ -375,7 +378,7 @@ const worker = {
     if (!env.EDITORIAL_RUN_TOKEN || token !== env.EDITORIAL_RUN_TOKEN) return jsonResponse({ error: "Not found" }, 404);
     try {
       const mode = url.searchParams.get("mode"), force = url.searchParams.get("force") === "1";
-      const result = mode === "prepare" ? await prepare(env, new Date(), force) : mode === "publish" ? await publishDue(env, new Date(), force) : await scheduledRun(env);
+      const result = mode === "prepare" ? await prepare(env, new Date(), force) : mode === "publish" ? await publishDue(env, new Date(), force, ctx) : await scheduledRun(env, new Date(), ctx);
       return jsonResponse({ ok: true, result });
     } catch (error) {
       console.error("editorial_manual_run_failed", error);

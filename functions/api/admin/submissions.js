@@ -1,4 +1,5 @@
 import { cleanText, json, readBody, requireAdmin, sameOrigin } from "../../_lib/auth.js";
+import { notifyContentSubscribers } from "../../_lib/push.js";
 
 const slugify=value=>cleanText(value,220).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,120);
 
@@ -44,6 +45,8 @@ export async function onRequestPost(context) {
   for(const source of sources.results)statements.push(context.env.DB.prepare("INSERT INTO content_sources(id,content_id,label,url,publisher,created_at) SELECT ?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM contributor_submissions WHERE id=? AND status='submitted')").bind(crypto.randomUUID(),contentId,source.label,source.url,source.publisher||"",now,id));
   statements.push(context.env.DB.prepare("UPDATE contributor_submissions SET status='approved',published_content_id=?,reviewed_at=?,reviewed_by=?,updated_at=? WHERE id=? AND status='submitted'").bind(contentId,now,admin.sub,now,id));
   try { const results=await context.env.DB.batch(statements);if(Number(results[0]?.meta?.changes||0)===0)return json({error:"Cette proposition a déjà été traitée."},409); } catch(error) { console.error("submission_publication_failed",error); return json({error:"Publication impossible. Vérifiez que l’URL de l’article est disponible."},409); }
+  await context.env.DB.prepare("INSERT INTO notifications(id,user_id,title,url,created_at) SELECT lower(hex(randomblob(16))),user_id,?,?,? FROM topic_subscriptions WHERE LOWER(topic)=LOWER(?)").bind(`Nouveau contenu : ${title}`,`/articles/${slug}/`,now,submission.category).run();
+  notifyContentSubscribers(context, submission.category, slug, title);
   await context.env.DB.prepare("INSERT INTO admin_audit_log(id,admin_user_id,action,target_type,target_id,metadata,created_at) VALUES(?,?,?,?,?,?,?)").bind(crypto.randomUUID(),admin.sub,"submission.approve","content",contentId,JSON.stringify({submissionId:id,slug}),now).run();
   return json({ok:true,status:"approved",contentId,slug,url:`/articles/${slug}/`},201);
 }
