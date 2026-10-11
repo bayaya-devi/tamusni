@@ -79,6 +79,14 @@ test("Google OAuth callback stays on the localized public route",async()=>{
   assert.equal(callback.href,"https://tamusni.pages.dev/ar/inscription/?oauth=google&newsletter=1");
 });
 
+test("Google OAuth returns to the native mobile callback for Android",async()=>{
+  const request=new Request("https://tamusni.pages.dev/api/auth/oauth?provider=google&intent=login&platform=android&locale=fr");
+  const response=await oauth({request,env:{OAUTH_GOOGLE_ENABLED:"true",PUBLIC_SITE_URL:"https://tamusni.pages.dev",SUPABASE_URL:"https://project.supabase.co"}});
+  assert.equal(response.status,302);
+  const redirect=new URL(response.headers.get("location")).searchParams.get("redirect_to");
+  assert.equal(redirect,"com.abtechnologies.tamusni://oauth-callback");
+});
+
 test("email verification creates a session and opens the new account",async()=>{
   const user={id:"new-user",name:"New User",email:"new@example.invalid",role:"USER",session_version:1,email_verified_at:null,preferred_language:"fr"};
   const DB=verificationDb(user),env={DB,SESSION_SECRET:secret};

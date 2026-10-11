@@ -1,7 +1,7 @@
 import { json, readBody, requireSession, sameOrigin } from "../_lib/auth.js";
 import { mirrorFavorite, removeMirroredFavorite } from "../_lib/supabase.js";
 
-const allowedTypes = new Set(["article", "video"]);
+const allowedTypes = new Set(["article", "brief", "video", "podcast", "interview"]);
 
 export async function onRequestGet(context) {
   const session = await requireSession(context);

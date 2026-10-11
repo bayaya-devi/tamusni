@@ -8,6 +8,9 @@ export async function onRequestGet(context) {
   const locale = new Set(["fr", "ar", "en", "es", "pt"]).has(url.searchParams.get("locale")) ? url.searchParams.get("locale") : "fr";
   const params = new URLSearchParams({ oauth: provider });
   if (url.searchParams.get("newsletter") === "1") params.set("newsletter", "1");
-  const redirectTo = `${siteOrigin}/${locale}/${intent === "signup" ? "inscription" : "connexion"}/?${params}`;
+  const platform = url.searchParams.get("platform");
+  const redirectTo = platform === "android" || platform === "ios"
+    ? "com.abtechnologies.tamusni://oauth-callback"
+    : `${siteOrigin}/${locale}/${intent === "signup" ? "inscription" : "connexion"}/?${params}`;
   return Response.redirect(`${context.env.SUPABASE_URL}/auth/v1/authorize?provider=${provider}&redirect_to=${encodeURIComponent(redirectTo)}`, 302);
 }

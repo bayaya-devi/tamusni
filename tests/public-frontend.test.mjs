@@ -2,12 +2,28 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { publicResponse, roleResponse } from '../functions/_lib/public-frontend.js';
 import { emailLayout } from '../functions/_lib/email.js';
+import { onRequestGet as publicContent } from '../functions/api/content.js';
 
 test('transactional emails use the new brand palette', () => {
   const html=emailLayout('Confirmer mon adresse','<p>Essai</p>');
   assert.match(html, /#111a2e/);
   assert.match(html, /#f8fafc/);
   assert.doesNotMatch(html, /#ddd0c8|#f4f0ed/i);
+});
+
+test('public content lists use safe localized translations and include all editorial formats', async () => {
+  const statements=[];
+  const DB={prepare(sql){return{bind(...values){statements.push({sql,values});return this;},async all(){return{results:[]};}};}};
+  const request=new Request('https://tamusni.pages.dev/api/content?lang=es&type=brief&q=ciencia');
+  const response=await publicContent({request,env:{DB}});
+  assert.equal(response.status,200);
+  const statement=statements.find(item=>item.sql.startsWith('SELECT c.id,c.slug,c.type'));
+  assert.ok(statement);
+  assert.match(statement.sql,/content_translations_extra t ON t\.content_id=c\.id AND t\.locale=\?/);
+  assert.match(statement.sql,/COALESCE\(t\.title,c\.title\) AS title/);
+  assert.match(statement.sql,/c\.type = \?/);
+  assert.equal(statement.values[0],'es');
+  assert.ok(statement.values.includes('brief'));
 });
 
 const sample = {id:'content-1',slug:'essai-source',type:'article',title:'Une actualité vérifiée',excerpt:'Un résumé sourcé.',body:'Un contenu sourcé.',summary:'',category:'Intelligence',author_name:'Rédigé par IA',cover_url:'/images/editorial-ai-space.svg',published_at:'2026-10-06T12:00:00.000Z',views:10,likes:2};

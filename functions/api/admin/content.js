@@ -1,4 +1,5 @@
 import { cleanText, json, readBody, requireAdmin, sameOrigin } from "../../_lib/auth.js";
+import { notifyContentSubscribers } from "../../_lib/push.js";
 const types = new Set(["article", "brief", "video", "interview", "podcast"]);
 const statuses = new Set(["draft", "review", "scheduled", "published", "archived"]);
 const checks = new Set(["verified", "context", "correction", "opinion"]);
@@ -66,6 +67,10 @@ export async function onRequestPost(context) {
     await context.env.DB.prepare("INSERT INTO content_items(id,slug,type,status,title,excerpt,body,summary,category,author_name,cover_url,media_url,transcript,subtitles_url,fact_check_status,sponsored,sponsor_name,published_at,scheduled_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(id,slug,type,status,title,cleanText(body.excerpt,500),cleanText(body.body,15000),cleanText(body.summary,1000),cleanText(body.category,80)||"Actualité",cleanText(body.authorName,100)||"Rédaction TAMUSNI",httpsUrl(body.coverUrl),httpsUrl(body.mediaUrl),cleanText(body.transcript,15000),httpsUrl(body.subtitlesUrl),checks.has(body.factCheckStatus)?body.factCheckStatus:"verified",body.sponsored?1:0,cleanText(body.sponsorName,100)||null,status==="published"?(body.publishedAt||now):null,status==="scheduled"?(body.scheduledAt||null):null,now,now).run();
     if(status==="scheduled")await context.env.DB.prepare("INSERT INTO admin_notifications(id,type,title,body,target_url,target_type,target_id,created_at) VALUES(?,?,?,?,?,?,?,?)").bind(crypto.randomUUID(),"content","Contenu programmé",`Publication prévue : ${title}`,"/admin/#content","content",id,now).run();
     await replaceSource(context,id,body,now); await replaceTags(context,id,body.tags); await audit(context,admin,"content.create",id,{slug,status});
+    if (status === "published") {
+      await context.env.DB.prepare("INSERT INTO notifications(id,user_id,title,url,created_at) SELECT lower(hex(randomblob(16))),user_id,?,?,? FROM topic_subscriptions WHERE LOWER(topic)=LOWER(?)").bind(`Nouveau contenu : ${title}`,`/articles/${slug}`,now,cleanText(body.category,80)||"Actualité").run();
+      notifyContentSubscribers(context, cleanText(body.category,80)||"Actualité", slug, title);
+    }
     return json({ ok:true,id,slug },201);
   } catch { return json({ error: "Cette URL est déjà utilisée." }, 409); }
 }
@@ -96,7 +101,10 @@ export async function onRequestPatch(context) {
   if(qualityError)return json({error:qualityError},400);
   const publishedAt=status==="published"?(body.publishedAt||existing.published_at||now):existing.published_at; const scheduledAt=status==="scheduled"?(body.scheduledAt||existing.scheduled_at):null;
   await context.env.DB.prepare("UPDATE content_items SET status=?,published_at=?,scheduled_at=?,updated_at=? WHERE id=?").bind(status,publishedAt,scheduledAt,now,id).run();
-  if(status==="published")await context.env.DB.prepare("INSERT INTO notifications(id,user_id,title,url,created_at) SELECT lower(hex(randomblob(16))),user_id,?,?,? FROM topic_subscriptions WHERE LOWER(topic)=LOWER(?)").bind(`Nouveau contenu : ${existing.title}`,`/articles/${existing.slug}`,now,existing.category).run();
+  if(status==="published"&&existing.status!=="published") {
+    await context.env.DB.prepare("INSERT INTO notifications(id,user_id,title,url,created_at) SELECT lower(hex(randomblob(16))),user_id,?,?,? FROM topic_subscriptions WHERE LOWER(topic)=LOWER(?)").bind(`Nouveau contenu : ${existing.title}`,`/articles/${existing.slug}`,now,existing.category).run();
+    notifyContentSubscribers(context, existing.category, existing.slug, existing.title);
+  }
   await audit(context,admin,"content.status",id,{status}); return json({ok:true});
 }
 

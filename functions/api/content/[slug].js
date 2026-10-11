@@ -3,11 +3,11 @@ import { cleanText, json, readBody, requireSession, sameOrigin } from "../../_li
 export async function onRequestGet(context) {
   const slug = cleanText(context.params.slug, 160);
   const requestedLocale = new URL(context.request.url).searchParams.get("lang");
-  const locale = ["fr", "en", "ar"].includes(requestedLocale) ? requestedLocale : "fr";
+  const locale = ["fr", "en", "ar", "es", "pt"].includes(requestedLocale) ? requestedLocale : "fr";
   const item = await context.env.DB.prepare("SELECT id,slug,type,title,excerpt,body,summary,category,author_name,cover_url,media_url,transcript,subtitles_url,fact_check_status,sponsored,sponsor_name,published_at,updated_at FROM content_items WHERE slug=? AND status='published' AND published_at<=?").bind(slug, new Date().toISOString()).first();
   if (!item) return json({ error: "Contenu introuvable." }, 404);
   const [translation, sources, tags, timeline, reactions, comments, related] = await Promise.all([
-    context.env.DB.prepare("SELECT locale,title,excerpt,body,summary,ai_disclosure FROM content_translations WHERE content_id=? AND locale=?").bind(item.id, locale).first(),
+    context.env.DB.prepare(`SELECT locale,title,excerpt,body,summary,ai_disclosure FROM ${locale === "es" || locale === "pt" ? "content_translations_extra" : "content_translations"} WHERE content_id=? AND locale=?`).bind(item.id, locale).first(),
     context.env.DB.prepare("SELECT label,url,publisher,published_at FROM content_sources WHERE content_id=? ORDER BY created_at").bind(item.id).all(),
     context.env.DB.prepare("SELECT t.slug,t.name FROM tags t JOIN content_tags ct ON ct.tag_id=t.id WHERE ct.content_id=? ORDER BY t.name").bind(item.id).all(),
     context.env.DB.prepare("SELECT event_date,title,description FROM content_timeline_events WHERE content_id=? ORDER BY position,event_date").bind(item.id).all(),

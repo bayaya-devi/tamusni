@@ -28,7 +28,9 @@ export async function onRequestPost(context) {
       ]);
       const language = user.preferred_language || locale;
       const origin = (context.env.PUBLIC_SITE_URL || new URL(context.request.url).origin).replace(/\/$/, "");
-      const resetUrl = `${origin}/${language}/reinitialiser-mot-de-passe/?token=${encodeURIComponent(token)}`;
+      const resetUrl = body.client === "mobile"
+        ? `com.abtechnologies.tamusni://password-reset?token=${encodeURIComponent(token)}`
+        : `${origin}/${language}/reinitialiser-mot-de-passe/?token=${encodeURIComponent(token)}`;
       await sendSecurityEmail(context.env, { type: "reset", to: user.email, name: user.name, locale: language, url: resetUrl });
     }
     return json({ ok: true, message: MESSAGE });
