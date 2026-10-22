@@ -1,5 +1,5 @@
 import { claimNextJob, completeJob, ensureJob, retryJob } from "../../automation/shared/job-core.js";
-import { NEWSLETTER_DELIVERY_HOUR, newsletterClock, newsletterLocalDateTimeToUtc } from "./newsletter-core.js";
+import { NEWSLETTER_DELIVERY_HOUR, newsletterClock, newsletterLocalDateTimeToUtc, sundayCycle } from "./newsletter-core.js";
 import { runWeeklyNewsletter } from "./newsletter-service.js";
 
 const isoDate = date => date.toISOString().slice(0, 10);
@@ -22,6 +22,17 @@ export async function runPersistentNewsletter(env, { date = new Date(), dryRun =
   try {
     const localCycle = job.metadata_json ? JSON.parse(job.metadata_json).localDate : localDate;
     const result = await runWeeklyNewsletter(env, { date: new Date(`${localCycle}T12:00:00.000Z`), force: true, dryRun });
+    // A repeated wake-up after a successful send must settle the durable job,
+    // not turn an already-SENT edition into an endless retry.
+    if (result.skipped === "locked_or_sent") {
+      const cycleKey = sundayCycle(new Date(`${localCycle}T12:00:00.000Z`), timeZone).cycleKey;
+      const cycle = await env.DB.prepare("SELECT status FROM newsletter_runs WHERE cycle_key=?").bind(cycleKey).first();
+      if (["SENT", "NO_CONTENT"].includes(cycle?.status)) {
+        const settled = { status: cycle.status, alreadyCompleted: true, cycleKey };
+        await completeJob(env.DB, job, settled);
+        return { ...settled, completedJob: job.id };
+      }
+    }
     if (["SENT", "NO_CONTENT", "READY"].includes(result.status)) {
       await completeJob(env.DB, job, result);
       return { ...result, completedJob: job.id };
