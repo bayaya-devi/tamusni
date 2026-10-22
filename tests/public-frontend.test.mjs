@@ -125,13 +125,13 @@ test('signup and login preserve their forms and OAuth links',async()=>{
   }
 });
 
-test('newsletter intent leads to signup and requires explicit consent only at login',async()=>{
+test('authentication is independent of newsletter consent',async()=>{
   const signup=await publicResponse(context('/fr/inscription/?newsletter=1'),'fr','inscription/');
   const login=await publicResponse(context('/fr/connexion/?newsletter=1'),'fr','connexion/');
-  const standard=await publicResponse(context('/fr/connexion/'),'fr','connexion/');
-  assert.match(await signup.text(),/connexion\/\?newsletter=1/);
-  assert.match(await login.text(),/name="newsletterConsent" checked/);
-  assert.doesNotMatch(await standard.text(),/name="newsletterConsent"/);
+  for(const response of [signup,login]){
+    const html=await response.text();
+    assert.doesNotMatch(html,/newsletterConsent|newsletter=1|tamusni_newsletter_intent/);
+  }
 });
 
 test('signup supports multiple preferred topics',async()=>{

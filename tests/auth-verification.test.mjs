@@ -71,12 +71,12 @@ test("registration accepts the official six-character password minimum",async()=
   assert.equal(accepted.status,503);
 });
 
-test("Google OAuth callback stays on the localized public route",async()=>{
+test("Google OAuth callback stays on the localized public route without newsletter state",async()=>{
   const request=new Request("https://tamusni.pages.dev/api/auth/oauth?provider=google&intent=signup&locale=ar&newsletter=1");
   const response=await oauth({request,env:{OAUTH_GOOGLE_ENABLED:"true",PUBLIC_SITE_URL:"https://tamusni.pages.dev",SUPABASE_URL:"https://project.supabase.co"}});
   assert.equal(response.status,302);
   const callback=new URL(new URL(response.headers.get("location")).searchParams.get("redirect_to"));
-  assert.equal(callback.href,"https://tamusni.pages.dev/ar/inscription/?oauth=google&newsletter=1");
+  assert.equal(callback.href,"https://tamusni.pages.dev/ar/inscription/?oauth=google");
 });
 
 test("Google OAuth returns to the native mobile callback for Android",async()=>{

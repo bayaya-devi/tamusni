@@ -51,4 +51,12 @@ Les procédures de production, sauvegarde, restauration, reprise et retour arri�
 La vérification e-mail, la révocation des sessions, la suppression sécurisée et Turnstile sont décrits dans [`docs/ACCOUNT_SECURITY.md`](docs/ACCOUNT_SECURITY.md).
 La maintenance hebdomadaire GitHub Actions, ses tests, son rapport PDF et son envoi Brevo sont décrits dans [`docs/WEEKLY_MAINTENANCE.md`](docs/WEEKLY_MAINTENANCE.md).
 
+## Newsletter hebdomadaire
+
+La newsletter ne possède pas de formulaire public : seul un compte TAMUSNI peut activer la préférence **« Recevoir la newsletter TAMUSNI »** depuis *Mon espace*. D1 (`newsletter_subscribers`) est la source de vérité ; Brevo est synchronisé après chaque changement et une désinscription reste effective dans D1 même si la synchronisation externe doit être réessayée.
+
+Le workflow GitHub Actions est un simple déclencheur de réveil toutes les quinze minutes. Le job durable `weekly_newsletter` dans D1 décide de l’exécution : il planifie l’édition le dimanche à 06:00 dans le fuseau `Africa/Casablanca`, calcule la période du lundi 00:00 local jusqu’à cette échéance, conserve les échecs réversibles en attente et utilise une clé d’édition stable par semaine et par langue. Les campagnes Brevo créées sont enregistrées avant l’envoi ; un retry consulte cette campagne au lieu de recréer un envoi déjà accepté par Brevo.
+
+Pour un contrôle sans diffusion, lancer le workflow **TAMUSNI weekly newsletter** avec `dry_run=true`. Le mode de test autorisé envoie uniquement les deux messages de contrôle à `aetbconseil@gmail.com` lorsque l’option dédiée est explicitement activée.
+
 Ne jamais versionner les secrets.

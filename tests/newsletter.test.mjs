@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { canAcquireNewsletterRun, newsletterClock, newsletterDue, normalizeNewsletterLocale, scoreNewsletterContent, selectNewsletterItems, sundayCycle } from "../functions/_lib/newsletter-core.js";
+import { canAcquireNewsletterRun, newsletterClock, newsletterDue, newsletterLocalDateTimeToUtc, normalizeNewsletterLocale, scoreNewsletterContent, selectNewsletterItems, sundayCycle } from "../functions/_lib/newsletter-core.js";
 import { renderNewsletter } from "../functions/_lib/newsletter-template.js";
 import { sendEmail } from "../functions/_lib/email.js";
 import { onRequestPost as handleBrevoWebhook } from "../functions/api/newsletter/webhook.js";
@@ -21,6 +21,7 @@ test("detects Sunday 06:00 in Africa/Casablanca without a fixed offset",()=>{
   assert.equal(newsletterDue(outsideWindow),false);
 });
 test("creates a stable weekly cycle key",()=>{const cycle=sundayCycle(new Date("2026-10-11T07:05:00Z"));assert.match(cycle.cycleKey,/^newsletter_2026-W\d{2}$/);assert.equal(cycle.localDate,"2026-10-11")});
+test("schedules Sunday 06:00 in Africa/Casablanca instead of assuming UTC",()=>{const instant=newsletterLocalDateTimeToUtc("2026-10-11",6,0);const clock=newsletterClock(instant);assert.equal(clock.date,"2026-10-11");assert.equal(clock.hour,6);assert.equal(clock.minute,0);const cycle=sundayCycle(instant);assert.equal(cycle.periodEnd,instant.toISOString())});
 test("selection keeps four main items, diversity and at most one exceptional item",()=>{const source=[item("a","Innovation",{views:40}),item("b","Innovation",{views:30}),item("c","Espace",{views:20}),item("d","Robotique",{views:10}),item("e","Cybersécurité",{views:100}),item("f","Intelligence artificielle",{views:1})];const result=selectNewsletterItems(source,{periodEnd:Date.parse("2026-10-11T08:00:00Z"),exceptionalThreshold:0});assert.equal(result.items.length,4);assert.ok(result.exceptional);assert.ok(!result.items.some(x=>x.id===result.exceptional.id))});
 test("content score is deterministic and based on real fields",()=>assert.equal(scoreNewsletterContent(item("a"),Date.parse("2026-10-11T08:00:00Z")),scoreNewsletterContent(item("a"),Date.parse("2026-10-11T08:00:00Z"))));
 test("sent and currently locked runs cannot be acquired twice",()=>{assert.equal(canAcquireNewsletterRun("SENT",null),false);assert.equal(canAcquireNewsletterRun("PREPARING",new Date(Date.now()+60000).toISOString()),false);assert.equal(canAcquireNewsletterRun("FAILED",new Date(Date.now()-60000).toISOString()),true)});

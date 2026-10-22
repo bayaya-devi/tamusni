@@ -2,7 +2,6 @@ import { createMfaChallengeCookie, createSessionCookie, json, readBody, sameOrig
 import { mirrorUser } from "../../_lib/supabase.js";
 import { recordAuthEvent } from "../../_lib/mfa.js";
 import { normalizeTopics, replaceTopicSubscriptions } from "../../_lib/topics.js";
-import { cancelNewsletterIntent, finalizeNewsletterIntent } from "../../_lib/newsletter-service.js";
 
 export async function onRequestPost(context) {
   if (!sameOrigin(context.request)) return json({ error: "Origine refusée." }, 403);
@@ -32,7 +31,6 @@ export async function onRequestPost(context) {
     if(user.mfa_enabled)return json({ok:true,mfaRequired:true,message:"Saisissez le code de votre application d’authentification."},202,{"Set-Cookie":await createMfaChallengeCookie(user,context.env.SESSION_SECRET)});
     try{await recordAuthEvent(context,{userId:user.id,email:user.email,name:user.name,locale:user.preferred_language,event:"oauth_success"})}catch(error){console.error("auth_event_write_failed",error)}
     const role=user.role === "ADMIN" ? "ADMIN" : user.additional_role || "USER";
-    const newsletterConsent=Object.prototype.hasOwnProperty.call(body,"newsletterConsent");let newsletter=null;try{if(body.newsletterConsent===true||body.newsletterConsent==="on")newsletter=await finalizeNewsletterIntent(context,user);else if(newsletterConsent)await cancelNewsletterIntent(context)}catch(error){console.error("newsletter_intent_finalize_failed",error)}
-    return json({ ok: true, newsletter:newsletter&&!newsletter.mismatch?"subscribed":null,redirect: role === "ADMIN" ? "/admin/" : role === "CONTRIBUTOR" ? "/contributeur/" : `/mon-espace/${newsletter&&!newsletter.mismatch?'?newsletter=success':''}` }, 200, { "Set-Cookie": await createSessionCookie({ ...user, role }, context.env.SESSION_SECRET) });
+    return json({ ok: true, redirect: role === "ADMIN" ? "/admin/" : role === "CONTRIBUTOR" ? "/contributeur/" : "/mon-espace/" }, 200, { "Set-Cookie": await createSessionCookie({ ...user, role }, context.env.SESSION_SECRET) });
   } catch (error) { console.error("oauth_session_failed", error); return json({ error: "Connexion sociale impossible." }, 500); }
 }

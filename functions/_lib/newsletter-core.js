@@ -12,6 +12,25 @@ export function newsletterClock(date=new Date(),timeZone=NEWSLETTER_TIME_ZONE){
   return {date:`${parts.year}-${parts.month}-${parts.day}`,weekday:parts.weekday,hour:Number(parts.hour),minute:Number(parts.minute)};
 }
 
+/**
+ * Converts a wall-clock time in the newsletter timezone to UTC without
+ * assuming that Casablanca has a fixed offset.  Morocco's DST changes make
+ * a hard-coded "06:00Z" incorrect for part of the year.
+ */
+export function newsletterLocalDateTimeToUtc(localDate,hour=NEWSLETTER_DELIVERY_HOUR,minute=0,timeZone=NEWSLETTER_TIME_ZONE){
+  const [year,month,day]=String(localDate).split("-").map(Number);
+  let guess=Date.UTC(year,month-1,day,hour,minute,0);
+  for(let attempt=0;attempt<3;attempt++){
+    const clock=newsletterClock(new Date(guess),timeZone);
+    const observed=Date.UTC(...clock.date.split("-").map((value,index)=>index===1?Number(value)-1:Number(value)),clock.hour,clock.minute,0);
+    const expected=Date.UTC(year,month-1,day,hour,minute,0);
+    const delta=expected-observed;
+    if(delta===0)break;
+    guess+=delta;
+  }
+  return new Date(guess);
+}
+
 export function sundayCycle(date=new Date(),timeZone=NEWSLETTER_TIME_ZONE){
   const clock=newsletterClock(date,timeZone); const noon=new Date(`${clock.date}T12:00:00Z`); const day=noon.getUTCDay();
   const end=new Date(noon); end.setUTCDate(noon.getUTCDate()+(7-day)%7);
@@ -19,7 +38,12 @@ export function sundayCycle(date=new Date(),timeZone=NEWSLETTER_TIME_ZONE){
   const iso=d=>d.toISOString().slice(0,10);
   const endDate=iso(end),startDate=iso(start); const year=Number(endDate.slice(0,4));
   const jan4=new Date(Date.UTC(year,0,4)); const week=Math.ceil((((end-new Date(Date.UTC(year,0,1)))/86400000)+new Date(Date.UTC(year,0,1)).getUTCDay()+1)/7);
-  return {cycleKey:`newsletter_${year}-W${String(week).padStart(2,"0")}`,periodStart:`${startDate}T00:00:00`,periodEnd:`${endDate}T06:00:00`,localDate:endDate};
+  return {
+    cycleKey:`newsletter_${year}-W${String(week).padStart(2,"0")}`,
+    periodStart:newsletterLocalDateTimeToUtc(startDate,0,0,timeZone).toISOString(),
+    periodEnd:newsletterLocalDateTimeToUtc(endDate,NEWSLETTER_DELIVERY_HOUR,0,timeZone).toISOString(),
+    localDate:endDate
+  };
 }
 
 export function newsletterDue(date=new Date(),timeZone=NEWSLETTER_TIME_ZONE){

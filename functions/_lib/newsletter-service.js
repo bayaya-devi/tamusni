@@ -1,25 +1,8 @@
-import { hashToken } from "./auth.js";
 import { createBrevoCampaign, deleteBrevoContact, ensureBrevoLists, getBrevoCampaign, sendBrevoCampaign, syncBrevoContact } from "./brevo.js";
 import { NEWSLETTER_LOCALES, NEWSLETTER_TIME_ZONE, newsletterCopy, newsletterDue, normalizeNewsletterLocale, selectNewsletterItems, sundayCycle } from "./newsletter-core.js";
 import { digest, renderNewsletter } from "./newsletter-template.js";
 
 const nowIso=()=>new Date().toISOString();
-const cookieValue=(request,name)=>(request.headers.get("cookie")||"").split(/;\s*/).find(part=>part.startsWith(`${name}=`))?.slice(name.length+1)||"";
-const token=()=>{const bytes=crypto.getRandomValues(new Uint8Array(32));return btoa(String.fromCharCode(...bytes)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/g,"")};
-
-export async function createNewsletterIntent(context,{email,locale}){
-  const raw=token(),now=nowIso(),ip=context.request.headers.get("CF-Connecting-IP")||"unknown",ipHash=await hashToken(`newsletter|${ip}`);
-  const recent=await context.env.DB.prepare("SELECT COUNT(*) AS count FROM newsletter_intents WHERE ip_hash=? AND created_at>?").bind(ipHash,new Date(Date.now()-3600000).toISOString()).first();
-  if(Number(recent?.count||0)>=8)throw new Error("NEWSLETTER_RATE_LIMIT");
-  await context.env.DB.prepare("DELETE FROM newsletter_intents WHERE expires_at<? OR consumed_at IS NOT NULL").bind(now).run();
-  await context.env.DB.prepare("INSERT INTO newsletter_intents(token_hash,email,locale,ip_hash,expires_at,created_at) VALUES(?,?,?,?,?,?)").bind(await hashToken(raw),email,normalizeNewsletterLocale(locale),ipHash,new Date(Date.now()+30*60000).toISOString(),now).run();
-  return {cookie:`tamusni_newsletter_intent=${raw}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=1800`,redirect:`/${normalizeNewsletterLocale(locale)}/inscription/?newsletter=1`};
-}
-
-export async function readNewsletterIntent(context){
-  const raw=cookieValue(context.request,"tamusni_newsletter_intent");if(!raw)return null;
-  return context.env.DB.prepare("SELECT email,locale FROM newsletter_intents WHERE token_hash=? AND consumed_at IS NULL AND expires_at>?").bind(await hashToken(raw),nowIso()).first();
-}
 
 export async function subscribeUser(context,user,requestedLocale,source="account"){
   const profile=await context.env.DB.prepare("SELECT email,preferred_language FROM users WHERE id=?").bind(user.id||user.sub).first();
@@ -34,21 +17,16 @@ export async function unsubscribeUser(context,user){
   const profile=await context.env.DB.prepare("SELECT email FROM users WHERE id=?").bind(user.id||user.sub).first();
   if(!profile)throw new Error("USER_NOT_FOUND");const now=nowIso();
   await context.env.DB.prepare("UPDATE newsletter_subscribers SET status='unsubscribed',unsubscribed_at=?,updated_at=?,brevo_sync_status='unsubscribed' WHERE user_id=? OR lower(email)=lower(?)").bind(now,now,user.id||user.sub,profile.email).run();
-  try{await deleteBrevoContact(context.env,profile.email)}catch(error){if(error.status!==404)throw error}
-  return {status:"unsubscribed"};
-}
-
-export async function finalizeNewsletterIntent(context,user){
-  const intent=await readNewsletterIntent(context);if(!intent)return null;
-  if(String(intent.email).toLowerCase()!==String(user.email).toLowerCase())return {mismatch:true};
-  const subscriber=await subscribeUser(context,user,intent.locale,"auth_intent");const raw=cookieValue(context.request,"tamusni_newsletter_intent");
-  await context.env.DB.prepare("UPDATE newsletter_intents SET consumed_at=? WHERE token_hash=?").bind(nowIso(),await hashToken(raw)).run();return subscriber;
-}
-
-export async function cancelNewsletterIntent(context){
-  const raw=cookieValue(context.request,"tamusni_newsletter_intent");
-  if(!raw)return;
-  await context.env.DB.prepare("UPDATE newsletter_intents SET consumed_at=? WHERE token_hash=? AND consumed_at IS NULL").bind(nowIso(),await hashToken(raw)).run();
+  // D1 is the consent source of truth.  A transient Brevo failure must never
+  // restore a recipient or make the opt-out look unsuccessful in TAMUSNI.
+  try{await deleteBrevoContact(context.env,profile.email)}catch(error){
+    if(error.status!==404){
+      console.error("newsletter_brevo_unsubscribe_sync_failed",error.message);
+      await context.env.DB.prepare("UPDATE newsletter_subscribers SET brevo_sync_status='error',updated_at=? WHERE user_id=? OR lower(email)=lower(?)").bind(nowIso(),user.id||user.sub,profile.email).run();
+      return {status:"unsubscribed",syncPending:true};
+    }
+  }
+  return {status:"unsubscribed",syncPending:false};
 }
 
 async function candidates(db,start,end){

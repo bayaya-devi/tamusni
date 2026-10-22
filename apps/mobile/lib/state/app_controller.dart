@@ -125,16 +125,14 @@ class AppController extends ChangeNotifier {
 
   Future<void> login(
     String email,
-    String password, {
-    bool? newsletterConsent,
-  }) async {
+    String password,
+  ) async {
     await _run(() async {
       final response = await api.post(
         '/api/auth/login',
         data: {
           'email': email.trim(),
           'password': password,
-          'newsletterConsent': ?newsletterConsent,
         },
       );
       if (response['mfaRequired'] == true) {

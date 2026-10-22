@@ -7,7 +7,6 @@ export async function onRequestGet(context) {
   const siteOrigin = (context.env.PUBLIC_SITE_URL || url.origin).replace(/\/$/, "");
   const locale = new Set(["fr", "ar", "en", "es", "pt"]).has(url.searchParams.get("locale")) ? url.searchParams.get("locale") : "fr";
   const params = new URLSearchParams({ oauth: provider });
-  if (url.searchParams.get("newsletter") === "1") params.set("newsletter", "1");
   const platform = url.searchParams.get("platform");
   const redirectTo = platform === "android" || platform === "ios"
     ? "com.abtechnologies.tamusni://oauth-callback"

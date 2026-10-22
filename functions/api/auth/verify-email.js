@@ -1,6 +1,5 @@
 import { createSessionCookie, hashToken, json, readBody, sameOrigin, validEmail } from "../../_lib/auth.js";
 import { consumeOtpChallenge, consumeRateLimit, rateLimitResponse } from "../../_lib/account-security.js";
-import { finalizeNewsletterIntent } from "../../_lib/newsletter-service.js";
 
 export async function onRequestPost(context) {
   if (!sameOrigin(context.request)) return json({ error: "Origine refusée." }, 403);
@@ -17,11 +16,9 @@ export async function onRequestPost(context) {
     if (!result.ok) return json({ error: result.reason === "locked" ? "Trop de codes incorrects. Demandez un nouveau code." : "Code invalide ou expiré.", remaining: result.remaining }, 400);
     const now = new Date().toISOString();
     await context.env.DB.prepare("UPDATE users SET email_verified_at=? WHERE id=? AND email_verified_at IS NULL").bind(now, user.id).run();
-    let newsletter = null;
-    try { newsletter = await finalizeNewsletterIntent(context, { ...user, sub: user.id }); } catch (error) { console.error("newsletter_intent_finalize_failed", error); }
     const locale = ["fr", "ar", "en", "es", "pt"].includes(body.locale) ? body.locale : user.preferred_language || "fr";
-    const redirect=`/${locale}/mon-espace/${newsletter && !newsletter.mismatch ? "?newsletter=success" : ""}`;
-    return json({ ok: true, newsletter: newsletter && !newsletter.mismatch ? "subscribed" : null, redirect },200,{ "Set-Cookie":await createSessionCookie({ ...user, role:user.role || "USER" },context.env.SESSION_SECRET) });
+    const redirect=`/${locale}/mon-espace/`;
+    return json({ ok: true, redirect },200,{ "Set-Cookie":await createSessionCookie({ ...user, role:user.role || "USER" },context.env.SESSION_SECRET) });
   } catch (error) {
     console.error("verify_email_failed", error);
     return json({ error: "Vérification impossible pour le moment." }, 500);
