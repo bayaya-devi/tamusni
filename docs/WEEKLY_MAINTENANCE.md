@@ -2,7 +2,7 @@
 
 ## Architecture
 
-Le workflow `.github/workflows/weekly-maintenance.yml` s’exécute sur GitHub Actions, indépendamment d’une session Codex. Deux créneaux UTC sont déclarés le dimanche (`02:00` et `03:00`) ; une garde utilisant `Africa/Casablanca` autorise uniquement celui correspondant à 03:00 au Maroc. Cela absorbe le changement d’heure sans lancer deux maintenances complètes. Le workflow peut aussi être déclenché manuellement.
+Le workflow `.github/workflows/weekly-maintenance.yml` se réveille toutes les quinze minutes sur GitHub Actions, indépendamment d’une session Codex. Il réclame alors un unique job D1 `weekly_maintenance` dû. Le job est créé pour le dimanche à 06:00 dans `Africa/Casablanca` ; la clé hebdomadaire et le bail D1 empêchent les doublons et permettent la reprise après une panne de GitHub, Brevo ou du réseau. Le workflow peut aussi être déclenché manuellement, sans contourner le job persistant.
 
 La concurrence GitHub empêche deux maintenances simultanées. La durée maximale est de 45 minutes.
 
@@ -29,11 +29,12 @@ Les tests agressifs, destructifs ou de charge ne sont jamais lancés contre la p
 
 `scripts/maintenance/generate_report.py` crée un PDF réel avec ReportLab, nommé `TAMUSNI_Maintenance_YYYY-MM-DD.pdf`. Le PDF, le JSON et les logs sont conservés comme artefact GitHub pendant 90 jours.
 
-Le workflow transmet ensuite le PDF à `/api/maintenance/report`. Cette route Cloudflare exige `MAINTENANCE_REPORT_TOKEN`, impose un vrai PDF, fixe le destinataire côté serveur et utilise la clé Brevo déjà protégée dans Cloudflare.
+Le workflow transmet ensuite le PDF à `/api/maintenance/report`. Cette route Cloudflare exige `MAINTENANCE_REPORT_TOKEN`, impose un vrai PDF, fixe le destinataire côté serveur et utilise la clé Brevo déjà protégée dans Cloudflare. Si l’audit, le PDF ou l’envoi échoue, le job D1 passe en `retry_pending` avec un délai exponentiel ; il n’est jamais déclaré terminé artificiellement.
 
 ## Secrets GitHub
 
 - `MAINTENANCE_REPORT_TOKEN`
+- `MAINTENANCE_RUN_TOKEN` (même valeur dans GitHub Actions et Cloudflare Pages)
 - `TAMUSNI_USER_EMAIL`
 - `TAMUSNI_USER_PASSWORD`
 - `TAMUSNI_CONTRIBUTOR_EMAIL`
@@ -45,7 +46,7 @@ Le même `MAINTENANCE_REPORT_TOKEN` doit exister dans les secrets du projet Clou
 
 ## Coordination des planificateurs
 
-- Maintenance : dimanche à 03:00, heure `Africa/Casablanca`, via GitHub Actions.
+- Maintenance : dimanche à 06:00, heure `Africa/Casablanca`, via GitHub Actions et un job D1 durable.
 - Éditorial : Cron Cloudflare toutes les quinze minutes ; préparation à partir de 04:00 et publication à 06:00 uniquement le jour dû.
 - Newsletter : dimanche à 06:00 en `Etc/UTC` (GMT+00), via un workflow GitHub distinct.
 
@@ -63,7 +64,7 @@ Après toute modification :
 
 1. déployer les Functions Pages ;
 2. déclencher `TAMUSNI weekly maintenance` avec `workflow_dispatch` ;
-3. attendre la fin de l’exécution ;
+3. vérifier que le job D1 passe de `running` à `completed` ou, en cas d’échec, à `retry_pending` ;
 4. télécharger et ouvrir l’artefact PDF ;
 5. confirmer la réponse d’envoi Brevo dans les logs ;
 6. vérifier la réception dans `aetbconseil@gmail.com` ;

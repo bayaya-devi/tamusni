@@ -54,6 +54,8 @@ const routes = ["/fr/", "/en/", "/ar/", "/fr/intelligence-artificielle/", "/fr/c
 const routeChecks = await Promise.all(routes.map((path) => fetchRecord(`${site}${path}`)));
 const backend = await fetchRecord(`${site}/api/backend-status`);
 const worker = await fetchRecord(process.env.EDITORIAL_HEALTH_URL || "https://tamusni-editorial-automation.aetbconseil.workers.dev/health");
+const maintenanceHeaders = process.env.MAINTENANCE_RUN_TOKEN ? { Authorization: `Bearer ${process.env.MAINTENANCE_RUN_TOKEN}` } : {};
+const automationJobs = await fetchRecord(`${site}/api/maintenance/run?mode=status`, { method: "POST", headers: maintenanceHeaders });
 const automationRepository = process.env.GITHUB_REPOSITORY || "bayaya-devi/tamusni";
 const githubHeaders = { Accept: "application/vnd.github+json", "User-Agent": "TAMUSNI-Maintenance" };
 if (process.env.GITHUB_TOKEN) githubHeaders.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
@@ -109,6 +111,13 @@ else {
   const scheduler = JSON.parse(newsletterScheduler.body || "{}");
   if (scheduler.state !== "active") anomalies.push({ id: "NEWSLETTER-CONFIG", service: "TAMUSNI NEWSLETTER", severity: "P1", description: "Planification newsletter inactive.", cause: newsletterScheduler.body, status: "OUVERT" });
 }
+if (automationJobs.status !== 200) anomalies.push({ id: "AUTOMATION-JOBS", service: "Jobs persistants", severity: "P1", description: "L’état durable des automatisations est indisponible.", cause: automationJobs.body || automationJobs.error, status: "OUVERT" });
+else {
+  const jobs=JSON.parse(automationJobs.body||"{}").jobs||[];
+  for(const job of jobs.filter(item=>["failed","retry_pending"].includes(item.status)&&Number(item.count)>0)){
+    anomalies.push({ id:`AUTOMATION-${job.job_type}-${job.status}`.toUpperCase(), service:job.job_type, severity:"P1", description:`${job.count} job(s) durable(s) ${job.status}.`, cause:`Dernière mise à jour : ${job.updated_at||"inconnue"}`, status:"OUVERT" });
+  }
+}
 if (notFound.status !== 404) anomalies.push({ id: "HTTP-404", service: "Page d’erreur", severity: "P2", description: `Une URL inconnue retourne ${notFound.status} au lieu de 404.`, cause: "Routage", status: "OUVERT" });
 for (const failure of sitemap.failures.slice(0, 30)) anomalies.push({ id: "SITEMAP-URL", service: failure.url, severity: "P2", description: `URL du sitemap en statut ${failure.status}.`, cause: failure.error || "Statut HTTP inattendu", status: "OUVERT" });
 for (const metric of performanceResults) {
@@ -117,6 +126,6 @@ for (const metric of performanceResults) {
 
 const commit = execute("git-version", "git", ["rev-parse", "HEAD"]).stdout.trim();
 const status = anomalies.some((item) => item.severity === "P0" || item.severity === "P1") ? "MAINTENANCE PARTIELLEMENT RÉUSSIE" : anomalies.length ? "MAINTENANCE RÉUSSIE AVEC RÉSERVES" : "MAINTENANCE RÉUSSIE";
-const report = { schemaVersion: 1, date: new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Casablanca", year: "numeric", month: "2-digit", day: "2-digit" }).format(startedAt), startedAt: startedAt.toISOString(), completedAt: new Date().toISOString(), durationMs: Date.now() - startedAt.getTime(), versionInitial: commit, versionFinal: commit, status, deployment: { environment: "production", site, verified: routeChecks.every((item) => item.ok), commitAssociation: "non vérifiable sans API Cloudflare dans la CI" }, checks, routes: routeChecks, backend, worker, newsletterScheduler, notFound: { status: notFound.status }, sitemap, performance: performanceResults, anomalies, corrections: [], limitations: ["Les corrections automatiques restent limitées aux remédiations déterministes explicitement autorisées.", "Les tests agressifs et destructifs sont exclus de la production."] };
+const report = { schemaVersion: 2, date: new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Casablanca", year: "numeric", month: "2-digit", day: "2-digit" }).format(startedAt), startedAt: startedAt.toISOString(), completedAt: new Date().toISOString(), durationMs: Date.now() - startedAt.getTime(), versionInitial: commit, versionFinal: commit, status, deployment: { environment: "production", site, verified: routeChecks.every((item) => item.ok), commitAssociation: "non vérifiable sans API Cloudflare dans la CI" }, checks, routes: routeChecks, backend, worker, newsletterScheduler, automationJobs, notFound: { status: notFound.status }, sitemap, performance: performanceResults, anomalies, corrections: [], limitations: ["Les corrections automatiques restent limitées aux remédiations déterministes explicitement autorisées.", "Les tests agressifs et destructifs sont exclus de la production."] };
 writeFileSync(resolve(outputDir, "maintenance.json"), JSON.stringify(report, null, 2));
 console.log(JSON.stringify({ status, anomalies: anomalies.length, checks: checks.length, sitemap: sitemap.checked, durationMs: Date.now() - commandStarted }));
