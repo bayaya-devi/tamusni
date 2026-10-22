@@ -1,16 +1,18 @@
 export const NEWSLETTER_LOCALES=["fr","ar","en","es","pt"];
+export const NEWSLETTER_TIME_ZONE="Africa/Casablanca";
+export const NEWSLETTER_DELIVERY_HOUR=6;
 
 export function normalizeNewsletterLocale(value){
   const locale=String(value||"").toLowerCase().split(/[-_]/)[0];
   return NEWSLETTER_LOCALES.includes(locale)?locale:"fr";
 }
 
-export function newsletterClock(date=new Date(),timeZone="Africa/Casablanca"){
+export function newsletterClock(date=new Date(),timeZone=NEWSLETTER_TIME_ZONE){
   const parts=Object.fromEntries(new Intl.DateTimeFormat("en-CA",{timeZone,year:"numeric",month:"2-digit",day:"2-digit",weekday:"short",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(date).filter(p=>p.type!=="literal").map(p=>[p.type,p.value]));
   return {date:`${parts.year}-${parts.month}-${parts.day}`,weekday:parts.weekday,hour:Number(parts.hour),minute:Number(parts.minute)};
 }
 
-export function sundayCycle(date=new Date(),timeZone="Africa/Casablanca"){
+export function sundayCycle(date=new Date(),timeZone=NEWSLETTER_TIME_ZONE){
   const clock=newsletterClock(date,timeZone); const noon=new Date(`${clock.date}T12:00:00Z`); const day=noon.getUTCDay();
   const end=new Date(noon); end.setUTCDate(noon.getUTCDate()+(7-day)%7);
   const start=new Date(end); start.setUTCDate(end.getUTCDate()-7);
@@ -20,8 +22,8 @@ export function sundayCycle(date=new Date(),timeZone="Africa/Casablanca"){
   return {cycleKey:`newsletter_${year}-W${String(week).padStart(2,"0")}`,periodStart:`${startDate}T00:00:00`,periodEnd:`${endDate}T06:00:00`,localDate:endDate};
 }
 
-export function newsletterDue(date=new Date(),timeZone="Africa/Casablanca"){
-  const clock=newsletterClock(date,timeZone); return clock.weekday==="Sun"&&clock.hour>=6;
+export function newsletterDue(date=new Date(),timeZone=NEWSLETTER_TIME_ZONE){
+  const clock=newsletterClock(date,timeZone); return clock.weekday==="Sun"&&clock.hour===NEWSLETTER_DELIVERY_HOUR&&clock.minute<15;
 }
 
 export function canAcquireNewsletterRun(status,lockExpires,now=Date.now()){
