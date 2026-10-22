@@ -2,6 +2,7 @@ export const LOCALES = ["fr", "en", "ar", "es", "pt"];
 export const START_DATE = "2026-10-01";
 export const ACTIVE_CATEGORIES = ["Intelligence", "Innovation", "Robotique", "Cybersécurité", "Espace"];
 export const EDITORIAL_SCORE_FIELDS = ["importance", "reliability", "potentialImpact", "publicInterest", "tamusniRelevance"];
+export const PUBLIC_AUTHOR = "TAMUSNI IA";
 
 const forbiddenHosts = new Set(["localhost", "0.0.0.0", "127.0.0.1", "::1", "metadata.google.internal"]);
 
@@ -16,6 +17,22 @@ export function addLocalDays(localDate, days) {
   if (!match) throw new Error("INVALID_LOCAL_DATE");
   const shifted = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]) + Number(days)));
   return shifted.toISOString().slice(0, 10);
+}
+
+/** Convert a wall-clock date in an IANA zone to UTC without a hard-coded offset. */
+export function localDateTimeToUtc(localDate, hour = 6, minute = 0, timeZone = "Africa/Casablanca") {
+  const match = String(localDate || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) throw new Error("INVALID_LOCAL_DATE");
+  const desired = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]), hour, minute);
+  let guess = desired;
+  for (let index = 0; index < 3; index += 1) {
+    const parts = Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date(guess)).filter(part => part.type !== "literal").map(part => [part.type, part.value]));
+    const seen = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), Number(parts.hour), Number(parts.minute));
+    const delta = desired - seen;
+    if (!delta) break;
+    guess += delta;
+  }
+  return new Date(guess);
 }
 
 export function isPublicationDue(clock, nextLocalDate) {
@@ -121,6 +138,29 @@ export function titleSimilarity(left, right) {
   return shared / Math.max(1, new Set([...a, ...b]).size);
 }
 
+const editorialStopWords = new Set([
+  "about", "after", "against", "also", "announces", "annonce", "avec", "dans", "from", "into", "leur", "leurs", "mais", "more", "nouveau", "nouvelle", "nouvelles", "over", "pour", "pourquoi", "selon", "sont", "this", "that", "their", "they", "with", "without", "dans", "des", "les", "une", "sur", "vers", "chez", "pour", "the", "and", "for", "from", "into", "its", "their", "will", "have", "has", "are", "was", "were", "says", "said", "after", "before", "update", "mise", "jour", "révèle", "lance", "lancement"
+]);
+
+export function subjectFingerprint(value) {
+  const aliases = new Map([["invites", "guest"], ["invite", "guest"], ["guests", "guest"], ["appel", "call"], ["appels", "call"], ["calls", "call"], ["calling", "call"], ["comptes", "account"], ["compte", "account"], ["accounts", "account"], ["without", "noaccount"], ["sans", "noaccount"]]);
+  return [...new Set(plainText(value, 1200).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(/[^a-z0-9]+/).filter(token => token.length > 2 && !editorialStopWords.has(token)).map(token => aliases.get(token) || token))].sort().join("|");
+}
+
+export function subjectSimilarity(left, right) {
+  const a = new Set(subjectFingerprint(left).split("|").filter(Boolean));
+  const b = new Set(subjectFingerprint(right).split("|").filter(Boolean));
+  if (!a.size || !b.size) return 0;
+  const shared = [...a].filter(token => b.has(token));
+  return shared.length < 2 ? 0 : shared.length / Math.max(a.size, b.size);
+}
+
+export function isEditorialDuplicate(candidate, existing) {
+  const candidateText = [candidate?.title, candidate?.summary, candidate?.excerpt].filter(Boolean).join(" ");
+  const existingText = [existing?.title, existing?.summary, existing?.excerpt, existing?.factSheet?.event].filter(Boolean).join(" ");
+  return titleSimilarity(candidateText, existingText) >= 0.68 || subjectSimilarity(candidateText, existingText) >= 0.4;
+}
+
 export function rankCandidates(candidates, categoryOrder = ACTIVE_CATEGORIES) {
   const order = new Map(categoryOrder.map((category, index) => [category, index]));
   return [...candidates].sort((left, right) => (order.get(left.category) ?? 999) - (order.get(right.category) ?? 999) || Number(left.sourceTier || 9) - Number(right.sourceTier || 9) || Number(left.ageHours || 999) - Number(right.ageHours || 999));
@@ -154,19 +194,27 @@ export function editorialScoreIssues(score, type = "article") {
   if (!normalized) return ["invalid_editorial_score"];
   const issues = [];
   if (normalized.reason.length < 30) issues.push("editorial_score_reason_too_short");
-  const minimum = type === "brief" ? 30 : 38;
+  const minimum = type === "brief" || type === "auto" ? 30 : 38;
   if (normalized.total < minimum) issues.push(normalized.total < 20 ? "editorial_score_ignore" : normalized.total < 30 ? "editorial_score_monitor" : "editorial_score_below_article_threshold");
   return issues;
+}
+
+export function selectEditorialFormat(score, articleMaterialSufficient) {
+  if (!Number.isInteger(score) || score < 30 || score > 50) return null;
+  if (score <= 37) return "brief";
+  if (articleMaterialSufficient === true) return "article";
+  return score <= 43 ? "brief" : null;
 }
 
 export function publicationQualityIssues(publication, type = "article") {
   const issues = [];
   if (!publication || typeof publication !== "object") return ["missing_publication"];
+  const contentType = publication.contentType || type;
   if (!publication.factSheet || typeof publication.factSheet.event !== "string" || publication.factSheet.event.trim().length < 20) issues.push("incomplete_fact_sheet");
-  if (!Array.isArray(publication.factSheet?.claims) || publication.factSheet.claims.length < 2) issues.push("insufficient_claims");
+  if (!Array.isArray(publication.factSheet?.claims) || publication.factSheet.claims.length < (contentType === "brief" ? 1 : 2)) issues.push("insufficient_claims");
   if (publication.factSheet?.claims?.some(claim => typeof claim !== "object" || !plainText(claim.claim, 500) || !Array.isArray(claim.sourceIds) || !claim.sourceIds.length)) issues.push("uncited_claim");
   if (!Array.isArray(publication.sources) || publication.sources.length < 1) issues.push("missing_source");
-  const minimumBody = type === "brief" ? 350 : 1200;
+  const minimumBody = contentType === "brief" ? 350 : 1200;
   for (const locale of LOCALES) {
     const entry = publication.translations?.[locale];
     if (!entry) { issues.push(`missing_${locale}`); continue; }
@@ -176,7 +224,7 @@ export function publicationQualityIssues(publication, type = "article") {
     if (body.length < minimumBody || body.length > 12_000) issues.push(`invalid_body_${locale}`);
     if (body === excerpt || /(?:lorem ipsum|texte à venir|coming soon|placeholder)/i.test(`${title} ${excerpt} ${body}`)) issues.push(`placeholder_${locale}`);
   }
-  if (plainText(publication.imagePrompt, 1200).length < 60) issues.push("missing_image_prompt");
+  if (publication.imagePrompt && plainText(publication.imagePrompt, 1200).length < 60) issues.push("invalid_image_prompt");
   return [...new Set(issues)];
 }
 

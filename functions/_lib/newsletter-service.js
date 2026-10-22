@@ -30,6 +30,14 @@ export async function subscribeUser(context,user,requestedLocale,source="account
   return {...subscriber,status:"active",locale};
 }
 
+export async function unsubscribeUser(context,user){
+  const profile=await context.env.DB.prepare("SELECT email FROM users WHERE id=?").bind(user.id||user.sub).first();
+  if(!profile)throw new Error("USER_NOT_FOUND");const now=nowIso();
+  await context.env.DB.prepare("UPDATE newsletter_subscribers SET status='unsubscribed',unsubscribed_at=?,updated_at=?,brevo_sync_status='unsubscribed' WHERE user_id=? OR lower(email)=lower(?)").bind(now,now,user.id||user.sub,profile.email).run();
+  try{await deleteBrevoContact(context.env,profile.email)}catch(error){if(error.status!==404)throw error}
+  return {status:"unsubscribed"};
+}
+
 export async function finalizeNewsletterIntent(context,user){
   const intent=await readNewsletterIntent(context);if(!intent)return null;
   if(String(intent.email).toLowerCase()!==String(user.email).toLowerCase())return {mismatch:true};
@@ -55,7 +63,7 @@ async function localizedItems(db,items,locale){
 }
 
 async function syncPending(env){
-  const rows=await env.DB.prepare("SELECT * FROM newsletter_subscribers WHERE status='active' AND brevo_sync_status<>'synced' LIMIT 100").all();
+  const rows=await env.DB.prepare("SELECT n.* FROM newsletter_subscribers n WHERE n.status='active' AND n.user_id IS NOT NULL AND EXISTS(SELECT 1 FROM users u WHERE u.id=n.user_id) AND n.brevo_sync_status<>'synced' LIMIT 100").all();
   for(const subscriber of rows.results||[]){try{if(subscriber.brevo_previous_email)await deleteBrevoContact(env,subscriber.brevo_previous_email).catch(error=>{if(error.status!==404)throw error});const id=await syncBrevoContact(env,env.DB,subscriber);await env.DB.prepare("UPDATE newsletter_subscribers SET brevo_contact_id=COALESCE(?,brevo_contact_id),brevo_sync_status='synced',brevo_previous_email=NULL,updated_at=? WHERE id=?").bind(id,nowIso(),subscriber.id).run()}catch(error){console.error("newsletter_contact_retry_failed",subscriber.id,error.message)}}
 }
 
@@ -76,7 +84,7 @@ export async function runWeeklyNewsletter(env,{date=new Date(),force=false,dryRu
     if(!selection.items.length){await env.DB.prepare("UPDATE newsletter_runs SET status='NO_CONTENT',completed_at=?,lock_token=NULL,lock_expires_at=NULL,updated_at=? WHERE cycle_key=?").bind(nowIso(),nowIso(),cycle.cycleKey).run();return {cycleKey:cycle.cycleKey,status:"NO_CONTENT"}}
     const lists=dryRun?{}:await ensureBrevoLists(env,env.DB);const results=[];
     for(const locale of NEWSLETTER_LOCALES){let currentEdition=null;try{
-      const all=await localizedItems(env.DB,[...selection.items,...(selection.exceptional?[selection.exceptional]:[])],locale);const main=all.slice(0,selection.items.length);const exceptional=selection.exceptional?all.find(item=>item.id===selection.exceptional.id):null;const copy=newsletterCopy[locale];const rendered=renderNewsletter({locale,items:main,exceptional,cycleKey:cycle.cycleKey,dateLabel:cycle.localDate,origin:env.PUBLIC_SITE_URL||env.PUBLIC_ORIGIN||"https://tamusni.pages.dev"});const editionKey=`${cycle.cycleKey}_${locale}`,editionId=crypto.randomUUID();const count=await env.DB.prepare("SELECT COUNT(*) AS count FROM newsletter_subscribers WHERE status='active' AND locale=? AND email_verified_at IS NOT NULL").bind(locale).first();
+      const all=await localizedItems(env.DB,[...selection.items,...(selection.exceptional?[selection.exceptional]:[])],locale);const main=all.slice(0,selection.items.length);const exceptional=selection.exceptional?all.find(item=>item.id===selection.exceptional.id):null;const copy=newsletterCopy[locale];const rendered=renderNewsletter({locale,items:main,exceptional,cycleKey:cycle.cycleKey,dateLabel:cycle.localDate,origin:env.PUBLIC_SITE_URL||env.PUBLIC_ORIGIN||"https://tamusni.pages.dev"});const editionKey=`${cycle.cycleKey}_${locale}`,editionId=crypto.randomUUID();const count=await env.DB.prepare("SELECT COUNT(*) AS count FROM newsletter_subscribers n WHERE n.status='active' AND n.locale=? AND n.email_verified_at IS NOT NULL AND n.user_id IS NOT NULL AND EXISTS(SELECT 1 FROM users u WHERE u.id=n.user_id)").bind(locale).first();
       await env.DB.prepare("INSERT OR IGNORE INTO newsletter_editions(id,edition_key,cycle_key,locale,period_start,period_end,subject,preheader,status,subscriber_count,html_hash,text_hash,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(editionId,editionKey,cycle.cycleKey,locale,cycle.periodStart,cycle.periodEnd,copy.subject,copy.preheader,dryRun?'READY':'PREPARING',Number(count?.count||0),await digest(rendered.html),await digest(rendered.text),nowIso(),nowIso()).run();
       const edition=await env.DB.prepare("SELECT * FROM newsletter_editions WHERE edition_key=?").bind(editionKey).first();currentEdition=edition;
       await env.DB.prepare("UPDATE newsletter_editions SET subscriber_count=?,updated_at=? WHERE id=?").bind(Number(count?.count||0),nowIso(),edition.id).run();

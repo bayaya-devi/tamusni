@@ -48,6 +48,8 @@ R2 reste l’évolution recommandée si le service est activé sur le compte Clo
 
 Après absence totale de sujet valable, la prochaine tentative est déplacée de deux jours sans terminer les rubriques reportées.
 
+Lorsque tous les candidats d’actualité échouent, le Worker peut essayer un `focus` de secours documenté : entreprise, invention, programme ou sujet historique relié à une rubrique active. Les focus sont limités à une bibliothèque de pages institutionnelles HTTPS, vérifiés par les mêmes contrôles factuels, de score, multilingues, image, anti-doublon et publics, puis stockés comme articles compatibles avec un `contentType` `focus` dans la fiche factuelle. Ils ne sont jamais présentés comme une actualité urgente.
+
 ## Journalisation
 
 Les principaux événements sont : `WATCH_STARTED`, `SOURCES_FETCHED`, `CANDIDATES_FOUND`, `DUPLICATES_REMOVED`, `TOPIC_SELECTED`, `FACT_CHECK_STARTED`, `FACT_CHECK_FAILED`, `FACT_CHECK_PASSED`, `CONTENT_GENERATED`, `LANGUAGES_GENERATED`, `IMAGE_READY`, `QUALITY_GATE_PASSED`, `EDITORIAL_SCORE_ACCEPTED`, `SEO_GEO_GATE_PASSED`, `PUBLICATION_CREATED`, `DEPLOYMENT_STARTED`, `DEPLOYMENT_SUCCESS`, `PUBLIC_CHECK_STARTED`, `PUBLIC_CHECK_FAILED` et `PUBLIC_CHECK_SUCCESS`.

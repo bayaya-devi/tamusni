@@ -56,9 +56,8 @@ for(const locale of ['fr','ar','en','es','pt']){
     assert.match(html,new RegExp(`\/brand\/tamusni-${locale==='ar'?'ar':'latin'}\.png`));
     assert.match(html,/hreflang="es"/);
     assert.doesNotMatch(html,/data-ad-slot|ads-client\.js|consent\.js/);
-    assert.equal((html.match(/type="email"/g)||[]).length,1);
-    assert.match(html,/<input type="hidden" name="company" value="">/);
-    assert.doesNotMatch(html,/newsletter-honeypot/);
+    assert.equal((html.match(/type="email"/g)||[]).length,0);
+    assert.doesNotMatch(html,/newsletter-form|newsletter-section|newsletter-honeypot/);
   });
 }
 

@@ -1,29 +1,27 @@
 export const NEWSLETTER_LOCALES=["fr","ar","en","es","pt"];
-export const NEWSLETTER_TIME_ZONE="Etc/UTC";
-export const NEWSLETTER_DELIVERY_HOUR=6;
 
 export function normalizeNewsletterLocale(value){
   const locale=String(value||"").toLowerCase().split(/[-_]/)[0];
   return NEWSLETTER_LOCALES.includes(locale)?locale:"fr";
 }
 
-export function newsletterClock(date=new Date(),timeZone=NEWSLETTER_TIME_ZONE){
+export function newsletterClock(date=new Date(),timeZone="Africa/Casablanca"){
   const parts=Object.fromEntries(new Intl.DateTimeFormat("en-CA",{timeZone,year:"numeric",month:"2-digit",day:"2-digit",weekday:"short",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(date).filter(p=>p.type!=="literal").map(p=>[p.type,p.value]));
   return {date:`${parts.year}-${parts.month}-${parts.day}`,weekday:parts.weekday,hour:Number(parts.hour),minute:Number(parts.minute)};
 }
 
-export function sundayCycle(date=new Date(),timeZone=NEWSLETTER_TIME_ZONE){
+export function sundayCycle(date=new Date(),timeZone="Africa/Casablanca"){
   const clock=newsletterClock(date,timeZone); const noon=new Date(`${clock.date}T12:00:00Z`); const day=noon.getUTCDay();
   const end=new Date(noon); end.setUTCDate(noon.getUTCDate()+(7-day)%7);
   const start=new Date(end); start.setUTCDate(end.getUTCDate()-7);
   const iso=d=>d.toISOString().slice(0,10);
   const endDate=iso(end),startDate=iso(start); const year=Number(endDate.slice(0,4));
   const jan4=new Date(Date.UTC(year,0,4)); const week=Math.ceil((((end-new Date(Date.UTC(year,0,1)))/86400000)+new Date(Date.UTC(year,0,1)).getUTCDay()+1)/7);
-  return {cycleKey:`newsletter_${year}-W${String(week).padStart(2,"0")}`,periodStart:`${startDate}T${String(NEWSLETTER_DELIVERY_HOUR).padStart(2,"0")}:00:00.000Z`,periodEnd:`${endDate}T${String(NEWSLETTER_DELIVERY_HOUR).padStart(2,"0")}:00:00.000Z`,localDate:endDate};
+  return {cycleKey:`newsletter_${year}-W${String(week).padStart(2,"0")}`,periodStart:`${startDate}T00:00:00`,periodEnd:`${endDate}T06:00:00`,localDate:endDate};
 }
 
-export function newsletterDue(date=new Date(),timeZone=NEWSLETTER_TIME_ZONE){
-  const clock=newsletterClock(date,timeZone); return clock.weekday==="Sun"&&clock.hour===NEWSLETTER_DELIVERY_HOUR&&clock.minute<15;
+export function newsletterDue(date=new Date(),timeZone="Africa/Casablanca"){
+  const clock=newsletterClock(date,timeZone); return clock.weekday==="Sun"&&clock.hour>=6;
 }
 
 export function canAcquireNewsletterRun(status,lockExpires,now=Date.now()){

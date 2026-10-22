@@ -2,7 +2,7 @@ name: TAMUSNI weekly maintenance
 
 on:
   schedule:
-    - cron: "0 2,3 * * 0"
+    - cron: "0 5,6 * * 0"
   workflow_dispatch:
     inputs:
       send_email:
@@ -45,7 +45,7 @@ jobs:
           node - <<'NODE'
           const manual=process.env.EVENT_NAME==='workflow_dispatch';
           const parts=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:'Africa/Casablanca',weekday:'long',hour:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).map(part=>[part.type,part.value]));
-          const run=manual||(parts.weekday==='Sunday'&&Number(parts.hour)===3);
+          const run=manual||(parts.weekday==='Sunday'&&Number(parts.hour)===6);
           require('fs').appendFileSync(process.env.GITHUB_OUTPUT,`run=${run}\n`);
           console.log(JSON.stringify({manual,localWeekday:parts.weekday,localHour:parts.hour,run}));
           NODE

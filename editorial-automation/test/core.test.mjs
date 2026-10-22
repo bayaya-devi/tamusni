@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { addLocalDays, allowedExternalUrl, editorialScoreBand, editorialScoreIssues, extractAiJson, isCompletePublication, isPublicationDue, localClock, normalizeEditorialScore, parseFeed, publicationQualityIssues, rankCandidates, safeJson, seoGeoPublicationIssues, slugify, titleSimilarity } from "../src/core.js";
+import { addLocalDays, allowedExternalUrl, editorialScoreBand, editorialScoreIssues, extractAiJson, isCompletePublication, isEditorialDuplicate, isPublicationDue, localClock, localDateTimeToUtc, normalizeEditorialScore, parseFeed, PUBLIC_AUTHOR, publicationQualityIssues, rankCandidates, safeJson, selectEditorialFormat, seoGeoPublicationIssues, slugify, titleSimilarity } from "../src/core.js";
 
 test("rejects local and non-https source URLs", () => {
   assert.equal(allowedExternalUrl("http://example.com"), false);
@@ -83,6 +83,53 @@ test("prioritizes pending category order, trust tier and freshness", () => {
 test("detects related titles without treating separate stories as identical", () => {
   assert.ok(titleSimilarity("NASA confirms a new lunar mission schedule", "New lunar mission schedule confirmed by NASA") > .5);
   assert.ok(titleSimilarity("NASA confirms a new lunar mission schedule", "Cybersecurity agency publishes browser guidance") < .2);
+});
+
+test("classifies eligible subjects from score and evidence depth", () => {
+  assert.equal(selectEditorialFormat(26, true), null);
+  assert.equal(selectEditorialFormat(34, false), "brief");
+  assert.equal(selectEditorialFormat(42, true), "article");
+  assert.equal(selectEditorialFormat(42, false), "brief");
+  assert.equal(selectEditorialFormat(47, true), "article");
+  assert.equal(selectEditorialFormat(47, false), null);
+  const score = { importance: 7, reliability: 7, potentialImpact: 6, publicInterest: 7, tamusniRelevance: 7, reason: "The official source documents a recent and relevant development with clear public impact." };
+  assert.deepEqual(editorialScoreIssues(score, "auto"), []);
+});
+
+test("detects the same event under a differently worded title but keeps unrelated stories", () => {
+  assert.equal(isEditorialDuplicate(
+    { title: "WhatsApp ouvre les appels invités sans compte", summary: "Meta permet aux invités de rejoindre des appels par lien." },
+    { title: "WhatsApp guest calling now supports people without accounts", excerpt: "Meta says guests can join a call link." }
+  ), true);
+  assert.equal(isEditorialDuplicate(
+    { title: "NASA prépare un nouveau rover lunaire", summary: "Mission robotique vers la Lune." },
+    { title: "CISA publie des conseils contre le hameçonnage", excerpt: "Recommandations de cybersécurité." }
+  ), false);
+});
+
+test("uses the required public attribution for automated stories", () => assert.equal(PUBLIC_AUTHOR, "TAMUSNI IA"));
+
+test("calculates the Casablanca publication instant through its IANA timezone", () => {
+  const instant = localDateTimeToUtc("2026-10-22", 6, 0, "Africa/Casablanca");
+  const clock = localClock(instant, "Africa/Casablanca");
+  assert.deepEqual(clock, { date: "2026-10-22", hour: 6, minute: 0 });
+});
+
+test("accepts a source-backed brief without forcing an illustration", () => {
+  const publication = {
+    contentType: "brief",
+    factSheet: { event: "A source-backed product announcement with practical limitations", claims: [{ claim: "The product is available by invitation.", sourceIds: ["S1"] }] },
+    sources: [{ id: "S1", label: "Official release", url: "https://example.org/release" }],
+    translations: Object.fromEntries(["fr", "en", "ar", "es", "pt"].map(locale => [locale, {
+      title: "A sufficiently precise factual headline",
+      excerpt: "A clear summary with enough context for a reader to understand the main development.",
+      body: "A verified concise paragraph. ".repeat(12)
+    }]))
+  };
+  assert.deepEqual(publicationQualityIssues(publication, "brief"), []);
+  assert.equal(isCompletePublication(publication, "brief"), true);
+  const focus = { ...publication, contentType: "focus", factSheet: { ...publication.factSheet, claims: [...publication.factSheet.claims, { claim: "The source describes its institutional context.", sourceIds: ["S1"] }] }, translations: Object.fromEntries(Object.entries(publication.translations).map(([locale, text]) => [locale, { ...text, body: "A verified focus paragraph with context. ".repeat(40) }])) };
+  assert.deepEqual(publicationQualityIssues(focus, "focus"), []);
 });
 
 test("accepts structured and fenced JSON returned by Workers AI", () => {

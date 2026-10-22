@@ -3,6 +3,7 @@ import { consumeOtpChallenge, consumeRateLimit, createOtpChallenge, rateLimitRes
 import { sendSecurityEmail } from "../_lib/security-email.js";
 import { removeMirroredUser } from "../_lib/supabase.js";
 import { normalizeTopics, replaceTopicSubscriptions } from "../_lib/topics.js";
+import { subscribeUser, unsubscribeUser } from "../_lib/newsletter-service.js";
 
 const languages = new Set(["fr", "en", "ar", "es", "pt"]);
 const themes = new Set(["auto", "light", "dark"]);
@@ -12,14 +13,15 @@ const densities = new Set(["compact", "comfortable"]);
 export async function onRequestGet(context) {
   const session = await requireSession(context);
   if (!session) return json({ error: "Connexion requise." }, 401);
-  const [profile, history, topics, searches, notifications] = await Promise.all([
+  const [profile, history, topics, searches, notifications, newsletter] = await Promise.all([
     context.env.DB.prepare("SELECT u.id,u.name,u.email,CASE WHEN u.role='ADMIN' THEN 'ADMIN' WHEN r.role='CONTRIBUTOR' THEN 'CONTRIBUTOR' ELSE 'USER' END AS role,u.avatar_url,u.bio,u.preferred_language,u.preferred_theme,u.text_size,u.display_density,u.notifications_enabled,u.preferred_topic,u.sponsored_in_app,u.sponsored_email,u.created_at FROM users u LEFT JOIN user_roles r ON r.user_id=u.id WHERE u.id=?").bind(session.sub).first(),
     context.env.DB.prepare("SELECT c.slug,c.type,c.title,c.category,h.progress,h.last_read_at FROM reading_history h JOIN content_items c ON c.id=h.content_id WHERE h.user_id=? ORDER BY h.last_read_at DESC LIMIT 50").bind(session.sub).all(),
     context.env.DB.prepare("SELECT topic,created_at FROM topic_subscriptions WHERE user_id=? ORDER BY topic").bind(session.sub).all(),
     context.env.DB.prepare("SELECT query,searched_at FROM search_history WHERE user_id=? ORDER BY searched_at DESC LIMIT 20").bind(session.sub).all(),
-    context.env.DB.prepare("SELECT id,title,url,read_at,created_at FROM notifications WHERE user_id=? ORDER BY created_at DESC LIMIT 30").bind(session.sub).all()
+    context.env.DB.prepare("SELECT id,title,url,read_at,created_at FROM notifications WHERE user_id=? ORDER BY created_at DESC LIMIT 30").bind(session.sub).all(),
+    context.env.DB.prepare("SELECT status,locale FROM newsletter_subscribers WHERE user_id=? LIMIT 1").bind(session.sub).first()
   ]);
-  return json({ profile, history: history.results || [], topics: topics.results || [], searches: searches.results || [], notifications: notifications.results || [] });
+  return json({ profile: profile ? { ...profile, newsletter_enabled: newsletter?.status === "active" } : null, history: history.results || [], topics: topics.results || [], searches: searches.results || [], notifications: notifications.results || [] });
 }
 
 export async function onRequestPatch(context) {
@@ -44,6 +46,8 @@ export async function onRequestPatch(context) {
     const preferredTopic = preferredTopics[0];
     const sponsoredInApp = body.sponsoredInApp === true ? 1 : 0;
     const sponsoredEmail = body.sponsoredEmail === true ? 1 : 0;
+    const newsletterPreferenceProvided = Object.prototype.hasOwnProperty.call(body,"newsletterEnabled");
+    const newsletterEnabled = body.newsletterEnabled === true;
     if (name.length < 2 || !validEmail(requestedEmail) || !preferredTopics.length || (avatar && !/^https:\/\//i.test(avatar))) return json({ error: "Profil invalide : choisissez au moins une rubrique." }, 400);
     if (requestedEmail !== session.email.toLowerCase()) return json({ error: "La modification de l’adresse e-mail nécessite une vérification dédiée et n’est pas disponible depuis ce formulaire." }, 400);
     await context.env.DB.batch([
@@ -51,6 +55,10 @@ export async function onRequestPatch(context) {
       context.env.DB.prepare("UPDATE newsletter_subscribers SET locale=?,brevo_sync_status=CASE WHEN locale<>? THEN 'pending' ELSE brevo_sync_status END,updated_at=? WHERE user_id=?").bind(language, language, new Date().toISOString(), session.sub)
     ]);
     await replaceTopicSubscriptions(context.env.DB, session.sub, preferredTopics);
+    if(newsletterPreferenceProvided){
+      if(newsletterEnabled) await subscribeUser(context,session,language,"account_preferences");
+      else await unsubscribeUser(context,session);
+    }
     return json({ ok: true });
   } catch (error) {
     console.error("account_update_failed", error);
