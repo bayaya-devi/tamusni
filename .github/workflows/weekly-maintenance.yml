@@ -79,7 +79,7 @@ jobs:
 
       - name: Install Chromium
         if: steps.claim.outputs.run == 'true'
-        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+        run: node node_modules/@playwright/test/cli.js install chromium
 
       - name: Execute production maintenance audit
         id: audit
