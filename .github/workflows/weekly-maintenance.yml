@@ -86,6 +86,8 @@ jobs:
         if: steps.claim.outputs.run == 'true'
         continue-on-error: true
         run: node scripts/maintenance/run.mjs
+        env:
+          MAINTENANCE_CURRENT_JOB_ID: ${{ steps.claim.outputs.job_id }}
 
       - name: Install PDF renderer
         if: always() && steps.claim.outputs.run == 'true'

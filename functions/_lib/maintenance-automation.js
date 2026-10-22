@@ -43,7 +43,7 @@ export async function settlePersistentMaintenance(env,{jobId,lockToken,ok,result
   return {status:"retry_pending",nextAttemptAt};
 }
 
-export async function maintenanceAutomationStatus(db){
-  const result=await db.prepare("SELECT job_type,status,COUNT(*) AS count,MAX(updated_at) AS updated_at FROM automation_jobs WHERE job_type IN ('editorial_publication','weekly_newsletter','weekly_maintenance') GROUP BY job_type,status ORDER BY job_type,status").all();
+export async function maintenanceAutomationStatus(db,{excludeJobId=""}={}){
+  const result=await db.prepare("SELECT job_type,status,COUNT(*) AS count,MAX(updated_at) AS updated_at FROM automation_jobs WHERE job_type IN ('editorial_publication','weekly_newsletter','weekly_maintenance') AND (?='' OR id<>?) GROUP BY job_type,status ORDER BY job_type,status").bind(excludeJobId,excludeJobId).all();
   return result.results||[];
 }

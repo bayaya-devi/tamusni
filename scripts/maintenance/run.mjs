@@ -55,7 +55,9 @@ const routeChecks = await Promise.all(routes.map((path) => fetchRecord(`${site}$
 const backend = await fetchRecord(`${site}/api/backend-status`);
 const worker = await fetchRecord(process.env.EDITORIAL_HEALTH_URL || "https://tamusni-editorial-automation.aetbconseil.workers.dev/health");
 const maintenanceHeaders = process.env.MAINTENANCE_RUN_TOKEN ? { Authorization: `Bearer ${process.env.MAINTENANCE_RUN_TOKEN}` } : {};
-const automationJobs = await fetchRecord(`${site}/api/maintenance/run?mode=status`, { method: "POST", headers: maintenanceHeaders });
+const maintenanceStatusQuery=new URLSearchParams({mode:"status"});
+if(process.env.MAINTENANCE_CURRENT_JOB_ID)maintenanceStatusQuery.set("exclude_job_id",process.env.MAINTENANCE_CURRENT_JOB_ID);
+const automationJobs = await fetchRecord(`${site}/api/maintenance/run?${maintenanceStatusQuery}`, { method: "POST", headers: maintenanceHeaders });
 const automationRepository = process.env.GITHUB_REPOSITORY || "bayaya-devi/tamusni";
 const githubHeaders = { Accept: "application/vnd.github+json", "User-Agent": "TAMUSNI-Maintenance" };
 if (process.env.GITHUB_TOKEN) githubHeaders.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;

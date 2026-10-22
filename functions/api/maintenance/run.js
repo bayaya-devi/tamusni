@@ -15,7 +15,7 @@ export async function onRequestPost(context){
       const result=await claimPersistentMaintenance(context.env,{forceValidation});
       return json({ok:true,localDate:result.localDate,validation:result.validation,job:result.job?{id:result.job.id,lockToken:result.job.lock_token,attemptCount:result.job.attempt_count,scheduledFor:result.job.scheduled_for}:null});
     }
-    if(mode==="status")return json({ok:true,jobs:await maintenanceAutomationStatus(context.env.DB)});
+    if(mode==="status")return json({ok:true,jobs:await maintenanceAutomationStatus(context.env.DB,{excludeJobId:new URL(context.request.url).searchParams.get("exclude_job_id")||""})});
     if(mode!=="complete")return json({error:"Invalid mode"},400);
     const body=await readBody(context.request);
     const result=await settlePersistentMaintenance(context.env,{jobId:String(body.jobId||""),lockToken:String(body.lockToken||""),ok:body.ok===true,result:body.result,error:String(body.error||"")});
