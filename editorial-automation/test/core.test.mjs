@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { addLocalDays, allowedExternalUrl, editorialScoreBand, editorialScoreIssues, extractAiJson, isCompletePublication, isEditorialDuplicate, isPublicationDue, localClock, localDateTimeToUtc, normalizeEditorialScore, parseFeed, PUBLIC_AUTHOR, publicationQualityIssues, rankCandidates, safeJson, selectEditorialFormat, seoGeoPublicationIssues, slugify, titleSimilarity } from "../src/core.js";
+import { addLocalDays, allowedExternalUrl, editorialScoreBand, editorialScoreIssues, extractAiJson, isCompletePublication, isEditorialDuplicate, isPublicationDue, localClock, localDateTimeToUtc, normalizeEditorialScore, oldestOutstandingPublicationDate, parseFeed, PUBLIC_AUTHOR, publicationQualityIssues, rankCandidates, safeJson, selectEditorialFormat, seoGeoPublicationIssues, slugify, titleSimilarity } from "../src/core.js";
 
 test("rejects local and non-https source URLs", () => {
   assert.equal(allowedExternalUrl("http://example.com"), false);
@@ -38,6 +38,19 @@ test("keeps a durable 48-hour local-date cadence", () => {
   assert.equal(addLocalDays("2026-12-31", 2), "2027-01-02");
   assert.equal(isPublicationDue({ date: "2026-10-08" }, "2026-10-09"), false);
   assert.equal(isPublicationDue({ date: "2026-10-09" }, "2026-10-09"), true);
+});
+
+test("recovers every missed deadline instead of silently advancing the cycle", () => {
+  const clock = { date: "2026-10-22", hour: 8, minute: 0 };
+  assert.equal(oldestOutstandingPublicationDate({
+    // Historical state was incorrectly advanced to the next future date.
+    next_publication_local_date: "2026-10-24",
+    last_publication_at: "2026-10-16T06:00:00.000Z"
+  }, clock), "2026-10-18");
+  assert.equal(oldestOutstandingPublicationDate({
+    next_publication_local_date: "2026-10-24",
+    last_publication_at: "2026-10-22T06:00:00.000Z"
+  }, clock), null);
 });
 
 test("applies the complete TAMUSNI 5x10 editorial scale at every boundary", () => {

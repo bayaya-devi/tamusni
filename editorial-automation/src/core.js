@@ -39,6 +39,24 @@ export function isPublicationDue(clock, nextLocalDate) {
   return Boolean(nextLocalDate && clock?.date >= nextLocalDate);
 }
 
+/**
+ * Returns the first editorial deadline that must still be completed.
+ *
+ * Older versions of the worker advanced `next_publication_local_date` after a
+ * failed discovery pass.  A successful publication is the only event allowed
+ * to move that deadline.  This helper heals that historical state by deriving
+ * the first missed date from the latest verified publication when it is older
+ * than the stored deadline.
+ */
+export function oldestOutstandingPublicationDate(state, clock, cadenceDays = 2, timeZone = "Africa/Casablanca") {
+  const stored = String(state?.next_publication_local_date || "");
+  const lastPublished = state?.last_publication_at
+    ? addLocalDays(localClock(new Date(state.last_publication_at), timeZone).date, cadenceDays)
+    : "";
+  const firstOutstanding = lastPublished && (!stored || lastPublished < stored) ? lastPublished : stored;
+  return firstOutstanding && firstOutstanding <= clock?.date ? firstOutstanding : null;
+}
+
 export function allowedExternalUrl(raw) {
   try {
     const url = new URL(raw);

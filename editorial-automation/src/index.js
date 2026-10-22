@@ -1,6 +1,6 @@
 import {
   ACTIVE_CATEGORIES, PUBLIC_AUTHOR, START_DATE, addLocalDays, aiDisclosure, allowedExternalUrl, extractAiJson,
-  editorialScoreIssues, isEditorialDuplicate, isPublicationDue, localClock, localDateTimeToUtc, normalizeEditorialScore, parseFeed, plainText, publicationQualityIssues, seoGeoPublicationIssues,
+  editorialScoreIssues, isEditorialDuplicate, isPublicationDue, localClock, localDateTimeToUtc, normalizeEditorialScore, oldestOutstandingPublicationDate, parseFeed, plainText, publicationQualityIssues, seoGeoPublicationIssues,
   rankCandidates, safeJson, selectEditorialFormat, slugify, sourceDigest, titleSimilarity
 } from "./core.js";
 import { claimNextJob, completeJob, ensureJob, retryJob } from "../../automation/shared/job-core.js";
@@ -60,7 +60,9 @@ async function categoriesForCycle(env, state) {
 async function beginRun(env, localDate, state, force = false) {
   const existing = await env.DB.prepare("SELECT * FROM editorial_runs WHERE local_date=? AND purpose='prepare'").bind(localDate).first();
   if (existing && ["published", "ready", "content_ready_but_not_public"].includes(existing.status)) return { run: existing, created: false };
-  if (existing && (force || ["failed", "no_topic", "running"].includes(existing.status))) {
+  // `no_topic` is retained for compatibility with pre-durable-worker runs.
+  // It is not a terminal state: an unmet editorial deadline remains due.
+  if (existing && (force || ["failed", "no_topic", "running", "content_ready_but_not_public"].includes(existing.status))) {
     await env.DB.prepare("UPDATE editorial_runs SET status='running',cycle_type=?,attempt_count=attempt_count+1,error_code=NULL,error_detail=NULL,updated_at=?,completed_at=NULL WHERE id=?").bind(state.cycle_type, nowIso(), existing.id).run();
     await log(env, existing.id, "WATCH_STARTED", "manual retry");
     return { run: await env.DB.prepare("SELECT * FROM editorial_runs WHERE id=?").bind(existing.id).first(), created: true };
@@ -366,7 +368,11 @@ async function publishDue(env, date = new Date(), force = false, ctx = null) {
     try {
       await log(env, run?.id, "PUBLIC_CHECK_STARTED", item.slug);
       await publicCheck(env, item);
-      const state = await currentState(env), nextDate = addLocalDays(force ? localClock(date, env.EDITORIAL_TIME_ZONE || "Africa/Casablanca").date : (state.next_publication_local_date || localClock(date, env.EDITORIAL_TIME_ZONE || "Africa/Casablanca").date), Number(env.PUBLICATION_CADENCE_DAYS || 2));
+      const state = await currentState(env);
+      // Advance from the deadline being fulfilled, never from "now".  This
+      // preserves every missed two-day deadline during a catch-up.
+      const fulfilledDate = run.local_date || state.next_publication_local_date || localClock(date, env.EDITORIAL_TIME_ZONE || "Africa/Casablanca").date;
+      const nextDate = addLocalDays(fulfilledDate, Number(env.PUBLICATION_CADENCE_DAYS || 2));
       const publicUrl = `${env.PUBLIC_ORIGIN}/fr/articles/${encodeURIComponent(item.slug)}/`;
       await env.DB.batch([
         env.DB.prepare("UPDATE editorial_cycle_categories SET completed_at=? WHERE cycle_number=? AND category=?").bind(now, state.cycle_number, item.category),
@@ -393,7 +399,14 @@ async function publishDue(env, date = new Date(), force = false, ctx = null) {
 
 async function scheduledRun(env, date = new Date(), ctx = null) {
   const zone = env.EDITORIAL_TIME_ZONE || "Africa/Casablanca";
-  const clock = localClock(date, zone), state = await currentState(env);
+  const clock = localClock(date, zone);
+  let state = await currentState(env);
+  const recoveredDueDate = oldestOutstandingPublicationDate(state, clock, Number(env.PUBLICATION_CADENCE_DAYS || 2), zone);
+  if (recoveredDueDate && recoveredDueDate !== state.next_publication_local_date) {
+    await env.DB.prepare("UPDATE editorial_cycle_state SET next_publication_local_date=?,deployment_status='catching_up',updated_at=? WHERE id=1")
+      .bind(recoveredDueDate, nowIso()).run();
+    state = await currentState(env);
+  }
   if (!isPublicationDue(clock, state.next_publication_local_date)) return { clock, skipped: "not_due", next: state.next_publication_local_date };
   const localDate = state.next_publication_local_date;
   const scheduledFor = localDateTimeToUtc(localDate, 6, 0, zone).toISOString();
