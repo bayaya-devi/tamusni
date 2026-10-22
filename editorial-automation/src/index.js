@@ -126,7 +126,11 @@ async function sourceBundle(candidate, candidates) {
   for (const [index, source] of selected.entries()) {
     try {
       const result = await safeFetch(source.url);
-      fetched.push({ id: `S${index + 1}`, title: source.title, publisher: source.publisher, url: result.url, publishedAt: source.publishedAt, text: result.text });
+      // Some publishers expose a challenge page to Workers while their signed
+      // RSS/Atom item still contains the publisher's own substantive summary.
+      // Keep that publisher-provided summary with the fetched page as evidence;
+      // it is never treated as executable instruction text.
+      fetched.push({ id: `S${index + 1}`, title: source.title, publisher: source.publisher, url: result.url, publishedAt: source.publishedAt, text: `${result.text}\n\nPUBLISHER_FEED_SUMMARY\n${source.summary || ""}` });
     } catch (error) {
       if (index === 0) throw error;
     }
