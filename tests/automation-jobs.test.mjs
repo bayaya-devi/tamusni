@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { JOB_STATES, retryAt, retryDelayMs } from "../automation/shared/job-core.js";
+import { JOB_STATES, claimJobByIdempotencyKey, retryAt, retryDelayMs } from "../automation/shared/job-core.js";
 import { latestMaintenanceSunday, MAINTENANCE_HOUR } from "../functions/_lib/maintenance-automation.js";
 
 test("uses the five durable states required by TAMUSNI", () => {
@@ -18,4 +18,8 @@ test("maintenance keeps the previous Sunday due until the 06:00 Casablanca slot"
   assert.equal(MAINTENANCE_HOUR,6);
   assert.equal(latestMaintenanceSunday({date:"2026-10-25",hour:5}),"2026-10-18");
   assert.equal(latestMaintenanceSunday({date:"2026-10-25",hour:6}),"2026-10-25");
+});
+
+test("exports an isolated idempotent claim primitive for controlled validation",()=>{
+  assert.equal(typeof claimJobByIdempotencyKey,"function");
 });

@@ -1,4 +1,4 @@
-import { claimNextJob, completeJob, ensureJob, retryJob } from "../../automation/shared/job-core.js";
+import { claimJobByIdempotencyKey, claimNextJob, completeJob, ensureJob, retryJob } from "../../automation/shared/job-core.js";
 import { NEWSLETTER_TIME_ZONE, newsletterClock, newsletterLocalDateTimeToUtc } from "./newsletter-core.js";
 
 export const MAINTENANCE_TIME_ZONE=NEWSLETTER_TIME_ZONE;
@@ -14,13 +14,19 @@ export function latestMaintenanceSunday(clock){
 }
 
 /** A GitHub runner only wakes this durable D1 job; it never defines completion. */
-export async function claimPersistentMaintenance(env,{date=new Date()}={}){
+export async function claimPersistentMaintenance(env,{date=new Date(),forceValidation=false}={}){
   const timeZone=env.MAINTENANCE_TIMEZONE||MAINTENANCE_TIME_ZONE;
   const clock=newsletterClock(date,timeZone);
   const localDate=latestMaintenanceSunday(clock);
-  await ensureJob(env.DB,{type:"weekly_maintenance",idempotencyKey:`maintenance:${localDate}`,scheduledFor:newsletterLocalDateTimeToUtc(localDate,MAINTENANCE_HOUR,0,timeZone).toISOString(),metadata:{localDate,timeZone}});
-  const job=await claimNextJob(env.DB,"weekly_maintenance");
-  return {localDate,job};
+  const idempotencyKey=forceValidation
+    ? `maintenance-validation:${clock.date}`
+    : `maintenance:${localDate}`;
+  const scheduledFor=forceValidation ? date.toISOString() : newsletterLocalDateTimeToUtc(localDate,MAINTENANCE_HOUR,0,timeZone).toISOString();
+  await ensureJob(env.DB,{type:"weekly_maintenance",idempotencyKey,scheduledFor,metadata:{localDate:forceValidation?clock.date:localDate,timeZone,validation:forceValidation}});
+  const job=forceValidation
+    ? await claimJobByIdempotencyKey(env.DB,"weekly_maintenance",idempotencyKey)
+    : await claimNextJob(env.DB,"weekly_maintenance");
+  return {localDate:forceValidation?clock.date:localDate,job,validation:forceValidation};
 }
 
 export async function settlePersistentMaintenance(env,{jobId,lockToken,ok,result,error}){

@@ -11,8 +11,9 @@ export async function onRequestPost(context){
   const mode=new URL(context.request.url).searchParams.get("mode")||"claim";
   try{
     if(mode==="claim"){
-      const result=await claimPersistentMaintenance(context.env);
-      return json({ok:true,localDate:result.localDate,job:result.job?{id:result.job.id,lockToken:result.job.lock_token,attemptCount:result.job.attempt_count,scheduledFor:result.job.scheduled_for}:null});
+      const forceValidation=new URL(context.request.url).searchParams.get("force_validation")==="true";
+      const result=await claimPersistentMaintenance(context.env,{forceValidation});
+      return json({ok:true,localDate:result.localDate,validation:result.validation,job:result.job?{id:result.job.id,lockToken:result.job.lock_token,attemptCount:result.job.attempt_count,scheduledFor:result.job.scheduled_for}:null});
     }
     if(mode==="status")return json({ok:true,jobs:await maintenanceAutomationStatus(context.env.DB)});
     if(mode!=="complete")return json({error:"Invalid mode"},400);

@@ -11,6 +11,11 @@ on:
         required: true
         type: boolean
         default: true
+      force_validation:
+        description: Exécuter une validation complète isolée, même hors échéance
+        required: true
+        type: boolean
+        default: false
 
 concurrency:
   group: tamusni-weekly-maintenance
@@ -43,15 +48,19 @@ jobs:
         shell: bash
         run: |
           node - <<'NODE'
-          const response=await fetch('https://tamusni.pages.dev/api/maintenance/run?mode=claim',{method:'POST',headers:{Authorization:`Bearer ${process.env.MAINTENANCE_RUN_TOKEN}`},signal:AbortSignal.timeout(30000)});
+          const force=process.env.FORCE_VALIDATION==='true';
+          const suffix=force?'&force_validation=true':'';
+          const response=await fetch(`https://tamusni.pages.dev/api/maintenance/run?mode=claim${suffix}`,{method:'POST',headers:{Authorization:`Bearer ${process.env.MAINTENANCE_RUN_TOKEN}`},signal:AbortSignal.timeout(30000)});
           const data=await response.json().catch(()=>({}));
           if(!response.ok||!data.ok)throw new Error(`Maintenance claim failed (${response.status})`);
           const job=data.job||null;
           const fs=await import('node:fs');
           fs.appendFileSync(process.env.GITHUB_OUTPUT,`run=${Boolean(job)}\n`);
           if(job)fs.appendFileSync(process.env.GITHUB_OUTPUT,`job_id=${job.id}\nlock_token=${job.lockToken}\n`);
-          console.log(JSON.stringify({localDate:data.localDate,claimed:Boolean(job),attempt:job?.attemptCount||0}));
+          console.log(JSON.stringify({localDate:data.localDate,validation:Boolean(data.validation),claimed:Boolean(job),attempt:job?.attemptCount||0}));
           NODE
+        env:
+          FORCE_VALIDATION: ${{ github.event_name == 'workflow_dispatch' && inputs.force_validation }}
 
       - uses: actions/checkout@v7
         if: steps.claim.outputs.run == 'true'
