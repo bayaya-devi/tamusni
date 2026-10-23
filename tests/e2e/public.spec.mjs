@@ -273,8 +273,24 @@ test('hero and story cards remain reachable after repeated browser returns', asy
 
 test('hero autoplay waits five seconds and uses one timer', async ({ page }) => {
   await page.goto('/fr/');
-  const first = await page.locator('.hero-slide.is-current').getAttribute('data-slide');
-  await page.waitForTimeout(4_200);
-  await expect(page.locator('.hero-slide.is-current')).toHaveAttribute('data-slide', first);
-  await expect.poll(() => page.locator('.hero-slide.is-current').getAttribute('data-slide'), { timeout: 2_200 }).not.toBe(first);
+  const changes = await page.evaluate(() => new Promise(resolve => {
+    const rail = document.querySelector('.hero-rail');
+    let current = document.querySelector('.hero-slide.is-current')?.getAttribute('data-slide');
+    const timestamps = [];
+    const observer = new MutationObserver(() => {
+      const next = document.querySelector('.hero-slide.is-current')?.getAttribute('data-slide');
+      if (next && next !== current) {
+        current = next;
+        timestamps.push(performance.now());
+        if (timestamps.length === 2) {
+          observer.disconnect();
+          resolve(timestamps);
+        }
+      }
+    });
+    observer.observe(rail, { subtree: true, attributes: true, attributeFilter: ['class'] });
+  }));
+  const [firstChange, secondChange] = changes;
+  expect(secondChange - firstChange).toBeGreaterThanOrEqual(4_700);
+  expect(secondChange - firstChange).toBeLessThan(5_800);
 });
