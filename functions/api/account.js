@@ -14,7 +14,7 @@ export async function onRequestGet(context) {
   const session = await requireSession(context);
   if (!session) return json({ error: "Connexion requise." }, 401);
   const [profile, history, topics, searches, notifications, newsletter] = await Promise.all([
-    context.env.DB.prepare("SELECT u.id,u.name,u.email,CASE WHEN u.role='ADMIN' THEN 'ADMIN' WHEN r.role='CONTRIBUTOR' THEN 'CONTRIBUTOR' ELSE 'USER' END AS role,u.avatar_url,u.bio,u.preferred_language,u.preferred_theme,u.text_size,u.display_density,u.notifications_enabled,u.preferred_topic,u.sponsored_in_app,u.sponsored_email,u.created_at FROM users u LEFT JOIN user_roles r ON r.user_id=u.id WHERE u.id=?").bind(session.sub).first(),
+    context.env.DB.prepare("SELECT u.id,u.name,u.email,CASE WHEN u.role='ADMIN' THEN 'ADMIN' WHEN r.role='CONTRIBUTOR' THEN 'CONTRIBUTOR' ELSE 'USER' END AS role,u.avatar_url,u.bio,u.preferred_language,u.preferred_theme,u.text_size,u.display_density,u.notifications_enabled,u.preferred_topic,u.sponsored_in_app,u.sponsored_email,u.onboarding_completed_at,u.created_at FROM users u LEFT JOIN user_roles r ON r.user_id=u.id WHERE u.id=?").bind(session.sub).first(),
     context.env.DB.prepare("SELECT c.slug,c.type,c.title,c.category,h.progress,h.last_read_at FROM reading_history h JOIN content_items c ON c.id=h.content_id WHERE h.user_id=? ORDER BY h.last_read_at DESC LIMIT 50").bind(session.sub).all(),
     context.env.DB.prepare("SELECT topic,created_at FROM topic_subscriptions WHERE user_id=? ORDER BY topic").bind(session.sub).all(),
     context.env.DB.prepare("SELECT query,searched_at FROM search_history WHERE user_id=? ORDER BY searched_at DESC LIMIT 20").bind(session.sub).all(),
@@ -31,6 +31,7 @@ export async function onRequestPatch(context) {
   try {
     const body = await readBody(context.request);
     if (body.action === "password") return changePassword(context, session, body);
+    if (body.action === "complete-onboarding") return completeOnboarding(context, session);
     if (body.action === "request-deletion") return requestDeletion(context, session, body);
 
     const name = cleanText(body.name, 80);
@@ -71,12 +72,18 @@ async function changePassword(context, session, body) {
   const currentPassword = String(body.currentPassword || "");
   const newPassword = String(body.newPassword || "");
   const confirmation = String(body.passwordConfirmation || "");
-  if (!user || !(await verifyPassword(currentPassword, user.password_hash))) return json({ error: "Mot de passe actuel incorrect." }, 403);
+  const oauthOnly = String(user?.password_hash || "").startsWith("oauth$");
+  if (!user || (!oauthOnly && !(await verifyPassword(currentPassword, user.password_hash)))) return json({ error: "Mot de passe actuel incorrect." }, 403);
   if (newPassword.length < 6 || newPassword.length > 128 || newPassword !== confirmation) return json({ error: "Le nouveau mot de passe doit contenir au moins 6 caractères et les deux saisies doivent correspondre." }, 400);
   const newVersion = Number(user.session_version || 1) + 1;
   await context.env.DB.prepare("UPDATE users SET password_hash=?,session_version=? WHERE id=?").bind(await hashPassword(newPassword), newVersion, session.sub).run();
   try { await sendSecurityEmail(context.env, { type: "changed", to: user.email, name: user.name, locale: user.preferred_language }); } catch (error) { console.error("password_changed_email_failed", error); }
   return json({ ok: true, sessionsRevoked: true }, 200, { "Set-Cookie": await createSessionCookie({ id: session.sub, name: session.name, email: session.email, role: session.role, session_version: newVersion }, context.env.SESSION_SECRET) });
+}
+
+async function completeOnboarding(context, session) {
+  await context.env.DB.prepare("UPDATE users SET onboarding_completed_at=COALESCE(onboarding_completed_at,?) WHERE id=?").bind(new Date().toISOString(), session.sub).run();
+  return json({ ok: true });
 }
 
 async function requestDeletion(context, session, body) {

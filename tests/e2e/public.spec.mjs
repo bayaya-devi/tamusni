@@ -232,7 +232,7 @@ test('desktop menu and carousel autoplay never change vertical scroll', async ({
     await clickMenuWithoutViewportAssistance(page);
     await expectStableScroll(page, before);
     const active = await activePopularIndex(page);
-    await expect.poll(() => activePopularIndex(page), { timeout: 4_500 }).not.toBe(active);
+    await expect.poll(() => activePopularIndex(page), { timeout: 6_500 }).not.toBe(active);
     await expectStableScroll(page, before);
   }
 });
@@ -251,6 +251,30 @@ test('mobile menu, header and carousel preserve the settled scroll position', as
   await clickMenuWithoutViewportAssistance(page);
   await expectStableScroll(page, before);
   const active = await activePopularIndex(page);
-  await expect.poll(() => activePopularIndex(page), { timeout: 4_500 }).not.toBe(active);
+  await expect.poll(() => activePopularIndex(page), { timeout: 6_500 }).not.toBe(active);
   await expectStableScroll(page, before);
+});
+
+test('hero and story cards remain reachable after repeated browser returns', async ({ page }) => {
+  await page.goto('/fr/');
+  const hero = page.locator('.hero-slide.is-current .hero-card');
+  const heroHref = await hero.getAttribute('href');
+  expect(heroHref).toBeTruthy();
+  for (let cycle = 0; cycle < 5; cycle += 1) {
+    await page.locator('.latest-section .story-card a').first().click();
+    await expect(page).toHaveURL(/\/fr\/articles\//);
+    await page.goBack();
+    await expect(page).toHaveURL(/\/fr\/$/);
+    await expect(page.locator('.latest-section .story-card a').first()).toBeVisible();
+  }
+  await expect(page.locator('.hero-slide.is-current .hero-card')).toBeVisible();
+  await expect(page.locator('.hero-slide.is-current .hero-card')).toHaveAttribute('href', heroHref);
+});
+
+test('hero autoplay waits five seconds and uses one timer', async ({ page }) => {
+  await page.goto('/fr/');
+  const first = await page.locator('.hero-slide.is-current').getAttribute('data-slide');
+  await page.waitForTimeout(4_200);
+  await expect(page.locator('.hero-slide.is-current')).toHaveAttribute('data-slide', first);
+  await expect.poll(() => page.locator('.hero-slide.is-current').getAttribute('data-slide'), { timeout: 2_200 }).not.toBe(first);
 });

@@ -14,9 +14,16 @@ export async function onRequestPost(context) {
     if (!context.env.SESSION_SECRET) return json({ error: "Configuration de sécurité indisponible." }, 503);
     let user = await context.env.DB.prepare("SELECT u.id,u.name,u.email,u.role,u.created_at,u.mfa_enabled,u.is_banned,u.session_version,u.preferred_language,u.email_verified_at,r.role AS additional_role FROM users u LEFT JOIN user_roles r ON r.user_id=u.id WHERE u.email=? LIMIT 1").bind(email).first();
     if (!user) {
-      const firstName = String(body.firstName || "").trim(); const lastName = String(body.lastName || "").trim(); const preferredTopics = normalizeTopics(body.preferredTopics, body.preferredTopic); const termsAccepted = body.termsAccepted === "on" || body.termsAccepted === true; const sponsoredInApp = body.sponsoredInApp === "on" || body.sponsoredInApp === true ? 1 : 0; const sponsoredEmail = body.sponsoredEmail === "on" || body.sponsoredEmail === true ? 1 : 0;
-      if (firstName.length < 2 || lastName.length < 2 || !preferredTopics.length || !termsAccepted) return json({ error: "Complétez votre profil, choisissez au moins une rubrique et acceptez les conditions pour terminer l’inscription Google.", code:"OAUTH_PROFILE_REQUIRED" }, 400);
-      const createdAt = new Date().toISOString(); const preferredTopic = preferredTopics[0]; user = { id: crypto.randomUUID(), name: `${firstName} ${lastName}`.trim(), email, role: "USER", mfa_enabled:0, session_version:1, preferred_language:String(body.locale||"fr"), preferredTopic, termsAcceptedAt: createdAt, sponsoredInApp, sponsoredEmail, created_at: createdAt };
+      const metadata = profile.user_metadata && typeof profile.user_metadata === "object" ? profile.user_metadata : {};
+      const fullName = String(metadata.full_name || metadata.name || "").trim();
+      const nameParts = fullName.split(/\s+/).filter(Boolean);
+      const firstName = String(metadata.given_name || metadata.first_name || body.firstName || nameParts.shift() || "").trim();
+      const lastName = String(metadata.family_name || metadata.last_name || body.lastName || nameParts.join(" ") || "").trim();
+      const preferredTopics = normalizeTopics(body.preferredTopics, body.preferredTopic); const termsAccepted = body.termsAccepted === "on" || body.termsAccepted === true; const sponsoredInApp = body.sponsoredInApp === "on" || body.sponsoredInApp === true ? 1 : 0; const sponsoredEmail = body.sponsoredEmail === "on" || body.sponsoredEmail === true ? 1 : 0;
+      if (!preferredTopics.length || !termsAccepted) return json({ error: "Choisissez au moins une rubrique et acceptez les conditions pour terminer l’inscription Google.", code:"OAUTH_PROFILE_REQUIRED" }, 400);
+      const fallbackName = email.split("@")[0].replace(/[._-]+/g," ").trim();
+      const name = `${firstName} ${lastName}`.trim() || fullName || fallbackName || "Utilisateur TAMUSNI";
+      const createdAt = new Date().toISOString(); const preferredTopic = preferredTopics[0]; user = { id: crypto.randomUUID(), name, email, role: "USER", mfa_enabled:0, session_version:1, preferred_language:String(body.locale||"fr"), preferredTopic, termsAcceptedAt: createdAt, sponsoredInApp, sponsoredEmail, created_at: createdAt };
       // A social-only account has no password to validate.  Persisting a
       // non-verifiable marker avoids an unnecessary expensive password hash
       // in the OAuth callback; a password reset can still create a password
