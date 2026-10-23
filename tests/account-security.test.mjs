@@ -53,13 +53,24 @@ test("account OTP locks after five invalid attempts", async () => {
 test("Turnstile validation is performed server-side", async () => {
   const originalFetch = globalThis.fetch;
   let submitted;
-  globalThis.fetch = async (_url, options) => { submitted = options.body; return Response.json({ success: true }); };
+  globalThis.fetch = async (_url, options) => { submitted = options.body; return Response.json({ success: true, hostname: "tamusni.test" }); };
   try {
     const request = new Request("https://tamusni.test/api/auth/register", { headers: { "CF-Connecting-IP": "203.0.113.5" } });
-    const result = await verifyTurnstile({ request, env: { TURNSTILE_SECRET_KEY: "secret" } }, "browser-token");
+    const result = await verifyTurnstile({ request, env: { TURNSTILE_SECRET_KEY: "secret", PUBLIC_SITE_URL: "https://tamusni.test" } }, "browser-token");
     assert.equal(result.success, true);
     assert.equal(submitted.get("secret"), "secret");
     assert.equal(submitted.get("response"), "browser-token");
     assert.equal(submitted.get("remoteip"), "203.0.113.5");
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+test("Turnstile refuses a token issued for an untrusted hostname", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({ success: true, hostname: "untrusted.example" });
+  try {
+    const request = new Request("https://tamusni.science/api/auth/register");
+    const result = await verifyTurnstile({ request, env: { TURNSTILE_SECRET_KEY: "secret", PUBLIC_SITE_URL: "https://tamusni.science" } }, "browser-token");
+    assert.equal(result.success, false);
+    assert.deepEqual(result.codes, ["hostname-mismatch"]);
   } finally { globalThis.fetch = originalFetch; }
 });

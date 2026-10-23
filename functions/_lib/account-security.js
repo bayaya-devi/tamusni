@@ -17,6 +17,13 @@ const limits = {
 
 const ipAddress = request => request.headers.get("CF-Connecting-IP") || "unknown";
 
+function expectedTurnstileHostnames(context) {
+  const configured = String(context.env.PUBLIC_SITE_URL || "").trim();
+  const hostnames = new Set(["tamusni.pages.dev"]);
+  try { if (configured) hostnames.add(new URL(configured).hostname.toLowerCase()); } catch { /* The production URL is optional in isolated tests. */ }
+  return hostnames;
+}
+
 /** Consume one request from both the IP and account/e-mail security buckets. */
 export async function consumeRateLimit(context, action, identity = "anonymous") {
   const policy = limits[action] || { maximum: 10, windowMs: 15 * 60_000 };
@@ -60,7 +67,13 @@ export async function verifyTurnstile(context, token) {
     const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", { method: "POST", body: form });
     if (!response.ok) return { success: false, unavailable: true };
     const result = await response.json();
-    return { success: result.success === true, codes: result["error-codes"] || [] };
+    const hostname = String(result.hostname || "").toLowerCase();
+    const hostnameAllowed = hostname && expectedTurnstileHostnames(context).has(hostname);
+    return {
+      success: result.success === true && hostnameAllowed,
+      codes: result.success === true && !hostnameAllowed ? ["hostname-mismatch"] : (result["error-codes"] || []),
+      hostname
+    };
   } catch (error) {
     console.error("turnstile_validation_failed", error);
     return { success: false, unavailable: true };
