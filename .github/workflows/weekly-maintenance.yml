@@ -115,7 +115,7 @@ jobs:
 
       - name: Send PDF through TAMUSNI Brevo gateway
         id: send_report
-        if: always() && steps.claim.outputs.run == 'true' && (github.event_name == 'schedule' || inputs.send_email)
+        if: always() && steps.claim.outputs.run == 'true' && (github.event_name == 'schedule' || inputs.send_email == true)
         continue-on-error: true
         run: node scripts/maintenance/send-report.mjs "${{ steps.pdf.outputs.file }}" artifacts/maintenance/maintenance.json
 
@@ -134,7 +134,7 @@ jobs:
           PDF_OUTCOME: ${{ steps.pdf.outcome }}
           REPORT_OUTCOME: ${{ steps.send_report.outcome }}
           ENFORCE_OUTCOME: ${{ steps.enforce.outcome }}
-          REPORT_REQUIRED: ${{ github.event_name == 'schedule' || inputs.send_email }}
+          REPORT_REQUIRED: ${{ github.event_name == 'schedule' || inputs.send_email == true }}
         run: |
           node - <<'NODE'
           const reportRequired=process.env.REPORT_REQUIRED==='true';
@@ -160,5 +160,5 @@ jobs:
             });
 
       - name: Fail workflow when maintenance is incomplete
-        if: always() && steps.claim.outputs.run == 'true' && (steps.audit.outcome != 'success' || steps.pdf.outcome != 'success' || steps.enforce.outcome != 'success' || ((github.event_name == 'schedule' || inputs.send_email) && steps.send_report.outcome != 'success'))
+        if: always() && steps.claim.outputs.run == 'true' && (steps.audit.outcome != 'success' || steps.pdf.outcome != 'success' || steps.enforce.outcome != 'success' || ((github.event_name == 'schedule' || inputs.send_email == true) && steps.send_report.outcome != 'success'))
         run: exit 1
