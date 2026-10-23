@@ -128,6 +128,12 @@ test("calculates the Casablanca publication instant through its IANA timezone", 
   assert.deepEqual(clock, { date: "2026-10-22", hour: 6, minute: 0 });
 });
 
+test("keeps the 06:00 Casablanca deadline at 06:00 local time during October", () => {
+  const instant = localDateTimeToUtc("2026-10-24", 6, 0, "Africa/Casablanca");
+  assert.equal(instant.toISOString(), "2026-10-24T05:00:00.000Z");
+  assert.deepEqual(localClock(instant, "Africa/Casablanca"), { date: "2026-10-24", hour: 6, minute: 0 });
+});
+
 test("accepts a source-backed brief without forcing an illustration", () => {
   const publication = {
     contentType: "brief",
