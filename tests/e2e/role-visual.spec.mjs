@@ -16,9 +16,18 @@ async function authenticate(page,account){
 for(const [role,account] of Object.entries(credentials)){
   test.describe(`${role} visual constitution`,()=>{
     test.skip(!account.email||!account.password,`${role} credentials are required`);
+    let storageState;
+    test.beforeAll(async({browser})=>{
+      const context=await browser.newContext({baseURL:process.env.TAMUSNI_TEST_URL||'http://127.0.0.1:8788'});
+      const page=await context.newPage();
+      await authenticate(page,account);
+      storageState=await context.storageState();
+      await context.close();
+    });
     for(const locale of ['fr','ar','en','es','pt']){
-      test(`${locale} desktop and mobile`,async({page})=>{
-        await authenticate(page,account);
+      test(`${locale} desktop and mobile`,async({browser})=>{
+        const context=await browser.newContext({baseURL:process.env.TAMUSNI_TEST_URL||'http://127.0.0.1:8788',storageState});
+        const page=await context.newPage();
         for(const [name,width,height] of [['desktop',1440,1000],['mobile',390,844]]){
           await page.setViewportSize({width,height});
           await page.goto(`/${locale}/${account.path}/`);
@@ -36,6 +45,7 @@ for(const [role,account] of Object.entries(credentials)){
           expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+1)).toBe(true);
           await page.screenshot({path:`test-results/visual-role-frontends/${role}-${locale}-${name}.png`,fullPage:true});
         }
+        await context.close();
       });
     }
   });
