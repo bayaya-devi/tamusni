@@ -10,6 +10,14 @@ export async function onRequest(context){
   const requestUrl=new URL(context.request.url);
   const pathname=requestUrl.pathname;
   const readable=context.request.method==='GET'||context.request.method==='HEAD';
+  const canonicalOrigin=(context.env.PUBLIC_SITE_URL||'').replace(/\/$/,'');
+  const canonicalHost=canonicalOrigin?new URL(canonicalOrigin).host:'';
+
+  // Preserve every public legacy URL while keeping it out of duplicate indexes.
+  // API writes intentionally stay on their original host during a cutover.
+  if(readable&&canonicalHost&&requestUrl.host!==canonicalHost){
+    return Response.redirect(new URL(`${pathname}${requestUrl.search}`,canonicalOrigin),308);
+  }
 
   if(readable&&pathname.endsWith('/index.html'))return Response.redirect(new URL(pathname.slice(0,-10)||'/',requestUrl.origin),308);
   if(readable&&(pathname==='/'||pathname==='/index.html'))return Response.redirect(new URL(`/${preferredLocale(context.request)}/`,requestUrl.origin),302);

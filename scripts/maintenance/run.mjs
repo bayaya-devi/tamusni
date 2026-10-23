@@ -5,7 +5,7 @@ import { chromium } from "@playwright/test";
 
 const startedAt = new Date();
 const outputDir = resolve(process.env.MAINTENANCE_OUTPUT_DIR || "artifacts/maintenance");
-const site = process.env.TAMUSNI_TEST_URL || "https://tamusni.pages.dev";
+const site = process.env.TAMUSNI_TEST_URL || "https://tamusni.science";
 process.env.TAMUSNI_TEST_URL = site;
 mkdirSync(outputDir, { recursive: true });
 const npm = "npm";

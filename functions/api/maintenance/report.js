@@ -20,8 +20,9 @@ export async function onRequestPost(context) {
     if (!/^TAMUSNI_Maintenance_\d{4}-\d{2}-\d{2}\.pdf$/.test(filename) || content.length < 1000 || content.length > 7_000_000 || !/^[A-Za-z0-9+/=]+$/.test(content)) return json({ error: "Invalid report" }, 400);
     if (!atob(content.slice(0, 16)).startsWith("%PDF-")) return json({ error: "Invalid PDF" }, 400);
     const subject = `TAMUSNI — Rapport de maintenance hebdomadaire — ${date}`;
-    const text = `Bonjour,\n\nVeuillez trouver ci-joint le rapport de maintenance hebdomadaire de TAMUSNI.\n\nÉtat de la maintenance : ${status}\nVersion contrôlée : ${commit}\nSite : https://tamusni.pages.dev/\n\nCordialement,\nSystème de maintenance automatisée TAMUSNI`;
-    const html = emailLayout("Rapport de maintenance hebdomadaire", `<p>Bonjour,</p><p>Veuillez trouver ci-joint le rapport de maintenance hebdomadaire de TAMUSNI.</p><p><strong>État :</strong> ${escapeHtml(status)}<br><strong>Version contrôlée :</strong> ${escapeHtml(commit)}</p><p><a href="https://tamusni.pages.dev/">Ouvrir TAMUSNI</a></p>`);
+    const origin = (context.env.PUBLIC_SITE_URL || new URL(context.request.url).origin).replace(/\/$/, "");
+    const text = `Bonjour,\n\nVeuillez trouver ci-joint le rapport de maintenance hebdomadaire de TAMUSNI.\n\nÉtat de la maintenance : ${status}\nVersion contrôlée : ${commit}\nSite : ${origin}/\n\nCordialement,\nSystème de maintenance automatisée TAMUSNI`;
+    const html = emailLayout("Rapport de maintenance hebdomadaire", `<p>Bonjour,</p><p>Veuillez trouver ci-joint le rapport de maintenance hebdomadaire de TAMUSNI.</p><p><strong>État :</strong> ${escapeHtml(status)}<br><strong>Version contrôlée :</strong> ${escapeHtml(commit)}</p><p><a href="${escapeHtml(origin)}/">Ouvrir TAMUSNI</a></p>`);
     const provider = await sendEmail(context.env, { to: context.env.MAINTENANCE_REPORT_TO || "aetbconseil@gmail.com", subject, html, text, attachments: [{ name: filename, content }] });
     return json({ ok: true, provider, accepted: true });
   } catch (error) {

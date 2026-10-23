@@ -6,7 +6,7 @@
   "observability": { "enabled": true },
   "triggers": { "crons": ["*/15 * * * *"] },
   "vars": {
-    "PUBLIC_ORIGIN": "https://tamusni.pages.dev",
+    "PUBLIC_ORIGIN": "https://tamusni.science",
     "EDITORIAL_START_DATE": "2026-10-01",
     "EDITORIAL_TIME_ZONE": "Africa/Casablanca",
     "PUBLICATION_CADENCE_DAYS": "2"

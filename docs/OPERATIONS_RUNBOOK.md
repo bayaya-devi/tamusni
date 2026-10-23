@@ -4,8 +4,8 @@ Ce document décrit les opérations courantes sans contenir de secret. La produc
 
 ## Contrôles quotidiens
 
-1. Ouvrir `https://tamusni.pages.dev/fr/` et un article récent en FR, EN et AR.
-2. Vérifier `https://tamusni.pages.dev/api/backend-status` : Cloudflare/D1 et Supabase doivent être disponibles.
+1. Ouvrir `https://tamusni.science/fr/` et un article récent en FR, EN et AR.
+2. Vérifier `https://tamusni.science/api/backend-status` : Cloudflare/D1 et Supabase doivent être disponibles.
 3. Vérifier `/health` sur le Worker éditorial, puis l'état actif du workflow GitHub `TAMUSNI weekly newsletter`.
 4. Examiner les erreurs récentes dans les journaux Cloudflare Pages et Worker, sans copier de données personnelles dans un ticket.
 5. Contrôler dans D1 le dernier `editorial_runs` et ses `editorial_logs` avant toute relance.
@@ -33,7 +33,7 @@ node 'node_modules/wrangler/bin/wrangler.js' pages deploy 'Site web' --project-n
 node 'node_modules/wrangler/bin/wrangler.js' deploy --config 'editorial-automation/wrangler.jsonc'
 ```
 
-Après déploiement, noter le SHA Git et l’identifiant Cloudflare, puis exécuter les tests E2E contre `https://tamusni.pages.dev`. Un déploiement de prévisualisation ne remplace pas le contrôle du domaine principal.
+Après déploiement, noter le SHA Git et l’identifiant Cloudflare, puis exécuter les tests E2E contre `https://tamusni.science`. Un déploiement de prévisualisation ne remplace pas le contrôle du domaine principal.
 
 ## Publication automatisée
 

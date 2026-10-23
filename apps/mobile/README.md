@@ -13,7 +13,7 @@ flutter test
 flutter run
 ```
 
-L’URL API par défaut est `https://tamusni.pages.dev`. Pour un environnement différent, utiliser `--dart-define=TAMUSNI_API_URL=https://...`.
+L’URL API par défaut est `https://tamusni.science`. Pour un environnement différent, utiliser `--dart-define=TAMUSNI_API_URL=https://...`.
 
 ## Rôles et données
 

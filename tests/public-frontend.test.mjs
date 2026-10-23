@@ -3,12 +3,21 @@ import assert from 'node:assert/strict';
 import { publicResponse, roleResponse } from '../functions/_lib/public-frontend.js';
 import { emailLayout } from '../functions/_lib/email.js';
 import { onRequestGet as publicContent } from '../functions/api/content.js';
+import { onRequest as middleware } from '../functions/_middleware.js';
 
 test('transactional emails use the new brand palette', () => {
   const html=emailLayout('Confirmer mon adresse','<p>Essai</p>');
   assert.match(html, /#111a2e/);
   assert.match(html, /#f8fafc/);
   assert.doesNotMatch(html, /#ddd0c8|#f4f0ed/i);
+});
+
+test('legacy Pages and www hosts redirect public paths to the canonical domain', async () => {
+  for (const origin of ['https://tamusni.pages.dev', 'https://www.tamusni.science']) {
+    const response = await middleware({ request: new Request(`${origin}/fr/articles/essai-source/?ref=legacy`), env: { PUBLIC_SITE_URL: 'https://tamusni.science' } });
+    assert.equal(response.status, 308);
+    assert.equal(response.headers.get('location'), 'https://tamusni.science/fr/articles/essai-source/?ref=legacy');
+  }
 });
 
 test('public content lists use safe localized translations and include all editorial formats', async () => {

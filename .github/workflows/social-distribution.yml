@@ -20,4 +20,4 @@ jobs:
           test -n "$SOCIAL_RUN_TOKEN"
           curl --fail-with-body --retry 2 --retry-all-errors --max-time 120 -X POST \
             -H "Authorization: Bearer $SOCIAL_RUN_TOKEN" \
-            https://tamusni.pages.dev/api/social/run
+            https://tamusni.science/api/social/run

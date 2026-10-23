@@ -29,7 +29,7 @@ async function safeFetch(url, timeout = 15_000) {
   let target = String(url);
   for (let redirects = 0; redirects <= 3; redirects += 1) {
     if (!allowedExternalUrl(target)) throw new Error("UNSAFE_SOURCE_URL");
-    const response = await fetch(target, { redirect: "manual", headers: { "User-Agent": "TAMUSNI-Watch/2.0 (+https://tamusni.pages.dev/fr/politique-ia/)", Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml, text/html;q=0.9" }, signal: AbortSignal.timeout(timeout) });
+    const response = await fetch(target, { redirect: "manual", headers: { "User-Agent": "TAMUSNI-Watch/2.0 (+https://tamusni.science/fr/politique-ia/)", Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml, text/html;q=0.9" }, signal: AbortSignal.timeout(timeout) });
     if (response.status >= 300 && response.status < 400) {
       const location = response.headers.get("location");
       if (!location) throw new Error(`SOURCE_HTTP_${response.status}`);

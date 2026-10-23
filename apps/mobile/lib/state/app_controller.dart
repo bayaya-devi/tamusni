@@ -414,7 +414,7 @@ class AppController extends ChangeNotifier {
 
   Future<void> share(ContentItem item) async => SharePlus.instance.share(
     ShareParams(
-      text: '${item.title}\nhttps://tamusni.pages.dev/article/${item.slug}/',
+      text: '${item.title}\nhttps://tamusni.science/article/${item.slug}/',
       subject: item.title,
     ),
   );

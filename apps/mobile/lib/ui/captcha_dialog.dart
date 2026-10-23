@@ -55,7 +55,7 @@ class _CaptchaDialogState extends State<CaptchaDialog> {
 <style>body{font-family:system-ui;background:#f8fafc;color:#111a2e;display:grid;place-items:center;min-height:80vh;margin:0}#challenge{min-height:70px}p{font-size:14px}</style></head>
 <body><main><p>Confirmez que vous êtes une personne.</p><div id="challenge"></div></main>
 <script>let n=0;function mount(){if(window.turnstile){window.turnstile.render('#challenge',{sitekey:'${widget.siteKey}',callback:t=>TamusniCaptcha.postMessage(t),'error-callback':()=>TamusniCaptcha.postMessage('ERROR:challenge'),'expired-callback':()=>TamusniCaptcha.postMessage('ERROR:expired')});}else if(n++<40){setTimeout(mount,100);}}</script></body></html>
-''', baseUrl: 'https://tamusni.pages.dev/mobile-captcha/');
+''', baseUrl: 'https://tamusni.science/mobile-captcha/');
 
   @override
   Widget build(BuildContext context) => AlertDialog(

@@ -6,5 +6,5 @@ Disallow: /*/mon-espace/
 Disallow: /*/connexion/
 Disallow: /*/inscription/
 Disallow: /api/
-Sitemap: https://tamusni.pages.dev/sitemap.xml
-Sitemap: https://tamusni.pages.dev/news-sitemap.xml
+Sitemap: https://tamusni.science/sitemap.xml
+Sitemap: https://tamusni.science/news-sitemap.xml

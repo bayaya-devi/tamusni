@@ -56,7 +56,7 @@ jobs:
           const dryRun=manual&&process.env.MANUAL_DRY_RUN!=='false';
           const testEmails=manual&&process.env.SEND_TEST_EMAILS==='true';
           const suffix=testEmails?'?mode=email-test':manual?(dryRun?'?force=1&dryRun=1':'?force=1'):'';
-          const response=await fetch(`https://tamusni.pages.dev/api/newsletter/run${suffix}`,{method:'POST',headers:{Authorization:`Bearer ${process.env.NEWSLETTER_RUN_TOKEN}`},signal:AbortSignal.timeout(120000)});
+          const response=await fetch(`https://tamusni.science/api/newsletter/run${suffix}`,{method:'POST',headers:{Authorization:`Bearer ${process.env.NEWSLETTER_RUN_TOKEN}`},signal:AbortSignal.timeout(120000)});
           const result=await response.json().catch(()=>({}));
           console.log(JSON.stringify({status:response.status,dryRun,testEmails,ok:result.ok,result:result.result||null,count:result.count||null,messageIds:result.messageIds||null}));
           if(!response.ok||!result.ok)process.exit(1);

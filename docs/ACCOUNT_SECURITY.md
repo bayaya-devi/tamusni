@@ -15,7 +15,7 @@ La sécurité reste une couche additive au système de comptes Cloudflare D1 / S
 
 Le frontend lit uniquement `TURNSTILE_SITE_KEY`. Le backend valide le jeton avec `TURNSTILE_SECRET_KEY` auprès de Cloudflare.
 
-1. Créer un widget Turnstile pour `tamusni.pages.dev` dans Cloudflare.
+1. Créer un widget Turnstile pour `tamusni.science` dans Cloudflare.
 2. Ajouter `TURNSTILE_SITE_KEY` comme variable Pages.
 3. Ajouter `TURNSTILE_SECRET_KEY` comme secret Pages.
 4. Après vérification du widget en production, définir `TURNSTILE_REQUIRED=true`.

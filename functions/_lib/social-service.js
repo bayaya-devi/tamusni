@@ -18,7 +18,7 @@ async function publishFacebook(env,job){
 async function publishInstagram(env,job){
   if(!env.META_PAGE_ACCESS_TOKEN||!env.INSTAGRAM_BUSINESS_ACCOUNT_ID)return {ok:false,status:401,code:'INSTAGRAM_NOT_CONNECTED',detail:'Compte Instagram professionnel non connecté'};
   if(!job.media_url)return {ok:false,status:422,code:'INSTAGRAM_MEDIA_REQUIRED',detail:'Instagram exige une image publique'};
-  const imageUrl=new URL(job.media_url,env.PUBLIC_SITE_URL||'https://tamusni.pages.dev').href;
+  const imageUrl=new URL(job.media_url,env.PUBLIC_SITE_URL||'https://tamusni.science').href;
   const created=await metaPost(env,`${env.INSTAGRAM_BUSINESS_ACCOUNT_ID}/media`,{image_url:imageUrl,caption:job.social_text,access_token:env.META_PAGE_ACCESS_TOKEN});
   if(!created.response.ok)return {ok:false,status:created.response.status,code:created.data.error?.code||'META_API_ERROR',detail:created.data.error?.message};
   const published=await metaPost(env,`${env.INSTAGRAM_BUSINESS_ACCOUNT_ID}/media_publish`,{creation_id:created.data.id,access_token:env.META_PAGE_ACCESS_TOKEN});return published.response.ok?{ok:true,id:published.data.id,url:null}:{ok:false,status:published.response.status,code:published.data.error?.code||'META_API_ERROR',detail:published.data.error?.message};
@@ -26,7 +26,7 @@ async function publishInstagram(env,job){
 async function adapter(env,job){if(job.platform==='x')return publishX(env,job);if(job.platform==='facebook')return publishFacebook(env,job);if(job.platform==='instagram')return publishInstagram(env,job);return {ok:false,status:422,code:'NOT_APPLICABLE',detail:'Aucune vraie vidéo à publier'};}
 
 export async function prepareSocialJobs(env,limit=25){
-  const origin=env.PUBLIC_SITE_URL||'https://tamusni.pages.dev';
+  const origin=env.PUBLIC_SITE_URL||'https://tamusni.science';
   const result=await env.DB.prepare("SELECT p.*,c.slug,c.type,c.title,c.excerpt,c.summary,c.category,c.cover_url,c.media_url,c.published_at,a.mode FROM social_publications p JOIN content_items c ON c.id=p.content_id JOIN social_accounts a ON a.platform=p.platform WHERE p.status='PENDING' ORDER BY p.created_at LIMIT ?").bind(limit).all();
   for(const job of result.results||[]){const formatted=formatSocialPost(job,job.platform,origin);const stamp=now();if(!formatted.applicable){await env.DB.prepare("UPDATE social_publications SET status='SKIPPED',last_error_code='NOT_APPLICABLE',updated_at=? WHERE id=? AND status='PENDING'").bind(stamp,job.id).run();continue}const scheduled=scheduleAt(job.platform,job.published_at||stamp);await env.DB.prepare("UPDATE social_publications SET status=?,social_text=?,canonical_url=?,media_url=?,scheduled_for=?,updated_at=? WHERE id=? AND status='PENDING'").bind(job.mode==='AUTO'?'SCHEDULED':'READY',formatted.text,formatted.url,formatted.mediaUrl,scheduled,stamp,job.id).run();if(formatted.mediaUrl)await env.DB.prepare("INSERT OR IGNORE INTO social_media_assets(id,publication_id,source_url,platform,aspect_ratio,alt_text,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)").bind(crypto.randomUUID(),job.id,formatted.mediaUrl,job.platform,job.platform==='instagram'?'4:5':'1.91:1',job.title,'READY',stamp,stamp).run();await event(env,job.id,'PREPARED',job.mode)}return result.results?.length||0;
 }

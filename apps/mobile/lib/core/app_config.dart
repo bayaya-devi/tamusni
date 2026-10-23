@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class AppConfig {
   static const apiBaseUrl = String.fromEnvironment(
     'TAMUSNI_API_URL',
-    defaultValue: 'https://tamusni.pages.dev',
+    defaultValue: 'https://tamusni.science',
   );
   static const appScheme = 'com.abtechnologies.tamusni';
   static const firebaseApiKey = String.fromEnvironment(

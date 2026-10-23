@@ -1,5 +1,5 @@
 project_id = "xnmcynxnyqxodxehcoql"
 
 [auth]
-site_url = "https://tamusni.pages.dev"
-additional_redirect_urls = ["https://tamusni.pages.dev/connexion/", "https://*.tamusni.pages.dev/connexion/"]
+site_url = "https://tamusni.science"
+additional_redirect_urls = ["https://tamusni.science/connexion/", "https://tamusni.science/*", "https://www.tamusni.science/connexion/", "https://tamusni.pages.dev/connexion/", "https://*.tamusni.pages.dev/connexion/"]
