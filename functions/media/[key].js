@@ -1,8 +1,5 @@
 export async function onRequestGet(context) {
   const key = String(context.params.key || "");
-  // Editorial covers committed with the Pages static bundle use WebP. Let Pages
-  // serve those immutable assets directly; JPEG uploads remain in D1 below.
-  if (/^[a-z0-9-]{8,160}\.webp$/i.test(key)) return context.next();
   if (!/^[a-z0-9-]{8,160}\.jpg$/i.test(key)) return new Response("Not found", { status: 404 });
   const media = await context.env.DB.prepare("SELECT content_type,data_base64 FROM editorial_media WHERE media_key=?").bind(key).first();
   if (!media) return new Response("Not found", { status: 404 });
