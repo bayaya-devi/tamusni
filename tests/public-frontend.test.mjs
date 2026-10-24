@@ -4,6 +4,8 @@ import { publicResponse, roleResponse } from '../functions/_lib/public-frontend.
 import { emailLayout } from '../functions/_lib/email.js';
 import { onRequestGet as publicContent } from '../functions/api/content.js';
 import { onRequest as middleware } from '../functions/_middleware.js';
+import { adsEnabled, adsenseClient, adsensePublisher } from '../functions/_lib/ads-config.js';
+import { onRequestGet as adsTxt } from '../functions/ads.txt.js';
 
 test('transactional emails use the new brand palette', () => {
   const html=emailLayout('Confirmer mon adresse','<p>Essai</p>');
@@ -18,6 +20,19 @@ test('legacy Pages and www hosts redirect public paths to the canonical domain',
     assert.equal(response.status, 308);
     assert.equal(response.headers.get('location'), 'https://tamusni.science/fr/articles/essai-source/?ref=legacy');
   }
+});
+
+test('AdSense uses one Cloudflare configuration and stays off until explicitly enabled', async () => {
+  const env = { ADSENSE_CLIENT_ID: 'ca-pub-6628181824999575' };
+  assert.equal(adsenseClient(env), 'ca-pub-6628181824999575');
+  assert.equal(adsensePublisher(env), 'pub-6628181824999575');
+  assert.equal(adsEnabled(env), false);
+  assert.equal(adsEnabled({ ...env, ADS_ENABLED: 'true' }), true);
+  assert.equal(adsenseClient({ ADSENSE_CLIENT_ID: 'invalid' }), '');
+  const configured = await adsTxt({ env });
+  assert.equal(await configured.text(), 'google.com, pub-6628181824999575, DIRECT, f08c47fec0942fa0\n');
+  const missing = await adsTxt({ env: {} });
+  assert.match(await missing.text(), /not configured/i);
 });
 
 test('public content lists use safe localized translations and include all editorial formats', async () => {
@@ -52,6 +67,31 @@ function context(path) {
   }; } }; }};
   return {request:new Request(`https://tamusni.pages.dev${path}`),env:{DB:db,PUBLIC_SITE_URL:'https://tamusni.pages.dev'}};
 }
+
+test('AdSense markup is opt-in and its runtime requires an external TCF consent signal', async () => {
+  const disabled = await publicResponse(context('/fr/'), 'fr', '');
+  const disabledHtml = await disabled.text();
+  assert.doesNotMatch(disabledHtml, /google-adsense-account|data-ad-slot|ads-client\.js|consent\.js/);
+  assert.doesNotMatch(disabled.headers.get('content-security-policy'), /googlesyndication/);
+  assert.match(disabled.headers.get('content-security-policy'), /challenges\.cloudflare\.com/);
+
+  const enabledContext = context('/fr/');
+  enabledContext.env = { ...enabledContext.env, ADSENSE_CLIENT_ID: 'ca-pub-6628181824999575', ADS_ENABLED: 'true' };
+  const enabled = await publicResponse(enabledContext, 'fr', '');
+  const enabledHtml = await enabled.text();
+  assert.match(enabledHtml, /google-adsense-account" content="ca-pub-6628181824999575/);
+  assert.match(enabledHtml, /data-ad-slot="mid-page"/);
+  assert.match(enabledHtml, /consent\.js\?v=3/);
+  assert.match(enabledHtml, /ads-client\.js\?v=3/);
+  assert.match(enabled.headers.get('content-security-policy'), /pagead2\.googlesyndication\.com/);
+
+  const consentSource = await (await import('node:fs/promises')).readFile(new URL('../Site web/consent.js', import.meta.url), 'utf8');
+  const adsClientSource = await (await import('node:fs/promises')).readFile(new URL('../Site web/ads-client.js', import.meta.url), 'utf8');
+  assert.match(consentSource, /__tcfapi/);
+  assert.doesNotMatch(consentSource, /localStorage/);
+  assert.match(adsClientSource, /tamusni-consent-ready/);
+  assert.doesNotMatch(adsClientSource, /localStorage/);
+});
 
 for(const locale of ['fr','ar','en','es','pt']){
   test(`homepage ${locale} has a localized shell`,async()=>{

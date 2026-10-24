@@ -1,4 +1,5 @@
 import { cleanText, json, readBody, requireAdmin, sameOrigin } from "../../_lib/auth.js";
+import { adsenseClient as configuredAdsenseClient } from "../../_lib/ads-config.js";
 const placements = new Set(["sidebar-hero", "mid-page", "footer-top", "article-inline"]);
 const statuses = new Set(["draft", "active", "paused", "ended"]);
 const adTypes = new Set(["display", "native", "sponsored", "affiliate", "house"]);
@@ -19,7 +20,7 @@ export async function onRequestPost(context) {
   const imageUrl = httpsUrl(body.imageUrl);
   const adsenseClient = cleanText(body.adsenseClient, 40); const adsenseSlot = cleanText(body.adsenseSlot, 30); const adsenseFormat = adsenseFormats.has(body.adsenseFormat) ? body.adsenseFormat : "auto";
   if (!placement || !adType || name.length < 2) return json({ error: "Campagne publicitaire incomplète." }, 400);
-  if (isAdsense && (!/^ca-pub-\d{16}$/.test(adsenseClient) || !/^\d{5,20}$/.test(adsenseSlot))) return json({ error: "Identifiants Google AdSense invalides." }, 400);
+  if (isAdsense && (!/^\d{5,20}$/.test(adsenseSlot) || !configuredAdsenseClient(context.env) || adsenseClient !== configuredAdsenseClient(context.env))) return json({ error: "L’identifiant AdSense doit correspondre à la configuration Cloudflare." }, 400);
   if (!isAdsense && (headline.length < 3 || advertiser.length < 2 || !targetUrl || (adType === "display" && !imageUrl))) return json({ error: adType === "display" && !imageUrl ? "Une bannière visuelle exige une image HTTPS." : "Campagne publicitaire directe incomplète." }, 400);
   const id = crypto.randomUUID(); const now = new Date().toISOString(); const status = statuses.has(body.status) ? body.status : "draft";
   await context.env.DB.prepare("INSERT INTO advertisements(id,name,placement,ad_type,provider,adsense_client,adsense_slot,adsense_format,headline,body,image_url,target_url,advertiser,status,starts_at,ends_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(id,name,placement,adType,isAdsense?"adsense":"direct",isAdsense?adsenseClient:null,isAdsense?adsenseSlot:null,isAdsense?adsenseFormat:null,isAdsense?"Google AdSense":headline,isAdsense?"":cleanText(body.body,500),isAdsense?null:imageUrl,isAdsense?"https://www.google.com/adsense/start/":targetUrl,isAdsense?"Google AdSense":advertiser,status,body.startsAt||null,body.endsAt||null,now,now).run();
