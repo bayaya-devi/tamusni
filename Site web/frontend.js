@@ -9,6 +9,14 @@
     es:{working:'Procesando…',done:'Solicitud recibida.',error:'Ha ocurrido un error.',confirm:'¿Eliminar definitivamente esta cuenta?',copied:'Enlace copiado.',login:'Accede para guardar este artículo.',pause:'Pausar',play:'Reanudar',show:'Mostrar contraseña',hide:'Ocultar contraseña'},
     pt:{working:'A processar…',done:'Pedido recebido.',error:'Ocorreu um erro.',confirm:'Eliminar esta conta definitivamente?',copied:'Link copiado.',login:'Entre para guardar este artigo.',pause:'Pausar',play:'Retomar',show:'Mostrar palavra-passe',hide:'Ocultar palavra-passe'}
   }[locale];
+  const themeToggle=document.querySelector('#theme-toggle');
+  const systemTheme=matchMedia('(prefers-color-scheme: dark)');
+  const themeNames={fr:{light:'Activer le thème clair',dark:'Activer le thème sombre'},en:{light:'Use light theme',dark:'Use dark theme'},ar:{light:'تفعيل المظهر الفاتح',dark:'تفعيل المظهر الداكن'},es:{light:'Activar tema claro',dark:'Activar tema oscuro'},pt:{light:'Ativar tema claro',dark:'Ativar tema escuro'}}[locale];
+  const savedTheme=()=>{try{return localStorage.getItem('tamusni-theme')}catch{return null}};
+  function applyTheme(theme,{persist=false}={}){root.dataset.theme=theme;if(persist){try{localStorage.setItem('tamusni-theme',theme)}catch{}}if(themeToggle){const next=theme==='dark'?'light':'dark';themeToggle.setAttribute('aria-label',themeNames[next]);themeToggle.setAttribute('title',themeNames[next]);themeToggle.setAttribute('aria-pressed',String(theme==='dark'));}}
+  applyTheme(savedTheme()||(systemTheme.matches?'dark':'light'));
+  themeToggle?.addEventListener('click',()=>applyTheme(root.dataset.theme==='dark'?'light':'dark',{persist:true}));
+  systemTheme.addEventListener?.('change',event=>{if(!savedTheme())applyTheme(event.matches?'dark':'light')});
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const toast = document.querySelector('#toast');
   let toastTimer;
