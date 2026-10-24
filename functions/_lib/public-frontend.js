@@ -223,7 +223,7 @@ export async function publicResponse(context,locale,path) {
  if(showAds)html=html.replace('</head>','<script src="/consent.js?v=3" defer></script><script src="/ads-client.js?v=3" defer></script></head>');
  const verificationActive=includeAdsenseVerificationScript&&status===200;
  const adsenseConnectionSources=verificationActive?' https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://ep1.adtrafficquality.google':'';
- const adsenseFrameSources=verificationActive?' https://googleads.g.doubleclick.net https://tpc.googlesyndication.com':'';
+ const adsenseFrameSources=verificationActive?' https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://ep2.adtrafficquality.google https://www.google.com':'';
  // Turnstile is part of the existing sign-up flow. Keep its narrowly scoped
  // allow-list even while advertising is disabled; ad origins are opt-in only.
  const contentSecurityPolicy=`default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://static.cloudflareinsights.com${verificationActive?' https://pagead2.googlesyndication.com https://ep2.adtrafficquality.google':''}; connect-src 'self' https://challenges.cloudflare.com${adsenseConnectionSources}; frame-src 'self' https://challenges.cloudflare.com${adsenseFrameSources}`;
