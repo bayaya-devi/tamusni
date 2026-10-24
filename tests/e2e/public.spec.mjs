@@ -202,13 +202,18 @@ for (const locale of ['fr','ar','en','es','pt']) test(`account security pages ar
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 });
 
-test('theme follows device preference and offers an accessible toggle', async ({ page }) => {
-  await page.emulateMedia({ colorScheme: 'dark' });
-  await page.goto('/fr/');
-  expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--tm-bg').trim())).toBe('#111a2e');
-  await expect(page.getByRole('button', { name: /thème|theme/i })).toHaveCount(1);
+test('theme follows the system preference without a manual public override', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('tamusni-theme', 'dark'));
   await page.emulateMedia({ colorScheme: 'light' });
-  expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--tm-bg').trim())).toBe('#f8fafc');
+  for (const path of ['/fr/', '/ar/a-propos/', '/en/connexion/', '/es/inscription/']) {
+    await page.goto(path);
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--tm-bg').trim())).toBe('#f8fafc');
+    await expect(page.locator('#theme-toggle')).toHaveCount(0);
+  }
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect.poll(() => page.locator('html').getAttribute('data-theme')).toBe('dark');
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--tm-bg').trim())).toBe('#111a2e');
 });
 
 test('mobile header hides on downward scroll and returns upward', async ({ page }) => {

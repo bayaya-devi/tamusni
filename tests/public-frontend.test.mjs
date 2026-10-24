@@ -102,6 +102,8 @@ for(const locale of ['fr','ar','en','es','pt']){
     assert.match(html,/class="site-header"/);
     assert.match(html,/class="site-footer"/);
     assert.doesNotMatch(html,/tamusni-rail/);
+    assert.doesNotMatch(html,/theme-toggle|tamusni-theme/);
+    assert.match(html,/matchMedia\('\(prefers-color-scheme:dark\)'\)/);
     assert.match(html,new RegExp(`\/brand\/tamusni-${locale==='ar'?'ar':'latin'}\.png`));
     assert.match(html,/hreflang="es"/);
     assert.doesNotMatch(html,/data-ad-slot|ads-client\.js|consent\.js/);

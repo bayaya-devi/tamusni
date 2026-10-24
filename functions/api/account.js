@@ -6,7 +6,6 @@ import { normalizeTopics, replaceTopicSubscriptions } from "../_lib/topics.js";
 import { subscribeUser, unsubscribeUser } from "../_lib/newsletter-service.js";
 
 const languages = new Set(["fr", "en", "ar", "es", "pt"]);
-const themes = new Set(["auto", "light", "dark"]);
 const textSizes = new Set(["small", "normal", "large"]);
 const densities = new Set(["compact", "comfortable"]);
 
@@ -39,7 +38,8 @@ export async function onRequestPatch(context) {
     const bio = cleanText(body.bio, 500);
     const avatar = cleanText(body.avatarUrl, 500);
     const language = languages.has(body.language) ? body.language : "fr";
-    const theme = themes.has(body.theme) ? body.theme : "auto";
+    // Public TAMUSNI follows the device setting. Do not persist a user override.
+    const theme = "auto";
     const textSize = textSizes.has(body.textSize) ? body.textSize : "normal";
     const density = densities.has(body.density) ? body.density : "comfortable";
     const notifications = body.notifications === false ? 0 : 1;

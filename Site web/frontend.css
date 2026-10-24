@@ -83,9 +83,7 @@ body{min-height:100dvh}
 .onboarding-content li{color:var(--tm-muted);font-size:1rem}
 .onboarding-content footer{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:28px}
 
-/* Futuristic editorial background: one non-repeating vector layer, switched by theme tokens. */
-.theme-toggle{background:color-mix(in srgb,var(--tm-surface) 88%,transparent);border-color:var(--tm-line)}
-.theme-toggle:hover,.theme-toggle:focus-visible{border-color:var(--tm-blue);color:var(--tm-blue);background:color-mix(in srgb,var(--tm-blue) 10%,var(--tm-surface))}
+/* Futuristic editorial background: one non-repeating vector layer, switched by system theme tokens. */
 .popular-section,.latest-section,.rubric-intro,.rubric-content,.auth-section,.dashboard-page,.legal-page,.institutional-page{position:relative}
 .rubric-search{box-shadow:0 12px 34px rgba(17,26,46,.07);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
 .auth-form,.dashboard-columns>section{padding:clamp(20px,3vw,30px);border:1px solid color-mix(in srgb,var(--tm-line) 82%,transparent);border-radius:var(--tm-radius);background:color-mix(in srgb,var(--tm-surface) 91%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 16px 45px rgba(17,26,46,.07)}
