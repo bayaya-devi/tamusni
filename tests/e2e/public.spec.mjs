@@ -149,10 +149,12 @@ test('French homepage has no serious axe errors', async ({ page }) => {
   expect(serious, serious.map(item => `${item.id}: ${item.nodes.map(node => node.target.join(' ')).join(', ')}`).join('\n')).toEqual([]);
 });
 
-test('advertising is completely disabled before AdSense approval', async ({ page }) => {
+test('AdSense verification script is present once without activating advertising', async ({ page }) => {
+  const verificationScript = page.locator('head script[src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6628181824999575"]');
   await page.goto('/fr/');
   await expect(page.locator('[data-ad-slot], .ad-placement')).toHaveCount(0);
-  await expect(page.locator('script[src*="googlesyndication"], script[data-tamusni-adsense]')).toHaveCount(0);
+  await expect(verificationScript).toHaveCount(1);
+  await expect(verificationScript).toHaveAttribute('crossorigin', 'anonymous');
   await expect(page.locator('script[src*="ads-client"]')).toHaveCount(0);
   await expect(page.getByText(/^Publicité$/)).toHaveCount(0);
   await expect(page.getByText(/^Contenu sponsorisé$/)).toHaveCount(0);

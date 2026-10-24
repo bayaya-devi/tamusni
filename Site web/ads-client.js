@@ -13,7 +13,7 @@
   let started = false;
 
   function loadAdsense(client) {
-    if (document.querySelector('script[data-tamusni-adsense]')) return;
+    if ([...document.scripts].some((script) => script.src.includes('pagead2.googlesyndication.com/pagead/js/adsbygoogle.js'))) return;
     const script = document.createElement('script');
     script.async = true;
     script.crossOrigin = 'anonymous';

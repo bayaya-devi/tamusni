@@ -75,6 +75,22 @@ test('AdSense markup is opt-in and its runtime requires an external TCF consent 
   assert.doesNotMatch(disabled.headers.get('content-security-policy'), /googlesyndication/);
   assert.match(disabled.headers.get('content-security-policy'), /challenges\.cloudflare\.com/);
 
+  const verificationContext = context('/fr/');
+  verificationContext.env = { ...verificationContext.env, ADSENSE_CLIENT_ID: 'ca-pub-6628181824999575', ADS_ENABLED: 'false' };
+  const verification = await publicResponse(verificationContext, 'fr', '');
+  const verificationHtml = await verification.text();
+  const verificationScripts = verificationHtml.match(/https:\/\/pagead2\.googlesyndication\.com\/pagead\/js\/adsbygoogle\.js\?client=ca-pub-6628181824999575/g) || [];
+  assert.equal(verificationScripts.length, 1);
+  assert.match(verificationHtml, /<script async src="https:\/\/pagead2\.googlesyndication\.com\/pagead\/js\/adsbygoogle\.js\?client=ca-pub-6628181824999575" crossorigin="anonymous"><\/script>/);
+  assert.doesNotMatch(verificationHtml, /data-ad-slot|ads-client\.js|consent\.js/);
+  assert.match(verification.headers.get('content-security-policy'), /script-src[^;]*pagead2\.googlesyndication\.com/);
+
+  const privateContext = context('/fr/connexion/');
+  privateContext.env = { ...privateContext.env, ADSENSE_CLIENT_ID: 'ca-pub-6628181824999575', ADS_ENABLED: 'false' };
+  const privateResponse = await publicResponse(privateContext, 'fr', 'connexion/');
+  const privateHtml = await privateResponse.text();
+  assert.doesNotMatch(privateHtml, /adsbygoogle\.js\?client=/);
+
   const enabledContext = context('/fr/');
   enabledContext.env = { ...enabledContext.env, ADSENSE_CLIENT_ID: 'ca-pub-6628181824999575', ADS_ENABLED: 'true' };
   const enabled = await publicResponse(enabledContext, 'fr', '');
@@ -90,6 +106,7 @@ test('AdSense markup is opt-in and its runtime requires an external TCF consent 
   assert.match(consentSource, /__tcfapi/);
   assert.doesNotMatch(consentSource, /localStorage/);
   assert.match(adsClientSource, /tamusni-consent-ready/);
+  assert.match(adsClientSource, /document\.scripts/);
   assert.doesNotMatch(adsClientSource, /localStorage/);
 });
 
