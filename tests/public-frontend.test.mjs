@@ -159,15 +159,15 @@ test('the shared client exposes only the official social accounts',async()=>{
   assert.match(source,/https:\/\/www\.youtube\.com\/@Tamusni-i7h/);
 });
 
-test('shared navigation keeps native links safe while transitioning internal routes',async()=>{
+test('shared navigation keeps native links deterministic and preserves article identity across languages',async()=>{
   const source=await import('node:fs/promises').then(fs=>fs.readFile(new URL('../Site web/frontend.js',import.meta.url),'utf8'));
   const css=await import('node:fs/promises').then(fs=>fs.readFile(new URL('../Site web/frontend.css',import.meta.url),'utf8'));
-  assert.match(source,/next\.pathname\.startsWith\('\/api\/'\)/);
-  assert.match(source,/event\.metaKey\|\|event\.ctrlKey\|\|event\.shiftKey\|\|event\.altKey/);
+  assert.doesNotMatch(source,/document\.addEventListener\('click',event=>/);
+  assert.doesNotMatch(source,/navigationTimer/);
+  assert.match(source,/location\.assign\(next\.href\)/);
   assert.match(source,/preserveScroll:true/);
-  assert.match(source,/reduced\.matches/);
   assert.match(css,/--motion-base:220ms/);
-  assert.match(css,/html\.is-page-leaving #main/);
+  assert.doesNotMatch(css,/html\.is-page-leaving #main/);
   assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
 });
 

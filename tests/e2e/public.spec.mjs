@@ -202,11 +202,11 @@ for (const locale of ['fr','ar','en','es','pt']) test(`account security pages ar
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 });
 
-test('theme follows device preference and has no toggle', async ({ page }) => {
+test('theme follows device preference and offers an accessible toggle', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/fr/');
   expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--tm-bg').trim())).toBe('#111a2e');
-  await expect(page.getByRole('button', { name: /thème|theme/i })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /thème|theme/i })).toHaveCount(1);
   await page.emulateMedia({ colorScheme: 'light' });
   expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--tm-bg').trim())).toBe('#f8fafc');
 });
