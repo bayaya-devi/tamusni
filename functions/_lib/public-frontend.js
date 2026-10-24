@@ -221,10 +221,11 @@ export async function publicResponse(context,locale,path) {
  if(path==='inscription/')result=result.replace(t.terms,`<a href="${href(locale,'conditions-utilisation/')}">${t.terms}</a>`);
  let html=layout({locale,title,description,path,main:result,session,origin,robots,structuredData,imageUrl,alternateLocales,googleSiteVerification:context.env.GOOGLE_SITE_VERIFICATION||'',adsenseClientId,includeAdsenseVerificationScript:includeAdsenseVerificationScript&&status===200}).replace('</head>','<script src="/api-client.js" defer></script></head>');
  if(showAds)html=html.replace('</head>','<script src="/consent.js?v=3" defer></script><script src="/ads-client.js?v=3" defer></script></head>');
- const advertisingSources=showAds?' https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com':'';
- const verificationScriptSource=includeAdsenseVerificationScript&&status===200?' https://pagead2.googlesyndication.com':'';
+ const verificationActive=includeAdsenseVerificationScript&&status===200;
+ const adsenseConnectionSources=verificationActive?' https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://ep1.adtrafficquality.google':'';
+ const adsenseFrameSources=verificationActive?' https://googleads.g.doubleclick.net https://tpc.googlesyndication.com':'';
  // Turnstile is part of the existing sign-up flow. Keep its narrowly scoped
  // allow-list even while advertising is disabled; ad origins are opt-in only.
- const contentSecurityPolicy=`default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com${verificationScriptSource}; connect-src 'self' https://challenges.cloudflare.com${advertisingSources}; frame-src 'self' https://challenges.cloudflare.com${advertisingSources}`;
+ const contentSecurityPolicy=`default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://static.cloudflareinsights.com${verificationActive?' https://pagead2.googlesyndication.com':''}; connect-src 'self' https://challenges.cloudflare.com${adsenseConnectionSources}; frame-src 'self' https://challenges.cloudflare.com${adsenseFrameSources}`;
  return new Response(html,{status,headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'private, no-store','Content-Security-Policy':contentSecurityPolicy,'Strict-Transport-Security':'max-age=31536000','X-Frame-Options':'DENY','X-Content-Type-Options':'nosniff','Referrer-Policy':'strict-origin-when-cross-origin','Permissions-Policy':'camera=(), microphone=(), geolocation=()'}});
 }
