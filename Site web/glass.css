@@ -1,0 +1,23 @@
+/* Reusable Liquid Glass primitives for functional TAMUSNI interfaces. */
+.glass-panel,
+.personal-card {
+  border: 1px solid var(--tm-glass-border);
+  background: var(--tm-glass-panel);
+  box-shadow: var(--tm-glass-shadow);
+  -webkit-backdrop-filter: blur(var(--tm-glass-blur));
+  backdrop-filter: blur(var(--tm-glass-blur));
+}
+
+.glass-action,
+.personal-tabs,
+.personal-story {
+  border: 1px solid var(--tm-glass-border);
+  background: var(--tm-glass-action);
+  -webkit-backdrop-filter: blur(var(--tm-glass-blur));
+  backdrop-filter: blur(var(--tm-glass-blur));
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-panel,
+  .personal-card { background: color-mix(in srgb, var(--tm-surface) 92%, var(--tm-blue)); }
+}
