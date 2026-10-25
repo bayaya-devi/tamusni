@@ -92,3 +92,8 @@ body{min-height:100dvh}
 .hero-section,.site-footer{isolation:isolate;background-color:var(--tm-night)}
 @media(max-width:650px){#main::before{background-position:48% top,52% center,48% bottom;background-size:auto 820px;opacity:calc(var(--tm-curve-opacity) * .82)}.site-brand,.site-brand img{width:128px}.header-actions select{min-width:56px;width:56px;padding-inline:7px}.header-actions .icon-button{width:40px;height:40px}.auth-form,.dashboard-columns>section{padding:20px}.article-body{width:calc(100% - 32px);padding:20px;border-radius:16px}.legal-page,.institutional-page{padding-inline:18px}}
 @media(max-width:360px){.site-brand,.site-brand img{width:108px}.header-actions{gap:3px;padding:3px}.header-actions select{min-width:52px;width:52px;height:40px}.header-actions .icon-button{width:38px;height:38px}}
+
+/* Shared Liquid Glass tokens: reserved for interactive utility surfaces. */
+:root{--tm-glass-panel:rgba(255,255,255,.68);--tm-glass-action:rgba(255,255,255,.54);--tm-glass-border:rgba(255,255,255,.72);--tm-glass-highlight:rgba(255,255,255,.56);--tm-glass-shadow:0 14px 38px rgba(17,26,46,.10);--tm-glass-blur:18px}
+html[data-theme=dark]{--tm-glass-panel:rgba(24,37,59,.62);--tm-glass-action:rgba(34,50,76,.54);--tm-glass-border:rgba(191,199,213,.22);--tm-glass-highlight:rgba(255,255,255,.08);--tm-glass-shadow:0 16px 42px rgba(0,0,0,.24)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--tm-glass-panel:rgba(24,37,59,.62);--tm-glass-action:rgba(34,50,76,.54);--tm-glass-border:rgba(191,199,213,.22);--tm-glass-highlight:rgba(255,255,255,.08);--tm-glass-shadow:0 16px 42px rgba(0,0,0,.24)}}
