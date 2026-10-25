@@ -5,6 +5,7 @@ import {
 } from "./core.js";
 import { claimNextJob, completeJob, ensureJob, retryJob } from "../../automation/shared/job-core.js";
 import { notifyContentSubscribers } from "../../functions/_lib/push.js";
+import { processCampaigns as processBusinessCampaigns } from "../../business-automation/src/index.js";
 
 const TEXT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const IMAGE_MODEL = "@cf/black-forest-labs/flux-1-schnell";
@@ -559,6 +560,10 @@ const worker = {
   async scheduled(controller, env, ctx) {
     ctx.waitUntil(scheduledRun(env, new Date(controller.scheduledTime), ctx).catch(error => {
       console.error("editorial_scheduled_failed", error);
+      throw error;
+    }));
+    ctx.waitUntil(processBusinessCampaigns(env, new Date(controller.scheduledTime)).catch(error => {
+      console.error("business_campaign_schedule_failed", error);
       throw error;
     }));
   },

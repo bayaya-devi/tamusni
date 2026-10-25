@@ -10,7 +10,7 @@ TAMUSNI Business est séparé du contenu éditorial, des comptes contributeurs e
 4. L’administration approuve ou demande des corrections.
 5. Le paiement Stripe ou PayPal devient disponible après approbation.
 6. Un webhook signé confirme le paiement. La carte bancaire n’est jamais traitée ni stockée par TAMUSNI.
-7. `tamusni-business-automation` active et termine la campagne suivant les dates enregistrées en D1.
+7. Le module isolé `business-automation` est exécuté par le cron existant `tamusni-editorial-automation` et active ou termine la campagne suivant les dates enregistrées en D1. Il ne lit ni ne modifie les jobs éditoriaux.
 8. Les impressions visibles et les clics sont enregistrés avec une clé d’unicité quotidienne puis consolidés.
 
 Le tarif est calculé uniquement côté serveur dans `functions/_lib/business-core.js` : 100 centimes EUR par jour, pour une durée comprise entre 1 et 30 jours.
@@ -40,7 +40,7 @@ Le composant de diffusion sponsorisée peut être coupé sans supprimer son arch
 ## Déploiement
 
 - Le frontend/API reste dans le projet Cloudflare Pages `tamusni`.
-- Le planificateur indépendant se déploie avec `wrangler deploy --config business-automation/wrangler.jsonc`.
+- Le module de planification Business est embarqué dans le Worker éditorial existant afin de respecter la limite de cinq crons du compte Cloudflare gratuit. Les deux traitements disposent de fonctions, de tables et de gestions d’erreurs séparées.
 - La base partagée est D1 `tamusni-production`.
 
 Les campagnes ne deviennent jamais actives avant une validation administrative et une confirmation de paiement signée par le prestataire.
