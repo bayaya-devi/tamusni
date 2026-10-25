@@ -7,7 +7,7 @@ export async function onRequestGet(context) {
   if (!await requireAdmin(context)) return json({ error:"Accès réservé à l’administration." },403);
   const id=cleanText(new URL(context.request.url).searchParams.get("id"),160);
   if(id){
-    const user=await context.env.DB.prepare("SELECT u.id,u.name,u.email,CASE WHEN u.role='ADMIN' THEN 'ADMIN' WHEN r.role='CONTRIBUTOR' THEN 'CONTRIBUTOR' ELSE 'USER' END AS role,u.is_banned,u.avatar_url,u.bio,u.preferred_topic,u.preferred_language,u.preferred_theme,u.text_size,u.display_density,u.notifications_enabled,u.terms_accepted_at,u.sponsored_in_app,u.sponsored_email,u.mfa_enabled,u.created_at FROM users u LEFT JOIN user_roles r ON r.user_id=u.id WHERE u.id=?").bind(id).first();
+    const user=await context.env.DB.prepare("SELECT u.id,u.name,u.email,CASE WHEN u.role='ADMIN' THEN 'ADMIN' WHEN r.role='CONTRIBUTOR' THEN 'CONTRIBUTOR' WHEN bp.user_id IS NOT NULL THEN 'BUSINESS' ELSE 'USER' END AS role,u.is_banned,u.avatar_url,u.bio,u.preferred_topic,u.preferred_language,u.preferred_theme,u.text_size,u.display_density,u.notifications_enabled,u.terms_accepted_at,u.sponsored_in_app,u.sponsored_email,u.mfa_enabled,u.created_at FROM users u LEFT JOIN user_roles r ON r.user_id=u.id LEFT JOIN business_profiles bp ON bp.user_id=u.id WHERE u.id=?").bind(id).first();
     if(!user)return json({error:"Compte introuvable."},404);
     const [saved,history,searches,subscriptions,reactions,comments,events]=await Promise.all([
       context.env.DB.prepare("SELECT item_type,title,url,created_at FROM saved_items WHERE user_id=? ORDER BY created_at DESC LIMIT 20").bind(id).all(),
@@ -20,7 +20,7 @@ export async function onRequestGet(context) {
     ]);
     return json({user,saved:saved.results||[],history:history.results||[],searches:searches.results||[],subscriptions:subscriptions.results||[],reactions:reactions.results||[],comments:comments.results||[],events:events.results||[]});
   }
-  const result = await context.env.DB.prepare("SELECT u.id,u.name,u.email,CASE WHEN u.role='ADMIN' THEN 'ADMIN' WHEN r.role='CONTRIBUTOR' THEN 'CONTRIBUTOR' ELSE 'USER' END AS role,u.is_banned,u.preferred_topic,u.sponsored_in_app,u.sponsored_email,u.created_at FROM users u LEFT JOIN user_roles r ON r.user_id=u.id ORDER BY u.created_at DESC LIMIT 200").all();
+  const result = await context.env.DB.prepare("SELECT u.id,u.name,u.email,CASE WHEN u.role='ADMIN' THEN 'ADMIN' WHEN r.role='CONTRIBUTOR' THEN 'CONTRIBUTOR' WHEN bp.user_id IS NOT NULL THEN 'BUSINESS' ELSE 'USER' END AS role,u.is_banned,u.preferred_topic,u.sponsored_in_app,u.sponsored_email,u.created_at FROM users u LEFT JOIN user_roles r ON r.user_id=u.id LEFT JOIN business_profiles bp ON bp.user_id=u.id ORDER BY u.created_at DESC LIMIT 200").all();
   return json({ items:result.results||[] });
 }
 

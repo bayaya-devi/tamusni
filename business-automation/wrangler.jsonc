@@ -1,0 +1,14 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "tamusni-business-automation",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-30",
+  "observability": { "enabled": true },
+  "triggers": { "crons": ["*/5 * * * *"] },
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "tamusni-production",
+    "database_id": "94449680-e5b3-496b-a0f9-27eb55b4b696",
+    "migrations_dir": "../migrations"
+  }]
+}

@@ -2,6 +2,7 @@ import { createMfaChallengeCookie, createSessionCookie, json, readBody, sameOrig
 import { mirrorUser } from "../../_lib/supabase.js";
 import { recordAuthEvent } from "../../_lib/mfa.js";
 import { normalizeTopics, replaceTopicSubscriptions } from "../../_lib/topics.js";
+import { businessRedirect } from "../../_lib/business-core.js";
 
 export async function onRequestPost(context) {
   if (!sameOrigin(context.request)) return json({ error: "Origine refusée." }, 403);
@@ -12,7 +13,7 @@ export async function onRequestPost(context) {
     const profile = await auth.json(); const email = String(profile.email || "").toLowerCase();
     if (!email || !(profile.email_confirmed_at || profile.confirmed_at)) return json({ error: "Le fournisseur n’a pas confirmé l’adresse e-mail." }, 400);
     if (!context.env.SESSION_SECRET) return json({ error: "Configuration de sécurité indisponible." }, 503);
-    let user = await context.env.DB.prepare("SELECT u.id,u.name,u.email,u.role,u.created_at,u.mfa_enabled,u.is_banned,u.session_version,u.preferred_language,u.email_verified_at,r.role AS additional_role FROM users u LEFT JOIN user_roles r ON r.user_id=u.id WHERE u.email=? LIMIT 1").bind(email).first();
+    let user = await context.env.DB.prepare("SELECT u.id,u.name,u.email,u.role,u.created_at,u.mfa_enabled,u.is_banned,u.session_version,u.preferred_language,u.email_verified_at,r.role AS additional_role,bp.user_id AS business_profile_id FROM users u LEFT JOIN user_roles r ON r.user_id=u.id LEFT JOIN business_profiles bp ON bp.user_id=u.id WHERE u.email=? LIMIT 1").bind(email).first();
     if (!user) {
       const metadata = profile.user_metadata && typeof profile.user_metadata === "object" ? profile.user_metadata : {};
       const fullName = String(metadata.full_name || metadata.name || "").trim();
@@ -37,7 +38,8 @@ export async function onRequestPost(context) {
     try { await mirrorUser(context.env, user); } catch (error) { console.error("supabase_oauth_mirror_failed", error); }
     if(user.mfa_enabled)return json({ok:true,mfaRequired:true,message:"Saisissez le code de votre application d’authentification."},202,{"Set-Cookie":await createMfaChallengeCookie(user,context.env.SESSION_SECRET)});
     try{await recordAuthEvent(context,{userId:user.id,email:user.email,name:user.name,locale:user.preferred_language,event:"oauth_success"})}catch(error){console.error("auth_event_write_failed",error)}
-    const role=user.role === "ADMIN" ? "ADMIN" : user.additional_role || "USER";
-    return json({ ok: true, redirect: role === "ADMIN" ? "/admin/" : role === "CONTRIBUTOR" ? "/contributeur/" : "/mon-espace/" }, 200, { "Set-Cookie": await createSessionCookie({ ...user, role }, context.env.SESSION_SECRET) });
+    const role=user.role === "ADMIN" ? "ADMIN" : user.additional_role || (user.business_profile_id ? "BUSINESS" : "USER");
+    const locale=["fr","ar","en","es","pt"].includes(user.preferred_language)?user.preferred_language:"fr";
+    return json({ ok: true, redirect: businessRedirect(role,locale) }, 200, { "Set-Cookie": await createSessionCookie({ ...user, role }, context.env.SESSION_SECRET) });
   } catch (error) { console.error("oauth_session_failed", error); return json({ error: "Connexion sociale impossible." }, 500); }
 }

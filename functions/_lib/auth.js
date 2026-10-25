@@ -93,7 +93,7 @@ export async function getSession(request, secret) {
 export async function requireSession(context) {
   const session = await getSession(context.request, context.env.SESSION_SECRET);
   if (!session || !context.env.DB) return null;
-  const user = await context.env.DB.prepare("SELECT u.id,u.name,u.email,u.is_banned,u.email_verified_at,u.session_version,CASE WHEN u.role='ADMIN' THEN 'ADMIN' WHEN r.role='CONTRIBUTOR' THEN 'CONTRIBUTOR' ELSE 'USER' END AS role FROM users u LEFT JOIN user_roles r ON r.user_id=u.id WHERE u.id = ?").bind(session.sub).first();
+  const user = await context.env.DB.prepare("SELECT u.id,u.name,u.email,u.is_banned,u.email_verified_at,u.session_version,CASE WHEN u.role='ADMIN' THEN 'ADMIN' WHEN r.role='CONTRIBUTOR' THEN 'CONTRIBUTOR' WHEN bp.user_id IS NOT NULL THEN 'BUSINESS' ELSE 'USER' END AS role FROM users u LEFT JOIN user_roles r ON r.user_id=u.id LEFT JOIN business_profiles bp ON bp.user_id=u.id WHERE u.id = ?").bind(session.sub).first();
   const sessionVersion = Number(user?.session_version || 1);
   return user && !user.is_banned && user.email_verified_at && Number(session.sv) === sessionVersion ? { sub: user.id, name: user.name, email: user.email, role: user.role, session_version:sessionVersion, iat: session.iat || null, exp: session.exp } : null;
 }
@@ -116,6 +116,11 @@ export async function requireAdmin(context) {
 export async function requireContributor(context) {
   const session = await requireSession(context);
   return session && (session.role === "CONTRIBUTOR" || session.role === "ADMIN") ? session : null;
+}
+
+export async function requireBusiness(context) {
+  const session = await requireSession(context);
+  return session?.role === "BUSINESS" ? session : null;
 }
 
 export function validEmail(value) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim().toLowerCase()); }

@@ -53,7 +53,7 @@ export async function onRequest(context){
       const rendered=await publicResponse(context,locale,path);
       if(rendered)return rendered;
     }
-    const legacy=pathname.match(/^\/(intelligence-artificielle|innovation|robotique|cybersecurite|espace|articles\/[^/]+|a-propos|contact|methodologie-editoriale|politique-ia|politique-corrections|mentions-legales|confidentialite|cookies|conditions-utilisation|mon-espace)\/?$/);
+    const legacy=pathname.match(/^\/(intelligence-artificielle|innovation|robotique|cybersecurite|espace|articles\/[^/]+|a-propos|contact|methodologie-editoriale|politique-ia|politique-corrections|mentions-legales|confidentialite|cookies|conditions-utilisation|mon-espace|business(?:\/espace)?)\/?$/);
     if(legacy)return Response.redirect(new URL(`/fr/${legacy[1]}/`,requestUrl.origin),308);
     if(pathname==='/connexion/'||pathname==='/inscription/')return publicResponse(context,'fr',pathname.slice(1));
     if(pathname==='/compte/')return Response.redirect(new URL('/fr/mon-espace/',requestUrl.origin),308);
