@@ -13,7 +13,7 @@ export async function onRequestGet(context) {
   const session = await requireSession(context);
   if (!session) return json({ error: "Connexion requise." }, 401);
   const [profile, history, topics, searches, notifications, newsletter] = await Promise.all([
-    context.env.DB.prepare("SELECT u.id,u.name,u.email,CASE WHEN u.role='ADMIN' THEN 'ADMIN' WHEN r.role='CONTRIBUTOR' THEN 'CONTRIBUTOR' ELSE 'USER' END AS role,u.avatar_url,u.bio,u.preferred_language,u.preferred_theme,u.text_size,u.display_density,u.notifications_enabled,u.preferred_topic,u.sponsored_in_app,u.sponsored_email,u.onboarding_completed_at,u.created_at FROM users u LEFT JOIN user_roles r ON r.user_id=u.id WHERE u.id=?").bind(session.sub).first(),
+    context.env.DB.prepare("SELECT u.id,u.name,u.email,CASE WHEN u.role='ADMIN' THEN 'ADMIN' WHEN r.role='CONTRIBUTOR' THEN 'CONTRIBUTOR' ELSE 'USER' END AS role,u.avatar_url,u.bio,u.preferred_language,u.preferred_theme,u.text_size,u.display_density,u.notifications_enabled,u.preferred_topic,u.sponsored_in_app,u.sponsored_email,u.personalization_consent,u.onboarding_completed_at,u.created_at FROM users u LEFT JOIN user_roles r ON r.user_id=u.id WHERE u.id=?").bind(session.sub).first(),
     context.env.DB.prepare("SELECT c.slug,c.type,c.title,c.category,h.progress,h.last_read_at FROM reading_history h JOIN content_items c ON c.id=h.content_id WHERE h.user_id=? ORDER BY h.last_read_at DESC LIMIT 50").bind(session.sub).all(),
     context.env.DB.prepare("SELECT topic,created_at FROM topic_subscriptions WHERE user_id=? ORDER BY topic").bind(session.sub).all(),
     context.env.DB.prepare("SELECT query,searched_at FROM search_history WHERE user_id=? ORDER BY searched_at DESC LIMIT 20").bind(session.sub).all(),
@@ -47,12 +47,13 @@ export async function onRequestPatch(context) {
     const preferredTopic = preferredTopics[0];
     const sponsoredInApp = body.sponsoredInApp === true ? 1 : 0;
     const sponsoredEmail = body.sponsoredEmail === true ? 1 : 0;
+    const personalizationConsent = body.personalizationConsent === true ? 1 : 0;
     const newsletterPreferenceProvided = Object.prototype.hasOwnProperty.call(body,"newsletterEnabled");
     const newsletterEnabled = body.newsletterEnabled === true;
     if (name.length < 2 || !validEmail(requestedEmail) || !preferredTopics.length || (avatar && !/^https:\/\//i.test(avatar))) return json({ error: "Profil invalide : choisissez au moins une rubrique." }, 400);
     if (requestedEmail !== session.email.toLowerCase()) return json({ error: "La modification de l’adresse e-mail nécessite une vérification dédiée et n’est pas disponible depuis ce formulaire." }, 400);
     await context.env.DB.batch([
-      context.env.DB.prepare("UPDATE users SET name=?,bio=?,avatar_url=?,preferred_language=?,preferred_theme=?,text_size=?,display_density=?,notifications_enabled=?,preferred_topic=?,sponsored_in_app=?,sponsored_email=? WHERE id=?").bind(name, bio, avatar || null, language, theme, textSize, density, notifications, preferredTopic, sponsoredInApp, sponsoredEmail, session.sub),
+      context.env.DB.prepare("UPDATE users SET name=?,bio=?,avatar_url=?,preferred_language=?,preferred_theme=?,text_size=?,display_density=?,notifications_enabled=?,preferred_topic=?,sponsored_in_app=?,sponsored_email=?,personalization_consent=? WHERE id=?").bind(name, bio, avatar || null, language, theme, textSize, density, notifications, preferredTopic, sponsoredInApp, sponsoredEmail, personalizationConsent, session.sub),
       context.env.DB.prepare("UPDATE newsletter_subscribers SET locale=?,brevo_sync_status=CASE WHEN locale<>? THEN 'pending' ELSE brevo_sync_status END,updated_at=? WHERE user_id=?").bind(language, language, new Date().toISOString(), session.sub)
     ]);
     await replaceTopicSubscriptions(context.env.DB, session.sub, preferredTopics);

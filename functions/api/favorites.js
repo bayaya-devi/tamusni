@@ -1,5 +1,6 @@
 import { json, readBody, requireSession, sameOrigin } from "../_lib/auth.js";
 import { mirrorFavorite, removeMirroredFavorite } from "../_lib/supabase.js";
+import { recordNervousEvent } from "../_lib/nervous-service.js";
 
 const allowedTypes = new Set(["article", "brief", "video", "podcast", "interview"]);
 
@@ -22,6 +23,7 @@ export async function onRequestPost(context) {
     const url = String(body.url || "").trim().slice(0, 500);
     if (!itemId || !title || !url.startsWith("/") || !allowedTypes.has(itemType)) return json({ error: "Favori invalide." }, 400);
     await context.env.DB.prepare("INSERT INTO saved_items (user_id, item_id, item_type, title, url, created_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(user_id, item_id) DO UPDATE SET title = excluded.title, url = excluded.url, item_type = excluded.item_type").bind(session.sub, itemId, itemType, title, url, new Date().toISOString()).run();
+    await recordNervousEvent(context,{eventType:'favorite_added',contentId:itemId,pagePath:url,locale:body.locale||'fr',source:'favorites'},session);
     try { await mirrorFavorite(context.env, { user_id: session.sub, item_id: itemId, item_type: itemType, title, url }); } catch (error) { console.error("supabase_favorite_mirror_failed", error); }
     return json({ ok: true, saved: true }, 201);
   } catch (error) { return json({ error: error?.message === "PAYLOAD_TOO_LARGE" ? "Requête trop volumineuse." : "Enregistrement impossible." }, 400); }

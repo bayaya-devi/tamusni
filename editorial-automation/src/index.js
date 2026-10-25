@@ -6,6 +6,7 @@ import {
 import { claimNextJob, completeJob, ensureJob, retryJob } from "../../automation/shared/job-core.js";
 import { notifyContentSubscribers } from "../../functions/_lib/push.js";
 import { processCampaigns as processBusinessCampaigns } from "../../business-automation/src/index.js";
+import { runNervousCycle } from "../../functions/_lib/nervous-service.js";
 
 const TEXT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const IMAGE_MODEL = "@cf/black-forest-labs/flux-1-schnell";
@@ -564,6 +565,10 @@ const worker = {
     }));
     ctx.waitUntil(processBusinessCampaigns(env, new Date(controller.scheduledTime)).catch(error => {
       console.error("business_campaign_schedule_failed", error);
+      throw error;
+    }));
+    ctx.waitUntil(runNervousCycle(env, new Date(controller.scheduledTime)).catch(error => {
+      console.error("nervous_system_schedule_failed", error);
       throw error;
     }));
   },

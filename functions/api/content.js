@@ -1,4 +1,5 @@
 import { cleanText, json, requireSession, sameOrigin } from "../_lib/auth.js";
+import { recordNervousEvent } from "../_lib/nervous-service.js";
 
 const allowedTypes = new Set(["article", "brief", "video", "interview", "podcast"]);
 const allowedSorts = new Set(["recent", "popular", "oldest"]);
@@ -41,5 +42,6 @@ export async function onRequestPost(context) {
   const query = cleanText(body.query, 120);
   if (!query) return json({ error: "Recherche invalide." }, 400);
   await context.env.DB.prepare("INSERT INTO search_history(id,user_id,query,searched_at) VALUES(?,?,?,?)").bind(crypto.randomUUID(), session.sub, query, new Date().toISOString()).run();
+  await recordNervousEvent(context,{eventType:'search_performed',pagePath:'/recherche/',locale:body.locale||'fr',source:'search',metadata:{query}},session);
   return json({ ok: true }, 201);
 }
