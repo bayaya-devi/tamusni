@@ -97,3 +97,6 @@ body{min-height:100dvh}
 :root{--tm-glass-panel:rgba(255,255,255,.68);--tm-glass-action:rgba(255,255,255,.54);--tm-glass-border:rgba(255,255,255,.72);--tm-glass-highlight:rgba(255,255,255,.56);--tm-glass-shadow:0 14px 38px rgba(17,26,46,.10);--tm-glass-blur:18px}
 html[data-theme=dark]{--tm-glass-panel:rgba(24,37,59,.62);--tm-glass-action:rgba(34,50,76,.54);--tm-glass-border:rgba(191,199,213,.22);--tm-glass-highlight:rgba(255,255,255,.08);--tm-glass-shadow:0 16px 42px rgba(0,0,0,.24)}
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]){--tm-glass-panel:rgba(24,37,59,.62);--tm-glass-action:rgba(34,50,76,.54);--tm-glass-border:rgba(191,199,213,.22);--tm-glass-highlight:rgba(255,255,255,.08);--tm-glass-shadow:0 16px 42px rgba(0,0,0,.24)}}
+
+/* Kept here so functional surfaces inherit a safe blur even when page CSS is cached. */
+.business-summary article,.business-panel,.business-dialog,.admin-toolbar,.admin-panel-card,.contrib-panel.card,.admin-dialog,.contrib-preview{ -webkit-backdrop-filter:blur(var(--tm-glass-blur));backdrop-filter:blur(var(--tm-glass-blur)); }
