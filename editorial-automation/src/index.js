@@ -543,9 +543,10 @@ async function localAgentHeartbeat(env, payload) {
   return { agentId, seenAt: now };
 }
 
-async function approvedSourceHosts(env) {
+async function approvedSourceHosts(env, runId = null) {
   const feeds = await env.DB.prepare("SELECT feed_url FROM editorial_source_feeds WHERE active=1").all();
-  return new Set((feeds.results || []).map(row => { try { return new URL(row.feed_url).hostname.toLowerCase(); } catch { return ""; } }).filter(Boolean));
+  const candidates = runId ? await env.DB.prepare("SELECT url FROM editorial_candidates WHERE run_id=? AND rejection_reason IS NULL").bind(runId).all() : { results: [] };
+  return new Set([...(feeds.results || []).map(row => row.feed_url), ...(candidates.results || []).map(row => row.url)].map(value => { try { return new URL(value).hostname.toLowerCase(); } catch { return ""; } }).filter(Boolean));
 }
 
 function isApprovedSourceHost(raw, hosts) {
@@ -571,7 +572,7 @@ async function claimLocalEditorialJob(env, payload) {
   }
   await localAgentHeartbeat(env, { ...payload, status: "busy", lastJobId: job.id, detail: `claimed ${job.idempotency_key}` });
   await log(env, begun.run.id, "LOCAL_AGENT_CLAIMED", job.id);
-  return { job: { id: job.id, idempotencyKey: job.idempotency_key, localDate, lockToken: job.lock_token, leaseExpiresAt: job.lock_expires_at }, runId: begun.run.id, candidates: candidates.results || [], approvedSourceHosts: [...await approvedSourceHosts(env)], policy: { type: "brief", minimumSources: 1, locales: ["fr", "en", "ar", "es", "pt"], author: PUBLIC_AUTHOR } };
+  return { job: { id: job.id, idempotencyKey: job.idempotency_key, localDate, lockToken: job.lock_token, leaseExpiresAt: job.lock_expires_at }, runId: begun.run.id, candidates: candidates.results || [], approvedSourceHosts: [...await approvedSourceHosts(env, begun.run.id)], policy: { type: "brief", minimumSources: 1, locales: ["fr", "en", "ar", "es", "pt"], author: PUBLIC_AUTHOR } };
 }
 
 async function submitLocalEditorialPublication(env, payload) {
@@ -588,7 +589,7 @@ async function submitLocalEditorialPublication(env, payload) {
   const structuralIssues = publicationQualityIssues(publication, "brief");
   const seoIssues = seoGeoPublicationIssues(publication, "brief");
   if (structuralIssues.length || seoIssues.length) throw new Error(`LOCAL_QUALITY_REJECTED:${[...new Set([...structuralIssues, ...seoIssues])].join(",")}`);
-  const hosts = await approvedSourceHosts(env);
+  const hosts = await approvedSourceHosts(env, run.id);
   if (publication.sources.some(source => !isApprovedSourceHost(source.url, hosts))) throw new Error("LOCAL_UNAPPROVED_SOURCE_HOST");
   const bundle = [];
   for (const source of publication.sources) {
