@@ -597,7 +597,7 @@ async function submitLocalEditorialPublication(env, payload) {
     bundle.push({ id: source.id, title: plainText(source.label, 240), publisher: plainText(source.publisher, 160), url: fetched.url, publishedAt: source.publishedAt || null, text: fetched.text });
   }
   const qualityReport = await qualityGate(env, publication, bundle, "brief");
-  const content = await savePreparedPublication(env, run, { category: publication.category }, publication, qualityReport, { passed: true, strategy: "local_codex_source_contract", locales: ["fr", "en", "ar", "es", "pt"], sourceCount: bundle.length }, null, now);
+  const content = await savePreparedPublication(env, run, { category: publication.category, url: publication.sources[0].url }, publication, qualityReport, { passed: true, strategy: "local_codex_source_contract", locales: ["fr", "en", "ar", "es", "pt"], sourceCount: bundle.length }, null, now);
   const published = await publishDue(env, new Date(), false, null, content.id);
   const result = published.find(entry => entry.published && entry.slug === content.slug);
   if (!result) throw new Error("LOCAL_PUBLICATION_NOT_VERIFIED");

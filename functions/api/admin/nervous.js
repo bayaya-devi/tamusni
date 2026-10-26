@@ -18,9 +18,9 @@ export async function onRequestGet(context){
     db.prepare('SELECT * FROM nervous_system_runs ORDER BY started_at DESC LIMIT 15').all(),
     db.prepare('SELECT * FROM nervous_daily_metrics ORDER BY metric_date DESC,value DESC LIMIT 60').all(),
     db.prepare('SELECT status,COUNT(*) count FROM business_campaigns GROUP BY status').all(),
-    quietly(db.prepare("SELECT status,waiting_reason,claimed_by,scheduled_for,lock_expires_at,completed_at FROM automation_jobs WHERE job_type='editorial_publication' ORDER BY scheduled_for ASC LIMIT 500")),
+    quietly(db.prepare("SELECT status,waiting_reason,claimed_by,scheduled_for,lock_expires_at,finished_at FROM automation_jobs WHERE job_type='editorial_publication' ORDER BY scheduled_for ASC LIMIT 500")),
     quietly(db.prepare('SELECT * FROM automation_agent_heartbeats ORDER BY last_seen_at DESC LIMIT 5')),
-    quietly(db.prepare("SELECT scheduled_for,completed_at,generation_source FROM automation_jobs WHERE job_type='editorial_publication' AND status='completed' ORDER BY completed_at DESC LIMIT 1")),
+    quietly(db.prepare("SELECT scheduled_for,finished_at,generation_source FROM automation_jobs WHERE job_type='editorial_publication' AND status='completed' ORDER BY finished_at DESC LIMIT 1")),
   ]);
   const editorialJobs=jobs.results||[];
   const newestAgent=(heartbeats.results||[])[0]||null;

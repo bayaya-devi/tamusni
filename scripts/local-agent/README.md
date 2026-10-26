@@ -23,9 +23,11 @@ powershell -ExecutionPolicy Bypass -File .\scripts\local-agent\install-local-age
 
 The installer stores the token encrypted with Windows DPAPI in the current
 user's local app-data folder and creates the **TAMUSNI Editorial Local
-Recovery** scheduled task. It runs at sign-in and then every 30 minutes. Each
-invocation handles at most one job, so delayed work is recovered in order and
-does not create a burst of publications.
+Recovery** scheduled task. On locked-down Windows accounts that prohibit task
+registration, it installs the equivalent per-user Startup launcher instead.
+It runs at sign-in and then every 30 minutes. Each invocation handles at most
+one job, so delayed work is recovered in order and does not create a burst of
+publications.
 
 ## Operational rules
 

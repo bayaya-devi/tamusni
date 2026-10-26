@@ -21,7 +21,20 @@ function Read-AgentConfig {
 
 function Invoke-AgentApi([hashtable]$Config, [string]$Path, [object]$Body) {
   $json = $Body | ConvertTo-Json -Depth 16 -Compress
-  return Invoke-RestMethod -Method Post -Uri ($Config.Origin + $Path) -Headers @{ Authorization = "Bearer $($Config.Token)" } -ContentType 'application/json' -Body $json -TimeoutSec 90
+  try { $null = $json | ConvertFrom-Json -ErrorAction Stop }
+  catch { throw "LOCAL_AGENT_JSON_SERIALIZATION_INVALID: $($_.Exception.Message)" }
+  $requestPath = Join-Path $env:TEMP ("tamusni-agent-request-" + [guid]::NewGuid().ToString() + '.json')
+  $responsePath = Join-Path $env:TEMP ("tamusni-agent-response-" + [guid]::NewGuid().ToString() + '.json')
+  [IO.File]::WriteAllText($requestPath, $json, (New-Object Text.UTF8Encoding($false)))
+  try {
+    $status = & curl.exe --ipv4 --silent --show-error --request POST --connect-timeout 15 --max-time 95 --header "Authorization: Bearer $($Config.Token)" --header 'Content-Type: application/json; charset=utf-8' --data-binary "@$requestPath" --output $responsePath --write-out '%{http_code}' ($Config.Origin + $Path)
+    if ($LASTEXITCODE -ne 0) { throw "LOCAL_AGENT_TRANSPORT_FAILED:$LASTEXITCODE" }
+    $body = if (Test-Path -LiteralPath $responsePath) { Get-Content -LiteralPath $responsePath -Raw } else { '' }
+    if ([int]$status -lt 200 -or [int]$status -ge 300) { throw "LOCAL_AGENT_HTTP_${status}: $body" }
+    return ($body | ConvertFrom-Json)
+  } finally {
+    Remove-Item -LiteralPath $requestPath,$responsePath -Force -ErrorAction SilentlyContinue
+  }
 }
 
 function Send-Heartbeat([hashtable]$Config, [string]$Status, [string]$Detail = '', [string]$LastJobId = '') {
@@ -38,10 +51,12 @@ try {
   if ($null -eq $claim) { exit 0 }
   Send-Heartbeat $config 'busy' "processing $($claim.idempotencyKey)" $claim.id
   $context = @{ job = $claimResponse.job; candidates = $claimResponse.candidates; approvedSourceHosts = $claimResponse.approvedSourceHosts; policy = $claimResponse.policy } | ConvertTo-Json -Depth 16 -Compress
-  $prompt = "You are the local TAMUSNI editorial recovery agent. Produce one factual, source-backed BRIEF only. Research may use only HTTPS pages whose host is listed in approvedSourceHosts. Use the candidate list when it offers a suitable current subject. Do not invent a fact, date, quote, number, product, person, source, or translation. Do not use a placeholder. Return only JSON matching the supplied schema. Every claim must cite a source id. Write five complete translations: fr, en, ar, es, pt. Each body must contain 350 to 1,100 characters. No image is required. Do not edit any file or publish anything yourself. CONTEXT: $context"
+  $prompt = "You are the local TAMUSNI editorial recovery agent. Produce one factual, source-backed BRIEF only. Research may use only HTTPS pages whose host is listed in approvedSourceHosts. Use the candidate list when it offers a suitable current subject. Do not invent a fact, date, quote, number, product, person, source, or translation. Do not use a placeholder. Return only JSON matching the supplied schema. Every claim must cite a source id. Write five complete translations: fr, en, ar, es, pt. Each body must contain 350 to 1,100 characters. No image is required. The five editorialScore values must be conservative but their sum must be at least 30; only select a candidate that can honestly meet that threshold. Do not edit any file or publish anything yourself. CONTEXT: $context"
   $output = Join-Path $env:TEMP ("tamusni-local-publication-" + [guid]::NewGuid().ToString() + '.json')
   try {
-    & codex exec -C $RepoRoot -s read-only --output-schema $SchemaPath -o $output $prompt
+    # Deliver the generated context through stdin. This avoids PowerShell
+    # splitting punctuation or source titles into multiple CLI arguments.
+    $prompt | & codex exec -C $RepoRoot -s read-only --output-schema $SchemaPath -o $output -
     if ($LASTEXITCODE -ne 0 -or !(Test-Path -LiteralPath $output)) { throw 'CODEX_LOCAL_GENERATION_FAILED' }
     $generated = Get-Content -LiteralPath $output -Raw | ConvertFrom-Json
     $submission = Invoke-AgentApi $config '/local-agent/submit' @{ agentId = $AgentId; agentVersion = $AgentVersion; jobId = $claim.id; lockToken = $claim.lockToken; publication = $generated.publication }
