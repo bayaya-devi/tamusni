@@ -220,8 +220,8 @@ export async function publicResponse(context,locale,path) {
  else if(path==='mon-espace/'){result=await dashboard(context,locale,session);if(!result)return Response.redirect(`${origin}/${locale}/connexion/`,302);title=t.dashboard;robots='noindex,nofollow';}
  else if(path==='business/'){result=businessPublicPage(locale,session);title='TAMUSNI Business';description='TAMUSNI Business — campagnes sponsorisées validées, paiement sécurisé et mesure transparente.';extraStyles='<link rel="stylesheet" href="/business.css?v=1">';bodyRole='business-public';}
  else if(path==='business/espace/'){
-   if(!session)return Response.redirect(`${origin}/${locale}/connexion/?next=${encodeURIComponent(`/${locale}/business/espace/`)}`,302);
-   result=session.role==='BUSINESS'?businessDashboardPage(locale):businessProfilePage(locale,session);title='TAMUSNI Business';robots='noindex,nofollow';extraStyles='<link rel="stylesheet" href="/business.css?v=1">';extraScripts='<script src="/business-app.js?v=1" defer></script>';bodyRole='business';
+  if(!session)return Response.redirect(`${origin}/${locale}/connexion/?next=${encodeURIComponent(`/${locale}/business/espace/`)}`,302);
+   result=session.role==='BUSINESS'?businessDashboardPage(locale):businessProfilePage(locale,session);title='TAMUSNI Business';robots='noindex,nofollow';extraStyles='<link rel="stylesheet" href="/business.css?v=1">';extraScripts='<script src="/business-app.js?v=2" defer></script>';bodyRole='business';
  }
  else if(['mentions-legales/','confidentialite/','cookies/','conditions-utilisation/'].includes(path)){result=legal(locale,path.slice(0,-1));title=path==='mentions-legales/'?t.legal:path==='confidentialite/'?t.privacy:path==='conditions-utilisation/'?termsTitle[locale]:t.cookies;}
  else if(institutionalSlugs.includes(path.replace(/\/$/,''))){const page=institutional(locale,path.replace(/\/$/,''));result=page.main;title=page.title;description=page.description;}
