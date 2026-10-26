@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { addLocalDays, allowedExternalUrl, editorialScoreBand, editorialScoreIssues, extractAiJson, isCompletePublication, isEditorialDuplicate, isPublicationDue, localClock, localDateTimeToUtc, normalizeEditorialScore, oldestOutstandingPublicationDate, parseFeed, PUBLIC_AUTHOR, publicationQualityIssues, rankCandidates, safeJson, selectEditorialFormat, seoGeoPublicationIssues, slugify, titleSimilarity } from "../src/core.js";
+import { addLocalDays, allowedExternalUrl, duePublicationDates, editorialScoreBand, editorialScoreIssues, extractAiJson, isCompletePublication, isEditorialDuplicate, isPublicationDue, localClock, localDateTimeToUtc, normalizeEditorialScore, oldestOutstandingPublicationDate, parseFeed, PUBLIC_AUTHOR, publicationQualityIssues, rankCandidates, safeJson, selectEditorialFormat, seoGeoPublicationIssues, slugify, titleSimilarity } from "../src/core.js";
 
 test("rejects local and non-https source URLs", () => {
   assert.equal(allowedExternalUrl("http://example.com"), false);
@@ -38,6 +38,10 @@ test("keeps a durable 48-hour local-date cadence", () => {
   assert.equal(addLocalDays("2026-12-31", 2), "2027-01-02");
   assert.equal(isPublicationDue({ date: "2026-10-08" }, "2026-10-09"), false);
   assert.equal(isPublicationDue({ date: "2026-10-09" }, "2026-10-09"), true);
+});
+
+test("materializes every missed editorial deadline without replacing an older job", () => {
+  assert.deepEqual(duePublicationDates("2026-10-24", "2026-10-30", 2), ["2026-10-24", "2026-10-26", "2026-10-28", "2026-10-30"]);
 });
 
 test("recovers every missed deadline instead of silently advancing the cycle", () => {

@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["publication"],
+  "properties": {
+    "publication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["category", "editorialScore", "factSheet", "sources", "translations"],
+      "properties": {
+        "category": {"type": "string", "enum": ["Intelligence", "Innovation", "Robotique", "Cybersécurité", "Espace"]},
+        "editorialScore": {"type": "object", "required": ["importance", "reliability", "potentialImpact", "publicInterest", "tamusniRelevance", "reason"], "properties": {"importance":{"type":"integer","minimum":0,"maximum":10},"reliability":{"type":"integer","minimum":0,"maximum":10},"potentialImpact":{"type":"integer","minimum":0,"maximum":10},"publicInterest":{"type":"integer","minimum":0,"maximum":10},"tamusniRelevance":{"type":"integer","minimum":0,"maximum":10},"reason":{"type":"string"}}},
+        "factSheet": {"type":"object","required":["event","claims","dates","figures","excludedUnverified"],"properties":{"event":{"type":"string"},"claims":{"type":"array","minItems":1,"items":{"type":"object","required":["claim","sourceIds","status"],"properties":{"claim":{"type":"string"},"sourceIds":{"type":"array","minItems":1,"items":{"type":"string"}},"status":{"type":"string","enum":["confirmed","attributed"]}}}},"dates":{"type":"array","items":{"type":"string"}},"figures":{"type":"array","items":{"type":"string"}},"excludedUnverified":{"type":"array","items":{"type":"string"}}}},
+        "sources": {"type":"array","minItems":1,"maxItems":3,"items":{"type":"object","required":["id","label","url","publisher"],"properties":{"id":{"type":"string"},"label":{"type":"string"},"url":{"type":"string"},"publisher":{"type":"string"},"publishedAt":{"type":["string","null"]}}}},
+        "translations": {"type":"object","required":["fr","en","ar","es","pt"],"properties":{"fr":{"$ref":"#/$defs/translation"},"en":{"$ref":"#/$defs/translation"},"ar":{"$ref":"#/$defs/translation"},"es":{"$ref":"#/$defs/translation"},"pt":{"$ref":"#/$defs/translation"}}}
+      }
+    }
+  },
+  "$defs": {"translation":{"type":"object","required":["title","excerpt","summary","body"],"properties":{"title":{"type":"string"},"excerpt":{"type":"string"},"summary":{"type":"string"},"body":{"type":"string"}}}}
+}

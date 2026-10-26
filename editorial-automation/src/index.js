@@ -1,6 +1,6 @@
 import {
   ACTIVE_CATEGORIES, PUBLIC_AUTHOR, START_DATE, addLocalDays, aiDisclosure, allowedExternalUrl, extractAiJson,
-  editorialScoreIssues, isEditorialDuplicate, isPublicationDue, localClock, localDateTimeToUtc, normalizeEditorialScore, oldestOutstandingPublicationDate, parseFeed, plainText, publicationQualityIssues, seoGeoPublicationIssues,
+  duePublicationDates, editorialScoreIssues, isEditorialDuplicate, isPublicationDue, localClock, localDateTimeToUtc, normalizeEditorialScore, oldestOutstandingPublicationDate, parseFeed, plainText, publicationQualityIssues, seoGeoPublicationIssues,
   rankCandidates, safeJson, selectEditorialFormat, slugify, sourceDigest, titleSimilarity
 } from "./core.js";
 import { claimNextJob, completeJob, ensureJob, retryJob } from "../../automation/shared/job-core.js";
@@ -22,6 +22,8 @@ const FOCUS_LIBRARY = [
 ];
 const jsonResponse = (data, status = 200) => Response.json(data, { status, headers: { "Cache-Control": "no-store" } });
 const nowIso = () => new Date().toISOString();
+const cloudQuotaError = value => /(?:daily free allocation|used up your daily free allocation|AI_QUOTA_EXHAUSTED|\b4006\b)/i.test(String(value || ""));
+const nextCloudQuotaWindow = (now = new Date()) => new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 10, 0)).toISOString();
 
 async function log(env, runId, event, detail = "") {
   await env.DB.prepare("INSERT INTO editorial_logs(id,run_id,event,detail,created_at) VALUES(?,?,?,?,?)").bind(crypto.randomUUID(), runId || null, event, plainText(detail, 1000), nowIso()).run();
@@ -421,10 +423,13 @@ async function prepare(env, date = new Date(), force = false) {
       }
     }
     await deferPending(env, state, categories);
-    await env.DB.prepare("UPDATE editorial_runs SET status='failed',updated_at=?,completed_at=? WHERE id=?").bind(nowIso(), nowIso(), run.id).run();
-    await env.DB.prepare("UPDATE editorial_runs SET error_code='NO_ELIGIBLE_CONTENT',error_detail='No candidate passed source, score, evidence, originality and multilingual quality checks.' WHERE id=?").bind(run.id).run();
-    await log(env, run.id, "NO_ELIGIBLE_CONTENT", "publication remains due and will be retried");
-    return { ok: false, noTopic: true, runId: run.id, retry: true };
+    const rejections = await env.DB.prepare("SELECT rejection_reason FROM editorial_candidates WHERE run_id=? AND rejection_reason IS NOT NULL").bind(run.id).all();
+    const quotaBlocked = (rejections.results || []).some(row => cloudQuotaError(row.rejection_reason));
+    const code = quotaBlocked ? "AI_QUOTA_EXHAUSTED" : "NO_ELIGIBLE_CONTENT";
+    const detail = quotaBlocked ? "Cloudflare Workers AI free allocation is exhausted; the deadline remains queued for Cloud or the local agent." : "No candidate passed source, score, evidence, originality and multilingual quality checks.";
+    await env.DB.prepare("UPDATE editorial_runs SET status='failed',error_code=?,error_detail=?,updated_at=?,completed_at=? WHERE id=?").bind(code, detail, nowIso(), nowIso(), run.id).run();
+    await log(env, run.id, code, "publication remains due and will be retried");
+    return { ok: false, noTopic: true, runId: run.id, retry: true, waitingReason: quotaBlocked ? "AI_QUOTA_EXHAUSTED" : null };
   } catch (error) {
     await env.DB.prepare("UPDATE editorial_runs SET status='failed',error_code=?,error_detail=?,updated_at=?,completed_at=? WHERE id=?").bind("PREPARE_FAILED", plainText(String(error.message || error), 800), nowIso(), nowIso(), run.id).run();
     await log(env, run.id, "PREPARE_FAILED", String(error.message || error));
@@ -463,10 +468,11 @@ async function publicCheck(env, item) {
   }
 }
 
-async function publishDue(env, date = new Date(), force = false, ctx = null) {
+async function publishDue(env, date = new Date(), force = false, ctx = null, onlyContentId = null) {
   const now = nowIso();
-  const dueStatement = env.DB.prepare(`SELECT * FROM content_items WHERE automated=1 AND status='scheduled' ${force ? "" : "AND scheduled_at<=?"} ORDER BY scheduled_at LIMIT 1`);
-  const due = force ? await dueStatement.all() : await dueStatement.bind(now).all();
+  const dueStatement = env.DB.prepare(`SELECT * FROM content_items WHERE automated=1 AND status='scheduled' ${force ? "" : "AND scheduled_at<=?"} ${onlyContentId ? "AND id=?" : ""} ORDER BY scheduled_at LIMIT 1`);
+  const dueArgs = [...(force ? [] : [now]), ...(onlyContentId ? [onlyContentId] : [])];
+  const due = await dueStatement.bind(...dueArgs).all();
   const results = [];
   for (const item of due.results || []) {
     const run = await env.DB.prepare("SELECT * FROM editorial_runs WHERE id=?").bind(item.automation_run_id).first();
@@ -520,6 +526,97 @@ async function publishDue(env, date = new Date(), force = false, ctx = null) {
   return results;
 }
 
+async function localAgentAuthorized(request, env) {
+  const provided = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") || "";
+  const expected = String(env.LOCAL_AGENT_TOKEN || "");
+  if (!provided || !expected) return false;
+  const encode = value => new TextEncoder().encode(value);
+  const [left, right] = await Promise.all([crypto.subtle.digest("SHA-256", encode(provided)), crypto.subtle.digest("SHA-256", encode(expected))]);
+  const a = new Uint8Array(left), b = new Uint8Array(right);
+  return a.length === b.length && a.every((value, index) => value === b[index]);
+}
+
+async function localAgentHeartbeat(env, payload) {
+  const now = nowIso(), agentId = plainText(payload?.agentId || "windows-codex-local", 80);
+  await env.DB.prepare("INSERT INTO automation_agent_heartbeats(agent_id,agent_kind,version,status,capabilities_json,last_seen_at,last_job_id,detail) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(agent_id) DO UPDATE SET version=excluded.version,status=excluded.status,capabilities_json=excluded.capabilities_json,last_seen_at=excluded.last_seen_at,last_job_id=excluded.last_job_id,detail=excluded.detail")
+    .bind(agentId, "windows_codex", plainText(payload?.version || "1", 40), ["online", "busy", "offline", "error"].includes(payload?.status) ? payload.status : "online", JSON.stringify({ codex: Boolean(payload?.capabilities?.codex), mode: "editorial_brief_only" }), now, payload?.lastJobId || null, plainText(payload?.detail || "", 300)).run();
+  return { agentId, seenAt: now };
+}
+
+async function approvedSourceHosts(env) {
+  const feeds = await env.DB.prepare("SELECT feed_url FROM editorial_source_feeds WHERE active=1").all();
+  return new Set((feeds.results || []).map(row => { try { return new URL(row.feed_url).hostname.toLowerCase(); } catch { return ""; } }).filter(Boolean));
+}
+
+function isApprovedSourceHost(raw, hosts) {
+  try {
+    const host = new URL(raw).hostname.toLowerCase();
+    return [...hosts].some(allowed => host === allowed || host.endsWith(`.${allowed}`) || allowed.endsWith(`.${host}`));
+  } catch { return false; }
+}
+
+async function claimLocalEditorialJob(env, payload) {
+  const now = nowIso();
+  const job = await claimNextJob(env.DB, "editorial_publication", now, 30 * 60_000, "local_codex", true);
+  if (!job) return { job: null };
+  const metadata = safeJson(job.metadata_json) || {};
+  const state = await currentState(env);
+  const localDate = String(metadata.localDate || state.next_publication_local_date || "");
+  const begun = await beginRun(env, localDate, state, true);
+  let candidates = await env.DB.prepare("SELECT category,title,url,publisher,published_at,source_tier FROM editorial_candidates WHERE run_id=? AND rejection_reason IS NULL ORDER BY source_tier,created_at LIMIT 12").bind(begun.run.id).all();
+  if (!(candidates.results || []).length) {
+    const categories = await categoriesForCycle(env, state);
+    await feedCandidates(env, begun.run, categories);
+    candidates = await env.DB.prepare("SELECT category,title,url,publisher,published_at,source_tier FROM editorial_candidates WHERE run_id=? AND rejection_reason IS NULL ORDER BY source_tier,created_at LIMIT 12").bind(begun.run.id).all();
+  }
+  await localAgentHeartbeat(env, { ...payload, status: "busy", lastJobId: job.id, detail: `claimed ${job.idempotency_key}` });
+  await log(env, begun.run.id, "LOCAL_AGENT_CLAIMED", job.id);
+  return { job: { id: job.id, idempotencyKey: job.idempotency_key, localDate, lockToken: job.lock_token, leaseExpiresAt: job.lock_expires_at }, runId: begun.run.id, candidates: candidates.results || [], approvedSourceHosts: [...await approvedSourceHosts(env)], policy: { type: "brief", minimumSources: 1, locales: ["fr", "en", "ar", "es", "pt"], author: PUBLIC_AUTHOR } };
+}
+
+async function submitLocalEditorialPublication(env, payload) {
+  const now = nowIso(), jobId = plainText(payload?.jobId, 100), lockToken = plainText(payload?.lockToken, 100);
+  const job = await env.DB.prepare("SELECT * FROM automation_jobs WHERE id=? AND job_type='editorial_publication' AND status='running' AND claimed_by='local_codex' AND lock_token=?").bind(jobId, lockToken).first();
+  if (!job) throw new Error("LOCAL_JOB_LEASE_INVALID");
+  const run = await env.DB.prepare("SELECT * FROM editorial_runs WHERE local_date=? AND purpose='prepare'").bind((safeJson(job.metadata_json) || {}).localDate).first();
+  if (!run) throw new Error("LOCAL_EDITORIAL_RUN_MISSING");
+  const submitted = payload?.publication && typeof payload.publication === "object" ? payload.publication : null;
+  const publication = { ...submitted, contentType: "brief", category: plainText(submitted?.category, 80), editorialScore: normalizeEditorialScore(submitted?.editorialScore) };
+  if (!ACTIVE_CATEGORIES.includes(publication.category)) throw new Error("LOCAL_INVALID_CATEGORY");
+  const scoreIssues = editorialScoreIssues(publication.editorialScore, "brief");
+  if (scoreIssues.length) throw new Error(`LOCAL_SCORE_REJECTED:${scoreIssues.join(",")}`);
+  const structuralIssues = publicationQualityIssues(publication, "brief");
+  const seoIssues = seoGeoPublicationIssues(publication, "brief");
+  if (structuralIssues.length || seoIssues.length) throw new Error(`LOCAL_QUALITY_REJECTED:${[...new Set([...structuralIssues, ...seoIssues])].join(",")}`);
+  const hosts = await approvedSourceHosts(env);
+  if (publication.sources.some(source => !isApprovedSourceHost(source.url, hosts))) throw new Error("LOCAL_UNAPPROVED_SOURCE_HOST");
+  const bundle = [];
+  for (const source of publication.sources) {
+    const fetched = await safeFetch(source.url);
+    if (plainText(fetched.text, 600).length < 180) throw new Error("LOCAL_SOURCE_EVIDENCE_TOO_SHORT");
+    bundle.push({ id: source.id, title: plainText(source.label, 240), publisher: plainText(source.publisher, 160), url: fetched.url, publishedAt: source.publishedAt || null, text: fetched.text });
+  }
+  const qualityReport = await qualityGate(env, publication, bundle, "brief");
+  const content = await savePreparedPublication(env, run, { category: publication.category }, publication, qualityReport, { passed: true, strategy: "local_codex_source_contract", locales: ["fr", "en", "ar", "es", "pt"], sourceCount: bundle.length }, null, now);
+  const published = await publishDue(env, new Date(), false, null, content.id);
+  const result = published.find(entry => entry.published && entry.slug === content.slug);
+  if (!result) throw new Error("LOCAL_PUBLICATION_NOT_VERIFIED");
+  await env.DB.prepare("UPDATE automation_jobs SET publication_id=?,generation_source='local_codex',waiting_reason=NULL,updated_at=? WHERE id=? AND lock_token=?").bind(content.id, nowIso(), job.id, lockToken).run();
+  if (!await completeJob(env.DB, { ...job, lock_token: lockToken }, { source: "local_codex", publication: result })) throw new Error("LOCAL_JOB_COMPLETION_CONFLICT");
+  await localAgentHeartbeat(env, { agentId: payload?.agentId, version: payload?.agentVersion, status: "online", lastJobId: job.id, capabilities: { codex: true }, detail: "publication verified" });
+  return { published: result, jobId: job.id };
+}
+
+async function reportLocalAgentFailure(env, payload) {
+  const jobId = plainText(payload?.jobId, 100), lockToken = plainText(payload?.lockToken, 100);
+  const job = await env.DB.prepare("SELECT * FROM automation_jobs WHERE id=? AND status='running' AND claimed_by='local_codex' AND lock_token=?").bind(jobId, lockToken).first();
+  if (!job) throw new Error("LOCAL_JOB_LEASE_INVALID");
+  const reason = plainText(payload?.reason || "LOCAL_AGENT_FAILED", 700);
+  await retryJob(env.DB, job, `LOCAL_AGENT_${reason}`, nowIso(), { waitingReason: reason });
+  await localAgentHeartbeat(env, { agentId: payload?.agentId, version: payload?.agentVersion, status: "error", lastJobId: job.id, capabilities: { codex: true }, detail: reason });
+  return { retried: true, jobId: job.id };
+}
+
 async function scheduledRun(env, date = new Date(), ctx = null) {
   const zone = env.EDITORIAL_TIME_ZONE || "Africa/Casablanca";
   const clock = localClock(date, zone);
@@ -531,10 +628,13 @@ async function scheduledRun(env, date = new Date(), ctx = null) {
     state = await currentState(env);
   }
   if (!isPublicationDue(clock, state.next_publication_local_date)) return { clock, skipped: "not_due", next: state.next_publication_local_date };
+  const dueDates = duePublicationDates(state.next_publication_local_date, clock.date, Number(env.PUBLICATION_CADENCE_DAYS || 2));
+  for (const dueDate of dueDates) {
+    const scheduledFor = localDateTimeToUtc(dueDate, 6, 0, zone).toISOString();
+    await ensureJob(env.DB, { type: "editorial_publication", idempotencyKey: `editorial:${dueDate}`, scheduledFor, metadata: { localDate: dueDate, timeZone: zone } });
+  }
   const localDate = state.next_publication_local_date;
-  const scheduledFor = localDateTimeToUtc(localDate, 6, 0, zone).toISOString();
-  await ensureJob(env.DB, { type: "editorial_publication", idempotencyKey: `editorial:${localDate}`, scheduledFor, metadata: { localDate, timeZone: zone } });
-  if (clock.date === localDate && clock.hour < 4) return { clock, skipped: "before_preparation_window", next: localDate };
+  if (clock.date === localDate && clock.hour < 4) return { clock, skipped: "before_preparation_window", next: localDate, materialized: dueDates };
   const job = await claimNextJob(env.DB, "editorial_publication");
   if (!job) return { clock, skipped: "job_locked_or_waiting", next: localDate };
   try {
@@ -546,8 +646,8 @@ async function scheduledRun(env, date = new Date(), ctx = null) {
       await completeJob(env.DB, job, { prepared, published });
       return { clock, prepared, published, completedJob: job.id };
     }
-    const reason = prepared?.noTopic ? "NO_ELIGIBLE_CONTENT" : "PUBLICATION_NOT_YET_VERIFIED";
-    await retryJob(env.DB, job, reason);
+    const reason = prepared?.waitingReason || (prepared?.noTopic ? "NO_ELIGIBLE_CONTENT" : "PUBLICATION_NOT_YET_VERIFIED");
+    await retryJob(env.DB, job, reason, nowIso(), prepared?.waitingReason ? { waitingReason: prepared.waitingReason, nextAttemptAt: nextCloudQuotaWindow() } : {});
     return { clock, prepared, published, retryPending: job.id, reason };
   } catch (error) {
     await retryJob(env.DB, job, plainText(String(error.message || error), 800));
@@ -577,6 +677,21 @@ const worker = {
     if (url.pathname === "/health") {
       const state = await currentState(env);
       return jsonResponse({ service: "TAMUSNI WATCH", active: true, cron: "*/15 * * * *", cycleType: state.cycle_type, cycleNumber: state.cycle_number, nextPublicationLocalDate: state.next_publication_local_date, preparationTime: "04:00", publicationTime: "06:00", timeZone: env.EDITORIAL_TIME_ZONE || "Africa/Casablanca", cadenceDays: Number(env.PUBLICATION_CADENCE_DAYS || 2), deploymentStatus: state.deployment_status });
+    }
+    if (url.pathname.startsWith("/local-agent/")) {
+      if (request.method !== "POST" || !await localAgentAuthorized(request, env)) return new Response("Not found", { status: 404 });
+      let payload;
+      try { payload = await request.json(); } catch { return jsonResponse({ error: "INVALID_JSON" }, 400); }
+      try {
+        if (url.pathname === "/local-agent/heartbeat") return jsonResponse({ ok: true, heartbeat: await localAgentHeartbeat(env, payload) });
+        if (url.pathname === "/local-agent/claim") return jsonResponse({ ok: true, ...(await claimLocalEditorialJob(env, payload)) });
+        if (url.pathname === "/local-agent/submit") return jsonResponse({ ok: true, ...(await submitLocalEditorialPublication(env, payload)) });
+        if (url.pathname === "/local-agent/failure") return jsonResponse({ ok: true, ...(await reportLocalAgentFailure(env, payload)) });
+      } catch (error) {
+        console.error("local_agent_request_failed", error);
+        return jsonResponse({ ok: false, error: plainText(String(error?.message || error), 500) }, 409);
+      }
+      return new Response("Not found", { status: 404 });
     }
     if (url.pathname !== "/run") return new Response("Not found", { status: 404 });
     const token = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");

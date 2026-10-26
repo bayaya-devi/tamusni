@@ -9,5 +9,5 @@ export default defineConfig([
       '@next/next/no-location-assign-relative-destination': 'off'
     }
   },
-  globalIgnores(['.next/**','out/**','build/**','next-env.d.ts','.wrangler/**','node_modules/**','test-results/**','playwright-report/**','.agents/**','site-public/**'])
+  globalIgnores(['.next/**','.open-next/**','out/**','build/**','next-env.d.ts','.wrangler/**','node_modules/**','test-results/**','playwright-report/**','.agents/**','site-public/**'])
 ]);

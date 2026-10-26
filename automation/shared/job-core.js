@@ -24,19 +24,23 @@ export async function ensureJob(db, { type, idempotencyKey, scheduledFor, metada
 }
 
 export async function recoverExpiredJobs(db, now = new Date().toISOString()) {
-  return db.prepare("UPDATE automation_jobs SET status='retry_pending',last_error=COALESCE(last_error,'Execution interrupted before completion'),next_attempt_at=?,lock_token=NULL,lock_expires_at=NULL,updated_at=? WHERE status='running' AND lock_expires_at IS NOT NULL AND lock_expires_at<?")
+  return db.prepare("UPDATE automation_jobs SET status='retry_pending',last_error=COALESCE(last_error,'Execution interrupted before completion'),next_attempt_at=?,lock_token=NULL,lock_expires_at=NULL,claimed_by=NULL,updated_at=? WHERE status='running' AND lock_expires_at IS NOT NULL AND lock_expires_at<?")
     .bind(now, now, now).run();
 }
 
-export async function claimNextJob(db, type, now = new Date().toISOString(), leaseMs = 12 * 60_000) {
+export async function claimNextJob(db, type, now = new Date().toISOString(), leaseMs = 12 * 60_000, claimedBy = "cloud", includeDeferred = false) {
   await recoverExpiredJobs(db, now);
-  const row = await db.prepare("SELECT * FROM automation_jobs WHERE job_type=? AND status IN ('pending','retry_pending') AND (next_attempt_at IS NULL OR next_attempt_at<=?) ORDER BY scheduled_for,id LIMIT 1")
-    .bind(type, now).first();
+  const dueClause = includeDeferred ? "" : "AND (next_attempt_at IS NULL OR next_attempt_at<=?)";
+  const query = `SELECT * FROM automation_jobs WHERE job_type=? AND status IN ('pending','retry_pending') ${dueClause} ORDER BY scheduled_for,id LIMIT 1`;
+  const row = includeDeferred ? await db.prepare(query).bind(type).first() : await db.prepare(query).bind(type, now).first();
   if (!row) return null;
   const token = crypto.randomUUID();
   const expiry = new Date(Date.parse(now) + leaseMs).toISOString();
-  const claimed = await db.prepare("UPDATE automation_jobs SET status='running',attempt_count=attempt_count+1,started_at=COALESCE(started_at,?),lock_token=?,lock_expires_at=?,updated_at=? WHERE id=? AND status IN ('pending','retry_pending') AND (next_attempt_at IS NULL OR next_attempt_at<=?)")
-    .bind(now, token, expiry, now, row.id, now).run();
+  const claimClause = includeDeferred ? "" : "AND (next_attempt_at IS NULL OR next_attempt_at<=?)";
+  const statement = `UPDATE automation_jobs SET status='running',attempt_count=attempt_count+1,started_at=COALESCE(started_at,?),last_attempt_at=?,claimed_by=?,generation_source=?,lock_token=?,lock_expires_at=?,updated_at=? WHERE id=? AND status IN ('pending','retry_pending') ${claimClause}`;
+  const claimed = includeDeferred
+    ? await db.prepare(statement).bind(now, now, claimedBy, claimedBy, token, expiry, now, row.id).run()
+    : await db.prepare(statement).bind(now, now, claimedBy, claimedBy, token, expiry, now, row.id, now).run();
   if (Number(claimed.meta?.changes || 0) !== 1) return null;
   return { ...row, status: "running", attempt_count: Number(row.attempt_count || 0) + 1, lock_token: token, lock_expires_at: expiry };
 }
@@ -65,10 +69,11 @@ export async function completeJob(db, job, result = null, now = new Date().toISO
   return Number(update.meta?.changes || 0) === 1;
 }
 
-export async function retryJob(db, job, error, now = new Date().toISOString()) {
+export async function retryJob(db, job, error, now = new Date().toISOString(), options = {}) {
   const attempt = Number(job.attempt_count || 1);
-  const next = retryAt(attempt, Date.parse(now));
-  const update = await db.prepare("UPDATE automation_jobs SET status='retry_pending',last_error=?,next_attempt_at=?,lock_token=NULL,lock_expires_at=NULL,updated_at=? WHERE id=? AND status='running' AND lock_token=?")
-    .bind(String(error || "Unknown error").slice(0, 1200), next, now, job.id, job.lock_token).run();
+  const next = options.nextAttemptAt || retryAt(attempt, Date.parse(now));
+  const waitingReason = options.waitingReason || null;
+  const update = await db.prepare("UPDATE automation_jobs SET status='retry_pending',last_error=?,waiting_reason=?,next_attempt_at=?,lock_token=NULL,lock_expires_at=NULL,updated_at=? WHERE id=? AND status='running' AND lock_token=?")
+    .bind(String(error || "Unknown error").slice(0, 1200), waitingReason, next, now, job.id, job.lock_token).run();
   return Number(update.meta?.changes || 0) === 1 ? next : null;
 }

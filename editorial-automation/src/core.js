@@ -57,6 +57,13 @@ export function oldestOutstandingPublicationDate(state, clock, cadenceDays = 2, 
   return firstOutstanding && firstOutstanding <= clock?.date ? firstOutstanding : null;
 }
 
+/** Materialize every calendar deadline so an overdue job never hides the next one. */
+export function duePublicationDates(firstDate, throughDate, cadenceDays = 2) {
+  const dates = [];
+  for (let current = String(firstDate || ""); current && current <= throughDate; current = addLocalDays(current, cadenceDays)) dates.push(current);
+  return dates;
+}
+
 export function allowedExternalUrl(raw) {
   try {
     const url = new URL(raw);
